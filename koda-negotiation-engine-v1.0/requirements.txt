@@ -1,0 +1,5 @@
+# Mulberry 협상 엔진 - Dependencies
+
+streamlit>=1.31.0
+pandas>=2.0.0
+numpy>=1.24.0
