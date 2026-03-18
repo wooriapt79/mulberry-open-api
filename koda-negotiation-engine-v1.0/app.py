@@ -14,7 +14,7 @@ from data.inje_data import get_items, get_households, get_agent_profile
 # 페이지 설정
 st.set_page_config(
     page_title="Mulberry 협상 엔진",
-    page_icon="U0001f33e",
+    page_icon="🌾",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -53,12 +53,12 @@ if 'selected_item' not in st.session_state:
     st.session_state.selected_item = None
 
 # 헤더
-st.title("U0001f33e Mulberry 에이전트 협상 엔진")
+st.title("🌾 Mulberry 에이전트 협상 엔진")
 st.caption("인제군 서화면 공동구매 시민레이터 - AI 에이전트가 주민을 위해 가격을 협상합니다")
 
 # 사이드바
 with st.sidebar:
-    st.header("U0001f4ca Dashboard")
+    st.header("📊 Dashboard")
     product_items = st.session_state.product_items
     total_items = len(product_items)
     active_items = sum(1 for item in product_items.values() if item['current'] > 0)
@@ -68,25 +68,25 @@ with st.sidebar:
     st.metric("총 참여 건수", f"{total_participants}건")
     st.divider()
     demand_agent = st.session_state.agents['demand']
-    st.subheader("U0001f332 수요 집계 에이전트")
+    st.subheader("🌲 수요 집계 에이전트")
     st.write(f"**{demand_agent.agent_name}**")
     st.metric("Spirit Score", f"{demand_agent.self_status_info['spirit_score']:.1f}/5.0")
     st.metric("협상력", f"{demand_agent.calculate_negotiation_power():.0%}")
     st.metric("신뢰 등급", demand_agent.self_status_info['trust_level'])
 
 tab1, tab2, tab3 = st.tabs([
-    "U0001f4e6 공동구매 현황",
-    "U0001f91d 실시간 협상",
-    "U0001f4c8 경제적 임팩트"
+    "📦 공동구매 현황",
+    "🤝 실시간 협상",
+    "📈 경제적 임팩트"
 ])
 
 with tab1:
-    st.subheader("U0001f6d2 서화면 공동구매 리스트")
-    st.info("U0001f4a1 Mulberry 에이전트들이 주민들의 필요를 분석해 최적의 거래를 제안합니다.")
+    st.subheader("🛒 서화면 공동구매 리스트")
+    st.info("💡 Mulberry 에이전트들이 주민들의 필요를 분석해 최적의 거래를 제안합니다.")
     product_items = st.session_state.product_items
     for item_name, item_info in product_items.items():
         with st.expander(
-            f"U0001f4e6 {item_name} (현재 {item_info['current']}가구 참여 / 목표 {item_info['goal']}{item_info['unit']})",
+            f"📦 {item_name} (현재 {item_info['current']}가구 참여 / 목표 {item_info['goal']}{item_info['unit']})",
             expanded=True
         ):
             col1, col2, col3 = st.columns([2, 2, 1])
@@ -113,7 +113,7 @@ with tab1:
                 if details['progress'] >= 70:
                     st.success(f"✅ 에이전트가 '{item_info['supplier']}'와 대량 구매 조건으로 {details['negotiation_bonus_rate']}% 추가 할인을 협상했습니다!")
                 elif details['progress'] >= 50:
-                    st.info(f"U0001f50d 현재 {details['base_discount_rate']}% 할인 중. 인원이 더 모이면 가격이 한 단계 더 내려갑니다.")
+                    st.info(f"🔍 현재 {details['base_discount_rate']}% 할인 중. 인원이 더 모이면 가격이 한 단계 더 내려갑니다.")
                 else:
                     st.warning(f"⏳ 현재 {item_info['current']}가구 참여 중. 목표 {item_info['goal']}{item_info['unit']}까지 {item_info['goal'] - item_info['current']}가구 더 필요합니다.")
                 st.caption(f"공급사: {item_info['supplier']} (신뢰도: {supply_agent.self_status_info['spirit_score']:.1f}/5.0)")
@@ -128,7 +128,7 @@ with tab1:
                     st.rerun()
 
 with tab2:
-    st.subheader("U0001f91d 에이전트 간 실시간 협상 프로세스")
+    st.subheader("🤝 에이전트 간 실시간 협상 프로세스")
     if st.session_state.selected_item:
         item_name = st.session_state.selected_item
         item_info = st.session_state.product_items[item_name]
@@ -170,7 +170,7 @@ with tab2:
         st.info("U0001f448 왼쪽 '공동구매 현황' 탭에서 '협상 보기' 버튼을 눌러주세요!")
 
 with tab3:
-    st.subheader("U0001f4c8 인제군 서화면 경제 임팩트 (Real-time)")
+    st.subheader("📈 인제군 서화면 경제 임팩트 (Real-time)")
     impact = st.session_state.engine.calculate_economic_impact(
         st.session_state.product_items,
         st.session_state.agents
@@ -182,7 +182,7 @@ with tab3:
     st.divider()
     col1, col2 = st.columns(2)
     with col1:
-        st.subheader("U0001f4b0 비용 분석")
+        st.subheader("💰 비용 분석")
         st.write("**원래 총 비용:**")
         st.write(f"₩{impact['total_original']:,}")
         st.write("**협상 후 총 비용:**")
@@ -195,7 +195,7 @@ with tab3:
         st.write(f"- AP2 수수료: ₩{impact['ap2_fee']:,} (0.5%)")
         st.write(f"- 주민 순혜택: ₩{impact['net_community_benefit']:,}")
     with col2:
-        st.subheader("U0001f3af 사회적 가치")
+        st.subheader("🎯 사회적 가치")
         households = get_households()
         st.metric("참여 가구", f"{len(households)}가구")
         st.metric("평균 절감액/가구", f"₩{impact['avg_savings_per_transaction']:,}")
@@ -210,10 +210,10 @@ with tab3:
 st.divider()
 col1, col2, col3 = st.columns([2, 1, 1])
 with col1:
-    st.caption("U0001f33e Mulberry Project - 식품사막화 제로")
+    st.caption("🌾 Mulberry Project - 식품사막화 제로")
     st.caption("Powered by Agent Engine + mHC + AP2")
 with col2:
-    if st.button("U0001f504 전체 초기화"):
+    if st.button("🔄 전체 초기화"):
         st.session_state.product_items = get_items()
         st.session_state.engine = NegotiationEngine()
         st.rerun()
