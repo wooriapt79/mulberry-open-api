@@ -99,6 +99,12 @@ with tab1:
                 supply_agent=supply_agent
             )
             item_info['negotiated_price'] = negotiated_price
+
+            # 안전하게 progress 값 가져오기 (없으면 현재 수량 기준으로 계산)
+            progress_value = details.get('progress')
+            if progress_value is None:
+                progress_value = (item_info['current'] / item_info['goal']) * 100
+
             with col1:
                 st.metric(
                     "현재 협상가",
@@ -106,14 +112,14 @@ with tab1:
                     f"-₩{details['savings']:,} ({details['total_discount_rate']}%)",
                     delta_color="inverse"
                 )
-                st.progress(details['progress'] / 100)
-                st.caption(f"진행률: {details['progress']}% (목표: {item_info['goal']}{item_info['unit']})")
+                st.progress(progress_value / 100)
+                st.caption(f"진행률: {progress_value:.1f}% (목표: {item_info['goal']}{item_info['unit']})")
             with col2:
                 st.write("**에이전트 협상 로그**")
-                if details['progress'] >= 70:
-                    st.success(f"✅ 에이전트가 '{item_info['supplier']}'와 대량 구매 조건으로 {details['negotiation_bonus_rate']}% 추가 할인을 협상했습니다!")
-                elif details['progress'] >= 50:
-                    st.info(f"🔍 현재 {details['base_discount_rate']}% 할인 중. 인원이 더 모이면 가격이 한 단계 더 내려갑니다.")
+                if progress_value >= 70:
+                    st.success(f"✅ 에이전트가 '{item_info['supplier']}'와 대량 구매 조건으로 {details.get('negotiation_bonus_rate', 0)}% 추가 할인을 협상했습니다!")
+                elif progress_value >= 50:
+                    st.info(f"🔍 현재 {details.get('base_discount_rate', 0)}% 할인 중. 인원이 더 모이면 가격이 한 단계 더 내려갑니다.")
                 else:
                     st.warning(f"⏳ 현재 {item_info['current']}가구 참여 중. 목표 {item_info['goal']}{item_info['unit']}까지 {item_info['goal'] - item_info['current']}가구 더 필요합니다.")
                 st.caption(f"공급사: {item_info['supplier']} (신뢰도: {supply_agent.self_status_info['spirit_score']:.1f}/5.0)")
@@ -162,12 +168,16 @@ with tab2:
                     time.sleep(0.3)
         st.divider()
         col1, col2, col3 = st.columns(3)
-        details = st.session_state.engine.negotiation_history[-1]
+        # negotiation_history가 비어있지 않은지 확인
+        if st.session_state.engine.negotiation_history:
+            details = st.session_state.engine.negotiation_history[-1]
+        else:
+            details = {'base_price': item_info['base_price'], 'savings': 0, 'total_discount_rate': 0}
         col1.metric("원가", f"₩{details['base_price']:,}")
         col2.metric("협상가", f"₩{negotiated_price:,}", f"-{details['total_discount_rate']}%")
         col3.metric("절감액", f"₩{details['savings']:,}")
     else:
-        st.info("U0001f448 왼쪽 '공동구매 현황' 탭에서 '협상 보기' 버튼을 눌러주세요!")
+        st.info("👈 왼쪽 '공동구매 현황' 탭에서 '협상 보기' 버튼을 눌러주세요!")
 
 with tab3:
     st.subheader("📈 인제군 서화면 경제 임팩트 (Real-time)")
@@ -219,4 +229,4 @@ with col2:
         st.rerun()
 with col3:
     st.caption(f"버전: v1.0.1")
-    st.caption(f"지역: 인제군 서화면")
+    st.caption(f"지역: 인제군 서화면")    
