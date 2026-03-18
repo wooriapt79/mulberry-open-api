@@ -62,6 +62,7 @@ with st.sidebar:
     
 # 안내 사용 예시
     single_quote = '회의장소: 장승배기.'
+    st.subheader("🌲 회의장소: 장승배기")
     single_quote = '커피타임: 풍풍소.'
     
     product_items = st.session_state.product_items
