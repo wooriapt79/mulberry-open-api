@@ -1,0 +1,114 @@
+{
+  "summary": {
+    "total": 17,
+    "passed": 17,
+    "failed": 0,
+    "duration": 0.001667022705078125,
+    "timestamp": "2026-03-17T03:54:40.222462"
+  },
+  "tests": [
+    {
+      "test": "Passport-GhostArchive 통합",
+      "passed": true,
+      "details": "활동 3개 기록됨 (예상 3개)",
+      "timestamp": "2026-03-17T03:54:40.220510"
+    },
+    {
+      "test": "Passport 직렬화",
+      "passed": true,
+      "details": "모든 필드 포함 확인",
+      "timestamp": "2026-03-17T03:54:40.220590"
+    },
+    {
+      "test": "Passport 복구",
+      "passed": true,
+      "details": "복구된 ID: 294dce10...",
+      "timestamp": "2026-03-17T03:54:40.220672"
+    },
+    {
+      "test": "AP2 Mandate 조건 협상",
+      "passed": true,
+      "details": "기본가 35,000원 → 협상가 25,148원 (절감 9,852원)",
+      "timestamp": "2026-03-17T03:54:40.220859"
+    },
+    {
+      "test": "상부상조 10% 로직",
+      "passed": true,
+      "details": "지역 환원: 13,793원 (절감액의 10%)",
+      "timestamp": "2026-03-17T03:54:40.220905"
+    },
+    {
+      "test": "AP2 Mandate 생성",
+      "passed": true,
+      "details": "거래 ID: TX_20260317035440",
+      "timestamp": "2026-03-17T03:54:40.220955"
+    },
+    {
+      "test": "협상 활동 기록",
+      "passed": true,
+      "details": "Ghost Archive에 AP2 거래 기록됨",
+      "timestamp": "2026-03-17T03:54:40.221072"
+    },
+    {
+      "test": "에이전트 리셋 & 복구",
+      "passed": true,
+      "details": "ID 일치: True, 활동 일치: True, Score 일치: True",
+      "timestamp": "2026-03-17T03:54:40.221211"
+    },
+    {
+      "test": "복구 후 활동 계속",
+      "passed": true,
+      "details": "활동 추가 성공: 4개",
+      "timestamp": "2026-03-17T03:54:40.221245"
+    },
+    {
+      "test": "동일 이름 에이전트 ID 분리",
+      "passed": true,
+      "details": "Agent1: e720aaec..., Agent2: 3bf94943...",
+      "timestamp": "2026-03-17T03:54:40.221360"
+    },
+    {
+      "test": "잘못된 Spirit Score 처리",
+      "passed": true,
+      "details": "음수 Score(-1.0) → 협상력 0.000 (0 이상)",
+      "timestamp": "2026-03-17T03:54:40.221395"
+    },
+    {
+      "test": "Rapport 범위 초과 처리",
+      "passed": true,
+      "details": "Rapport 1.5 → 협상력 0.130 (1.0 이하)",
+      "timestamp": "2026-03-17T03:54:40.221427"
+    },
+    {
+      "test": "빈 활동 기록 처리",
+      "passed": true,
+      "details": "빈 활동도 기록 가능",
+      "timestamp": "2026-03-17T03:54:40.221463"
+    },
+    {
+      "test": "극단값 협상 차이",
+      "passed": true,
+      "details": "고신뢰(39.1% 할인) > 저신뢰(1.5% 할인)",
+      "timestamp": "2026-03-17T03:54:40.221596"
+    },
+    {
+      "test": "0원 거래 처리",
+      "passed": true,
+      "details": "무료 거래 정상 처리",
+      "timestamp": "2026-03-17T03:54:40.221681"
+    },
+    {
+      "test": "초대량 거래 처리",
+      "passed": true,
+      "details": "10,000개 거래: 608원 (할인 99.4%)",
+      "timestamp": "2026-03-17T03:54:40.221759"
+    },
+    {
+      "test": "전체 워크플로우 (E2E)",
+      "passed": true,
+      "details": "절감 137,970원, Mulberry 4,139.099999999999원, 커뮤니티 13,797.0원",
+      "timestamp": "2026-03-17T03:54:40.221972"
+    }
+  ],
+  "errors": []
+}
