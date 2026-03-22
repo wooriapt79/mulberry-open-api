@@ -5,7 +5,7 @@
 광고비 없는 광고 - Agent-to-Agent Negotiation Demo
 """
 
-import streamlit as sth
+import streamlit as st
 import time
 from agent_passport import AgentPassport
 from negotiation_engine import NegotiationEngine
