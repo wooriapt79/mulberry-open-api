@@ -8,7 +8,7 @@
 import streamlit as st
 import time
 from agent_passport import AgentPassport
-from negotiation_engine import NegotiationEngine
+from negotiation_engine import NegotiationEngineh
 from data.inje_data import get_items, get_households, get_agent_profile
 
 # 페이지 설정
@@ -21,7 +21,7 @@ st.set_page_config(
 
 # 세션 상태 초기화
 if 'items' not in st.session_state:
-    st.session_state.items = get_items()
+    st.session_state['items'] = get_items()
 
 if 'agents' not in st.session_state:
     # 에이전트 초기화
@@ -66,9 +66,9 @@ with st.sidebar:
     st.header("📊 Dashboard")
     
     # 전체 통계
-    total_items = len(st.session_state.items)
-    active_items = sum(1 for item in st.session_state.items.values() if item['current'] > 0)
-    total_participants = sum(item['current'] for item in st.session_state.items.values())
+    total_items = len(st.session_state['items'])
+    active_items = sum(1 for item in st.session_state['items'].values() if item['current'] > 0)
+    total_participants = sum(item['current'] for item in st.session_state['items'].values())
     
     st.metric("총 품목", f"{total_items}개")
     st.metric("진행 중", f"{active_items}개")
@@ -96,7 +96,7 @@ with tab1:
     st.info("💡 Mulberry 에이전트들이 주민들의 필요를 분석해 최적의 거래를 제안합니다.")
     
     # 공동구매 아이템 표시
-    for item_name, item_info in st.session_state.items.items():
+    for item_name, item_info in st.session_state['items'].items():
         with st.expander(
             f"📦 {item_name} (현재 {item_info['current']}/{item_info['goal']}명 참여중)", 
             expanded=True
@@ -154,7 +154,7 @@ with tab2:
     
     if st.session_state.selected_item:
         item_name = st.session_state.selected_item
-        item_info = st.session_state.items[item_name]
+        item_info = st.session_state['items'][item_name]
         
         st.info(f"**{item_name}** 협상 프로세스를 시뮬레이션합니다...")
         
@@ -212,7 +212,7 @@ with tab3:
     
     # 경제적 임팩트 계산
     impact = st.session_state.engine.calculate_economic_impact(
-        st.session_state.items,
+        st.session_state['items'],
         st.session_state.agents
     )
     
@@ -290,7 +290,7 @@ with col1:
 
 with col2:
     if st.button("🔄 전체 초기화"):
-        st.session_state.items = get_items()
+        st.session_state['items'] = get_items()
         st.session_state.engine = NegotiationEngine()
         st.rerun()
 
