@@ -73,6 +73,8 @@ with st.sidebar:
     st.metric("총 품목", f"{total_items}개")
     st.metric("진행 중", f"{active_items}개")
     st.metric("참여 가구", f"{total_participants}가구")
+    st.caption("📍 회의 장소: 장승배기")
+    st.caption("☕ 커피 타임: 풍풍소")
     
     st.divider()
     
