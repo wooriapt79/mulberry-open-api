@@ -1,494 +1,256 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🌾 Mulberry Field Monitoring - 인제군 현장 관제</title>
-    <script src="/socket.io/socket.io.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #333;
-            min-height: 100vh;
-        }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        header {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        
-        h1 {
-            color: #667eea;
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
-        
-        .subtitle {
-            color: #666;
-            font-size: 14px;
-        }
-        
-        .status-bar {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-top: 15px;
-        }
-        
-        .status-badge {
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        
-        .status-online {
-            background: #10b981;
-            color: white;
-        }
-        
-        .status-time {
-            background: #f3f4f6;
-            color: #666;
-        }
-        
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        
-        .card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        
-        .card-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: #333;
-        }
-        
-        .card-icon {
-            font-size: 24px;
-        }
-        
-        .stat-value {
-            font-size: 36px;
-            font-weight: 700;
-            color: #667eea;
-            margin-bottom: 5px;
-        }
-        
-        .stat-label {
-            font-size: 14px;
-            color: #666;
-        }
-        
-        .stat-change {
-            font-size: 12px;
-            margin-top: 8px;
-        }
-        
-        .stat-up {
-            color: #10b981;
-        }
-        
-        .stat-down {
-            color: #ef4444;
-        }
-        
-        .agent-list {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        
-        .agent-item {
-            padding: 12px;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: background 0.2s;
-        }
-        
-        .agent-item:hover {
-            background: #f9fafb;
-        }
-        
-        .agent-info {
-            flex: 1;
-        }
-        
-        .agent-name {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 4px;
-        }
-        
-        .agent-meta {
-            font-size: 12px;
-            color: #666;
-        }
-        
-        .agent-spirit {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .spirit-bar {
-            width: 60px;
-            height: 6px;
-            background: #e5e7eb;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-        
-        .spirit-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #10b981, #3b82f6);
-            transition: width 0.3s;
-        }
-        
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 5px;
-        }
-        
-        .status-active {
-            background: #10b981;
-            box-shadow: 0 0 4px #10b981;
-        }
-        
-        .status-inactive {
-            background: #9ca3af;
-        }
-        
-        .transaction-table {
-            width: 100%;
-            font-size: 13px;
-        }
-        
-        .transaction-table th {
-            text-align: left;
-            padding: 10px;
-            border-bottom: 2px solid #e5e7eb;
-            color: #666;
-            font-weight: 600;
-        }
-        
-        .transaction-table td {
-            padding: 10px;
-            border-bottom: 1px solid #f3f4f6;
-        }
-        
-        .tx-status {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 600;
-        }
-        
-        .tx-success {
-            background: #d1fae5;
-            color: #065f46;
-        }
-        
-        .tx-failed {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        
-        .tx-pending {
-            background: #fef3c7;
-            color: #92400e;
-        }
-        
-        .refresh-btn {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-            transition: background 0.2s;
-        }
-        
-        .refresh-btn:hover {
-            background: #5568d3;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        
-        .pulse {
-            animation: pulse 2s ease-in-out infinite;
-        }
-        
-        .full-width {
-            grid-column: 1 / -1;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌾 Mulberry Mission Control - 인제군 현장 관제</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #333; min-height: 100vh; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+    header { background: rgba(255,255,255,0.95); padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    h1 { color: #667eea; font-size: 28px; margin-bottom: 10px; }
+    .subtitle { color: #666; font-size: 14px; }
+    .status-bar { display: flex; gap: 10px; align-items: center; margin-top: 15px; flex-wrap: wrap; }
+    .status-badge { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .status-online { background: #10b981; color: white; }
+    .status-time { background: #f3f4f6; color: #666; }
+    .status-user { background: #667eea; color: white; }
+    .tab-nav { display: flex; gap: 8px; margin-bottom: 20px; }
+    .tab-btn { background: rgba(255,255,255,0.25); color: white; border: 2px solid rgba(255,255,255,0.4); padding: 10px 24px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; }
+    .tab-btn:hover { background: rgba(255,255,255,0.4); }
+    .tab-btn.active { background: rgba(255,255,255,0.95); color: #667eea; border-color: white; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px; }
+    .card { background: rgba(255,255,255,0.95); border-radius: 15px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .card-title { font-size: 16px; font-weight: 600; color: #333; }
+    .card-icon { font-size: 24px; }
+    .stat-value { font-size: 36px; font-weight: 700; color: #667eea; margin-bottom: 5px; }
+    .stat-label { font-size: 14px; color: #666; }
+    .stat-change { font-size: 12px; margin-top: 8px; }
+    .stat-up { color: #10b981; }
+    .full-width { grid-column: 1 / -1; }
+    .agent-list { max-height: 400px; overflow-y: auto; }
+    .agent-item { padding: 12px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
+    .agent-item:hover { background: #f9fafb; }
+    .agent-name { font-weight: 600; color: #333; margin-bottom: 4px; }
+    .agent-meta { font-size: 12px; color: #666; }
+    .agent-spirit { display: flex; align-items: center; gap: 5px; }
+    .spirit-bar { width: 60px; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+    .spirit-fill { height: 100%; background: linear-gradient(90deg, #10b981, #3b82f6); transition: width 0.3s; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+    .status-active { background: #10b981; box-shadow: 0 0 4px #10b981; }
+    .status-inactive { background: #9ca3af; }
+    .transaction-table { width: 100%; font-size: 13px; }
+    .transaction-table th { text-align: left; padding: 10px; border-bottom: 2px solid #e5e7eb; color: #666; font-weight: 600; }
+    .transaction-table td { padding: 10px; border-bottom: 1px solid #f3f4f6; }
+    .tx-status { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .tx-success { background: #d1fae5; color: #065f46; }
+    .tx-failed { background: #fee2e2; color: #991b1b; }
+    .tx-pending { background: #fef3c7; color: #92400e; }
+    .refresh-btn { background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; transition: background 0.2s; }
+    .refresh-btn:hover { background: #5568d3; }
+    .loading { text-align: center; padding: 40px; color: #666; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    .pulse { animation: pulse 2s ease-in-out infinite; }
+    .team-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-bottom: 24px; }
+    .team-card { background: rgba(255,255,255,0.95); border-radius: 15px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); text-align: center; transition: transform 0.2s; }
+    .team-card:hover { transform: translateY(-3px); }
+    .team-avatar { font-size: 48px; margin-bottom: 12px; }
+    .team-name { font-size: 20px; font-weight: 700; color: #333; margin-bottom: 4px; }
+    .team-role-badge { display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-bottom: 10px; }
+    .role-ceo { background: #fef3c7; color: #92400e; }
+    .role-cto { background: #dbeafe; color: #1e40af; }
+    .role-pm  { background: #d1fae5; color: #065f46; }
+    .role-csa { background: #ede9fe; color: #5b21b6; }
+    .team-email { font-size: 12px; color: #9ca3af; margin-bottom: 12px; }
+    .team-status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+    .online-dot { background: #10b981; box-shadow: 0 0 6px #10b981; }
+    .offline-dot { background: #9ca3af; }
+    .team-status-text { font-size: 13px; color: #666; }
+    .channel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .channel-card { background: rgba(255,255,255,0.95); border-radius: 12px; padding: 18px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: flex; align-items: flex-start; gap: 14px; transition: transform 0.2s; }
+    .channel-card:hover { transform: translateY(-2px); }
+    .channel-hash { font-size: 28px; font-weight: 800; color: #667eea; line-height: 1; }
+    .channel-name { font-size: 15px; font-weight: 700; color: #333; margin-bottom: 4px; }
+    .channel-desc { font-size: 12px; color: #9ca3af; margin-bottom: 6px; }
+    .channel-members { font-size: 12px; color: #667eea; font-weight: 600; }
+    #loginBox { background: rgba(255,255,255,0.95); border-radius: 15px; padding: 32px; max-width: 400px; margin: 0 auto 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+    #loginBox h3 { color: #667eea; font-size: 18px; margin-bottom: 20px; text-align: center; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 13px; color: #666; margin-bottom: 6px; font-weight: 600; }
+    .form-group input { width: 100%; padding: 10px 14px; border: 1.5px solid #e5e7eb; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s; }
+    .form-group input:focus { border-color: #667eea; }
+    .login-btn { width: 100%; background: #667eea; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 6px; transition: background 0.2s; }
+    .login-btn:hover { background: #5568d3; }
+    .login-error { color: #ef4444; font-size: 13px; text-align: center; margin-top: 10px; }
+    #teamContent { display: none; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🌾 Mulberry Field Monitoring</h1>
-            <div class="subtitle">인제군 현장 관제 시스템 - Real-time Agent Tracking & Transaction Monitoring</div>
-            <div class="status-bar">
-                <span class="status-badge status-online">🟢 LIVE</span>
-                <span class="status-badge status-time" id="currentTime">-</span>
-                <span class="status-badge status-time" id="connectionStatus">WebSocket: Connecting...</span>
-            </div>
-        </header>
-        
-        <!-- Stats Grid -->
-        <div class="grid">
-            <!-- Total Transactions -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">총 거래</div>
-                    <div class="card-icon">📊</div>
-                </div>
-                <div class="stat-value" id="totalTransactions">-</div>
-                <div class="stat-label">Total Transactions</div>
-                <div class="stat-change stat-up" id="txChange">-</div>
-            </div>
-            
-            <!-- Success Rate -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">성공률</div>
-                    <div class="card-icon">✅</div>
-                </div>
-                <div class="stat-value" id="successRate">-</div>
-                <div class="stat-label">Success Rate</div>
-                <div class="stat-change stat-up" id="successChange">Target: 97.2%</div>
-            </div>
-            
-            <!-- Total Volume -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">거래액</div>
-                    <div class="card-icon">💰</div>
-                </div>
-                <div class="stat-value" id="totalVolume">-</div>
-                <div class="stat-label">Transaction Volume</div>
-                <div class="stat-change stat-up" id="volumeChange">KRW</div>
-            </div>
-            
-            <!-- Active Agents -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">활성 에이전트</div>
-                    <div class="card-icon">👥</div>
-                </div>
-                <div class="stat-value" id="activeAgents">-</div>
-                <div class="stat-label">Active Agents</div>
-                <div class="stat-change stat-up" id="agentChange">-</div>
-            </div>
-        </div>
-        
-        <!-- Agents and Transactions -->
-        <div class="grid">
-            <!-- Agents List -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">에이전트 목록</div>
-                    <button class="refresh-btn" onclick="loadAgents()">🔄 새로고침</button>
-                </div>
-                <div class="agent-list" id="agentList">
-                    <div class="loading pulse">Loading agents...</div>
-                </div>
-            </div>
-            
-            <!-- Recent Transactions -->
-            <div class="card full-width">
-                <div class="card-header">
-                    <div class="card-title">최근 거래</div>
-                    <button class="refresh-btn" onclick="loadTransactions()">🔄 새로고침</button>
-                </div>
-                <div style="overflow-x: auto;">
-                    <table class="transaction-table" id="transactionTable">
-                        <thead>
-                            <tr>
-                                <th>시간</th>
-                                <th>거래 ID</th>
-                                <th>에이전트</th>
-                                <th>금액</th>
-                                <th>상태</th>
-                                <th>Latency</th>
-                            </tr>
-                        </thead>
-                        <tbody id="transactionBody">
-                            <tr><td colspan="6" class="loading pulse">Loading transactions...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+<div class="container">
+  <header>
+    <h1>🌾 Mulberry Mission Control</h1>
+    <div class="subtitle">인제군 현장 관제 + 팀 대시보드 — 식품사막화 제로 프로젝트</div>
+    <div class="status-bar">
+      <span class="status-badge status-online">🟢 LIVE</span>
+      <span class="status-badge status-time" id="currentTime">-</span>
+      <span class="status-badge status-time" id="connectionStatus">WebSocket: Connecting...</span>
+      <span class="status-badge status-user" id="userBadge" style="display:none">-</span>
     </div>
-    
-    <script>
-        // WebSocket connection
-        const socket = io();
-        
-        socket.on('connect', () => {
-            document.getElementById('connectionStatus').textContent = 'WebSocket: ✅ Connected';
-            socket.emit('subscribe', { type: 'field-monitoring' });
-        });
-        
-        socket.on('disconnect', () => {
-            document.getElementById('connectionStatus').textContent = 'WebSocket: ❌ Disconnected';
-        });
-        
-        // Real-time updates
-        socket.on('statsUpdate', (data) => {
-            console.log('Stats update:', data);
-        });
-        
-        socket.on('transaction', (data) => {
-            console.log('New transaction:', data);
-            loadTransactions();
-        });
-        
-        socket.on('agentUpdate', (data) => {
-            console.log('Agent update:', data);
-            loadAgents();
-        });
-        
-        // Update current time
-        setInterval(() => {
-            const now = new Date();
-            document.getElementById('currentTime').textContent = now.toLocaleString('ko-KR');
-        }, 1000);
-        
-        // Load stats
-        async function loadStats() {
-            try {
-                const response = await fetch('/api/field/stats');
-                const data = await response.json();
-                
-                if (data.success) {
-                    const stats = data.stats;
-                    
-                    document.getElementById('totalTransactions').textContent = stats.transactions.total.toLocaleString();
-                    document.getElementById('successRate').textContent = stats.transactions.successRate + '%';
-                    document.getElementById('totalVolume').textContent = '₩' + (stats.transactions.totalVolume / 1000000).toFixed(1) + 'M';
-                    document.getElementById('activeAgents').textContent = stats.agents.active + ' / ' + stats.agents.total;
-                    
-                    document.getElementById('txChange').textContent = '+' + stats.transactions.successful + ' successful';
-                    document.getElementById('agentChange').textContent = 'Avg Spirit: ' + stats.agents.avgSpiritScore;
-                }
-            } catch (error) {
-                console.error('Error loading stats:', error);
-            }
-        }
-        
-        // Load agents
-        async function loadAgents() {
-            try {
-                const response = await fetch('/api/field/agents');
-                const data = await response.json();
-                
-                if (data.success) {
-                    const agentList = document.getElementById('agentList');
-                    agentList.innerHTML = data.agents.map(agent => `
-                        <div class="agent-item">
-                            <div class="agent-info">
-                                <div class="agent-name">
-                                    <span class="status-dot status-${agent.status}"></span>
-                                    ${agent.name} (${agent.age}세)
-                                </div>
-                                <div class="agent-meta">
-                                    📍 ${agent.region} | 💼 ${agent.transactions}건 거래
-                                </div>
-                            </div>
-                            <div class="agent-spirit">
-                                <div class="spirit-bar">
-                                    <div class="spirit-fill" style="width: ${agent.spiritScore * 20}%"></div>
-                                </div>
-                                <span style="font-size: 12px; color: #666;">${agent.spiritScore.toFixed(1)}</span>
-                            </div>
-                        </div>
-                    `).join('');
-                }
-            } catch (error) {
-                console.error('Error loading agents:', error);
-            }
-        }
-        
-        // Load transactions
-        async function loadTransactions() {
-            try {
-                const response = await fetch('/api/field/transactions?limit=20');
-                const data = await response.json();
-                
-                if (data.success) {
-                    const tbody = document.getElementById('transactionBody');
-                    tbody.innerHTML = data.transactions.map(tx => `
-                        <tr>
-                            <td>${new Date(tx.timestamp).toLocaleTimeString('ko-KR')}</td>
-                            <td style="font-family: monospace; font-size: 11px;">${tx.transactionId}</td>
-                            <td>${tx.agentId?.name || 'Unknown'}</td>
-                            <td>₩${tx.amount.toLocaleString()}</td>
-                            <td><span class="tx-status tx-${tx.status}">${tx.status.toUpperCase()}</span></td>
-                            <td>${tx.latency}ms</td>
-                        </tr>
-                    `).join('');
-                }
-            } catch (error) {
-                console.error('Error loading transactions:', error);
-            }
-        }
-        
-        // Initialize
-        loadStats();
-        loadAgents();
-        loadTransactions();
-        
-        // Refresh every 5 seconds
-        setInterval(loadStats, 5000);
-    </script>
+  </header>
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('field', event)">🗺️ 현장 모니터링</button>
+    <button class="tab-btn" onclick="switchTab('team', event)">👥 팀 대시보드</button>
+  </div>
+  <div id="tab-field" class="tab-content active">
+    <div class="grid">
+      <div class="card"><div class="card-header"><div class="card-title">총 거래</div><div class="card-icon">📊</div></div><div class="stat-value" id="totalTransactions">-</div><div class="stat-label">Total Transactions</div><div class="stat-change stat-up" id="txChange">-</div></div>
+      <div class="card"><div class="card-header"><div class="card-title">성공률</div><div class="card-icon">✅</div></div><div class="stat-value" id="successRate">-</div><div class="stat-label">Success Rate</div><div class="stat-change stat-up">Target: 97.2%</div></div>
+      <div class="card"><div class="card-header"><div class="card-title">거래액</div><div class="card-icon">💰</div></div><div class="stat-value" id="totalVolume">-</div><div class="stat-label">Transaction Volume</div><div class="stat-change stat-up">KRW</div></div>
+      <div class="card"><div class="card-header"><div class="card-title">활성 에이전트</div><div class="card-icon">👥</div></div><div class="stat-value" id="activeAgents">-</div><div class="stat-label">Active Agents</div><div class="stat-change stat-up" id="agentChange">-</div></div>
+    </div>
+    <div class="grid">
+      <div class="card"><div class="card-header"><div class="card-title">에이전트 목록</div><button class="refresh-btn" onclick="loadAgents()">🔄 새로고침</button></div><div class="agent-list" id="agentList"><div class="loading pulse">Loading...</div></div></div>
+      <div class="card full-width"><div class="card-header"><div class="card-title">최근 거래</div><button class="refresh-btn" onclick="loadTransactions()">🔄 새로고침</button></div><div style="overflow-x:auto;"><table class="transaction-table"><thead><tr><th>시간</th><th>거래 ID</th><th>에이전트</th><th>금액</th><th>상태</th><th>Latency</th></tr></thead><tbody id="transactionBody"><tr><td colspan="6" class="loading pulse">Loading...</td></tr></tbody></table></div></div>
+    </div>
+  </div>
+  <div id="tab-team" class="tab-content">
+    <div id="loginBox">
+      <h3>🔐 팀 로그인</h3>
+      <div class="form-group"><label>이메일</label><input type="email" id="loginEmail" placeholder="your@mulberry.ai" /></div>
+      <div class="form-group"><label>비밀번호</label><input type="password" id="loginPassword" placeholder="password" onkeydown="if(event.key==='Enter') doLogin()" /></div>
+      <button class="login-btn" onclick="doLogin()">로그인</button>
+      <div id="loginError" class="login-error"></div>
+    </div>
+    <div id="teamContent">
+      <div class="card" style="margin-bottom:20px;"><div class="card-header"><div class="card-title">🌾 Mulberry 팀원</div><button class="refresh-btn" onclick="loadTeam()">🔄 새로고침</button></div></div>
+      <div class="team-grid" id="teamGrid"></div>
+      <div class="card" style="margin-bottom:20px;"><div class="card-header"><div class="card-title">💬 채널</div><button class="refresh-btn" onclick="loadChannels()">🔄 새로고침</button></div></div>
+      <div class="channel-grid" id="channelGrid"></div>
+    </div>
+  </div>
+</div>
+<script>
+  const socket = io();
+  socket.on('connect', () => { document.getElementById('connectionStatus').textContent = 'WebSocket: ✅ Connected'; socket.emit('subscribe', {type:'field-monitoring'}); });
+  socket.on('disconnect', () => { document.getElementById('connectionStatus').textContent = 'WebSocket: ❌ Disconnected'; });
+  socket.on('transaction', () => loadTransactions());
+  socket.on('agentUpdate', () => loadAgents());
+  setInterval(() => { document.getElementById('currentTime').textContent = new Date().toLocaleString('ko-KR'); }, 1000);
+  function switchTab(tab, e) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    e.target.classList.add('active');
+    if (tab === 'team' && window.__token) { loadTeam(); loadChannels(); }
+  }
+  async function doLogin() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const pw = document.getElementById('loginPassword').value;
+    document.getElementById('loginError').textContent = '';
+    try {
+      const r = await fetch('/api/auth/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email, password:pw})});
+      const d = await r.json();
+      if (d.success) {
+        window.__token = d.token; window.__me = d.user;
+        document.getElementById('loginBox').style.display = 'none';
+        document.getElementById('teamContent').style.display = 'block';
+        const b = document.getElementById('userBadge');
+        b.textContent = '👤 ' + d.user.displayName + ' (' + d.user.role + ')';
+        b.style.display = 'inline-block';
+        loadTeam(); loadChannels();
+      } else { document.getElementById('loginError').textContent = '❌ ' + d.error; }
+    } catch(e) { document.getElementById('loginError').textContent = '❌ 서버 오류'; }
+  }
+  const ROLE_META = {
+    CEO:{emoji:'👑', badge:'role-ceo', label:'CEO 대표이사'},
+    CTO:{emoji:'🔧', badge:'role-cto', label:'CTO 최고기술책임자'},
+    PM: {emoji:'🌿', badge:'role-pm',  label:'PM 운영매니저'},
+    CSA:{emoji:'🏛️', badge:'role-csa', label:'CSA 최고전략아키텍트'}
+  };
+  async function loadTeam() {
+    const team = [
+      {username:'re.eul',  displayName:'re.eul', email:'chongchongsaigon@gmail.com', role:'CEO', status:'online'},
+      {username:'Koda',    displayName:'Koda',   email:'koda@mulberry.ai',            role:'CTO', status:'online'},
+      {username:'Trang',   displayName:'Trang',  email:'trang@mulberry.ai',           role:'PM',  status:'online'},
+      {username:'Kbin',    displayName:'Kbin',   email:'kbin@mulberry.ai',            role:'CSA', status:'online'}
+    ];
+    const myUsername = window.__me?.username;
+    document.getElementById('teamGrid').innerHTML = team.map(u => {
+      const m = ROLE_META[u.role] || {emoji:'👤', badge:'role-csa', label:u.role};
+      const isMe = u.username === myUsername;
+      return '<div class="team-card" style="' + (isMe?'border:2px solid #667eea;':'') + '">'
+        + '<div class="team-avatar">' + m.emoji + '</div>'
+        + '<div class="team-name">' + u.displayName + (isMe?' <span style="font-size:11px;color:#667eea;">(나)</span>':'') + '</div>'
+        + '<div><span class="team-role-badge ' + m.badge + '">' + m.label + '</span></div>'
+        + '<div class="team-email">' + u.email + '</div>'
+        + '<div><span class="team-status-dot ' + (u.status==='online'?'online-dot':'offline-dot') + '"></span>'
+        + '<span class="team-status-text">' + (u.status==='online'?'온라인':'오프라인') + '</span></div></div>';
+    }).join('');
+  }
+  const CH_EMOJI = {general:'💬', development:'⚙️', operations:'📋', emergency:'🚨', field:'🗺️'};
+  async function loadChannels() {
+    const r = await fetch('/api/channels', {headers:{'Authorization':'Bearer ' + window.__token}});
+    const d = await r.json();
+    if (!d.success) return;
+    document.getElementById('channelGrid').innerHTML = d.channels.map(ch =>
+      '<div class="channel-card"><div class="channel-hash">#</div><div>'
+      + '<div class="channel-name">' + (CH_EMOJI[ch.name]||'💬') + ' ' + ch.displayName + '</div>'
+      + '<div class="channel-desc">' + ch.description + '</div>'
+      + '<div class="channel-members">👥 ' + ch.stats.memberCount + '명</div></div></div>'
+    ).join('');
+  }
+  async function loadStats() {
+    try {
+      const r = await fetch('/api/field/stats'); const data = await r.json();
+      if (data.success) {
+        const s = data.stats;
+        document.getElementById('totalTransactions').textContent = s.transactions.total.toLocaleString();
+        document.getElementById('successRate').textContent = s.transactions.successRate + '%';
+        document.getElementById('totalVolume').textContent = '₩' + (s.transactions.totalVolume/1000000).toFixed(1) + 'M';
+        document.getElementById('activeAgents').textContent = s.agents.active + ' / ' + s.agents.total;
+        document.getElementById('txChange').textContent = '+' + s.transactions.successful + ' successful';
+        document.getElementById('agentChange').textContent = 'Avg Spirit: ' + s.agents.avgSpiritScore;
+      }
+    } catch(e) {}
+  }
+  async function loadAgents() {
+    try {
+      const r = await fetch('/api/field/agents'); const data = await r.json();
+      if (data.success) {
+        document.getElementById('agentList').innerHTML = data.agents.map(a =>
+          '<div class="agent-item"><div>'
+          + '<div class="agent-name"><span class="status-dot status-' + a.status + '"></span>' + a.name + ' (' + a.age + '세)</div>'
+          + '<div class="agent-meta">📍 ' + a.region + ' | 💼 ' + a.transactions + '건 거래</div></div>'
+          + '<div class="agent-spirit"><div class="spirit-bar"><div class="spirit-fill" style="width:' + (a.spiritScore*20) + '%"></div></div>'
+          + '<span style="font-size:12px;color:#666;">' + a.spiritScore.toFixed(1) + '</span></div></div>'
+        ).join('');
+      }
+    } catch(e) {}
+  }
+  async function loadTransactions() {
+    try {
+      const r = await fetch('/api/field/transactions?limit=20'); const data = await r.json();
+      if (data.success) {
+        document.getElementById('transactionBody').innerHTML = data.transactions.length
+          ? data.transactions.map(tx =>
+              '<tr><td>' + new Date(tx.timestamp).toLocaleTimeString('ko-KR') + '</td>'
+              + '<td style="font-family:monospace;font-size:11px;">' + tx.transactionId + '</td>'
+              + '<td>' + (tx.agentId?.name||'Unknown') + '</td>'
+              + '<td>₩' + tx.amount.toLocaleString() + '</td>'
+              + '<td><span class="tx-status tx-' + tx.status + '">' + tx.status.toUpperCase() + '</span></td>'
+              + '<td>' + tx.latency + 'ms</td></tr>'
+            ).join('')
+          : '<tr><td colspan="6" style="text-align:center;padding:20px;color:#9ca3af;">거래 데이터가 없습니다</td></tr>';
+      }
+    } catch(e) {}
+  }
+  loadStats(); loadAgents(); loadTransactions();
+  setInterval(loadStats, 5000);
+</script>
 </body>
 </html>
