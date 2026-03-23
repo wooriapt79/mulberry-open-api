@@ -74,7 +74,7 @@ const MHC_LogSchema = new mongoose.Schema({
   
   // 데이터 페이로드
   payload: {
-    type: mongoose.Schema.Mixed,
+    type: mongoose.Schema.Types.Mixed,
     default: {}
   },
   
