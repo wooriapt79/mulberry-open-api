@@ -9,13 +9,12 @@
 
 const express = require('express');
 const router = express.Router();
-const { jwtMiddleware } = require('../middleware/auth');
 
 /**
  * GET /api/agents/team
  * AGENT TEAM 섹션 - 7명 에이전트 상태
  */
-router.get('/team', jwtMiddleware, async (req, res) => {
+router.get('/team', async (req, res) => {
   try {
     const team = await getAgentTeam();
     res.json({
@@ -33,7 +32,7 @@ router.get('/team', jwtMiddleware, async (req, res) => {
  * GET /api/agents/:agentId/status
  * 특정 에이전트 상태 조회
  */
-router.get('/:agentId/status', jwtMiddleware, async (req, res) => {
+router.get('/:agentId/status', async (req, res) => {
   try {
     const { agentId } = req.params;
     const agentStatus = await getAgentStatus(agentId);
@@ -47,7 +46,7 @@ router.get('/:agentId/status', jwtMiddleware, async (req, res) => {
  * POST /api/agents/:agentId/override
  * ACTION PANEL - Override Agent
  */
-router.post('/:agentId/override', jwtMiddleware, async (req, res) => {
+router.post('/:agentId/override', async (req, res) => {
   try {
     const { agentId } = req.params;
     const { action, params } = req.body;
