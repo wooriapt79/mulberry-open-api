@@ -9,13 +9,12 @@
 
 const express = require('express');
 const router = express.Router();
-const { jwtMiddleware } = require('../middleware/auth');
 
 /**
  * GET /api/trust/score
  * 전체 시스템 신뢰도 점수
  */
-router.get('/score', jwtMiddleware, async (req, res) => {
+router.get('/score', async (req, res) => {
   try {
     const trustData = await calculateTrustScore();
     res.json({ success: true, trust: trustData });
@@ -28,7 +27,7 @@ router.get('/score', jwtMiddleware, async (req, res) => {
  * GET /api/trust/timeline
  * TRUST & EVENTS 타임라인
  */
-router.get('/timeline', jwtMiddleware, async (req, res) => {
+router.get('/timeline', async (req, res) => {
   try {
     const { limit = 10 } = req.query;
     const timeline = await getEventTimeline(limit);
@@ -42,7 +41,7 @@ router.get('/timeline', jwtMiddleware, async (req, res) => {
  * GET /api/trust/risk-assessment
  * 커뮤니티 위험도 평가
  */
-router.get('/risk-assessment', jwtMiddleware, async (req, res) => {
+router.get('/risk-assessment', async (req, res) => {
   try {
     const riskAssessment = await assessCommunityRisk();
     res.json({ success: true, risk: riskAssessment });
