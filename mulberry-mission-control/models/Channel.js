@@ -1,179 +1,175 @@
 /**
- * Channel Model - Slack 스타일 채널
+ * Channel 모델 수정 - Meeting Type 추가
  * 
- * # 일반, # 개발, # 운영, # 긴급, # 현장
+ * 기존 Channel.js에 추가할 내용
+ * 
+ * @author CTO Koda
+ * @date 2026-03-29
  */
 
 const mongoose = require('mongoose');
 
-const ChannelSchema = new mongoose.Schema({
-  // 기본 정보
+const channelSchema = new mongoose.Schema({
+  // ==================== 기존 필드 (유지) ====================
   name: {
     type: String,
     required: true,
-    unique: true,
     trim: true
   },
-  displayName: {
-    type: String,
-    required: true
-  },
   description: {
-    type: String,
-    default: ''
+    type: String
   },
   
-  // 채널 타입
+  // ==================== type 필드 수정 ====================
   type: {
     type: String,
-    enum: ['public', 'private', 'dm'],
+    enum: ['public', 'private', 'direct', 'meeting'], // 'meeting' 추가!
     default: 'public'
   },
   
-  // 권한
-  minLevel: {
-    type: Number,
-    min: 0,
-    max: 5,
-    default: 0  // Public은 0, Community는 1 등
-  },
-  
-  // 멤버
+  // ==================== 기존 필드 (유지) ====================
   members: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }],
-  admins: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    role: {
+      type: String,
+      enum: ['owner', 'admin', 'member'],
+      default: 'member'
+    },
+    joinedAt: {
+      type: Date,
+      default: Date.now
+    },
+    status: {
+      type: String,
+      enum: ['active', 'pending', 'blocked'],
+      default: 'active'
+    }
   }],
   
-  // 생성자
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
   
-  // 채널 설정
-  settings: {
-    archived: {
+  // ==================== Meeting 전용 필드 (신규) ====================
+  
+  // 회의 일정
+  scheduledAt: {
+    type: Date
+  },
+  
+  // 예상 소요 시간 (분)
+  duration: {
+    type: Number // 예: 60 (1시간)
+  },
+  
+  // 회의 만료 시간
+  expiresAt: {
+    type: Date
+  },
+  
+  // 화상/음성 회의 링크
+  meetingLink: {
+    type: String
+  },
+  
+  // 초대 코드 (임의 가입용)
+  inviteCode: {
+    type: String,
+    unique: true,
+    sparse: true // meeting type일 때만 값 있음
+  },
+  
+  // 회의 상태
+  status: {
+    type: String,
+    enum: ['scheduled', 'active', 'ended', 'cancelled'],
+    default: 'scheduled'
+  },
+  
+  // 회의 종료 시간
+  endedAt: {
+    type: Date
+  },
+  
+  // 회의 시작 시간 (실제 시작)
+  startedAt: {
+    type: Date
+  },
+  
+  // 회의 설정
+  meetingSettings: {
+    allowGuests: {
+      type: Boolean,
+      default: true
+    },
+    requirePassword: {
       type: Boolean,
       default: false
     },
-    muted: {
+    password: {
+      type: String
+    },
+    maxParticipants: {
+      type: Number,
+      default: 100
+    },
+    recordMeeting: {
       type: Boolean,
       default: false
-    },
-    pinned: {
-      type: Boolean,
-      default: false
-    },
-    notifications: {
-      type: String,
-      enum: ['all', 'mentions', 'none'],
-      default: 'all'
     }
-  },
+  }
   
-  // 통계
-  stats: {
-    messageCount: { type: Number, default: 0 },
-    memberCount: { type: Number, default: 0 },
-    lastMessageAt: { type: Date, default: null }
-  },
-  
-  // DM 전용 (type이 'dm'일 때)
-  dmParticipants: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }]
 }, {
   timestamps: true
 });
 
-// 인덱스
-ChannelSchema.index({ name: 1 });
-ChannelSchema.index({ type: 1 });
-ChannelSchema.index({ 'settings.archived': 1 });
-ChannelSchema.index({ members: 1 });
-ChannelSchema.index({ createdBy: 1 });
+// ==================== 인덱스 ====================
+channelSchema.index({ type: 1, status: 1 });
+channelSchema.index({ inviteCode: 1 });
+channelSchema.index({ scheduledAt: 1 });
+channelSchema.index({ expiresAt: 1 });
 
-// Virtual: 멤버 수
-ChannelSchema.virtual('memberCount').get(function() {
-  return this.members.length;
-});
+// ==================== 메서드 ====================
 
-// Virtual: 채널 아이콘
-ChannelSchema.virtual('icon').get(function() {
-  if (this.type === 'dm') return '💬';
-  if (this.type === 'private') return '🔒';
-  return '#';
-});
-
-// 메서드: 멤버 추가
-ChannelSchema.methods.addMember = function(userId) {
-  if (!this.members.includes(userId)) {
-    this.members.push(userId);
-    this.stats.memberCount = this.members.length;
-    return this.save();
-  }
-  return Promise.resolve(this);
+/**
+ * 회의 초대 코드 생성
+ */
+channelSchema.methods.generateInviteCode = function() {
+  this.inviteCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+  return this.inviteCode;
 };
 
-// 메서드: 멤버 제거
-ChannelSchema.methods.removeMember = function(userId) {
-  this.members = this.members.filter(id => !id.equals(userId));
-  this.stats.memberCount = this.members.length;
+/**
+ * 회의 만료 여부 확인
+ */
+channelSchema.methods.isExpired = function() {
+  if (this.type !== 'meeting') return false;
+  if (!this.expiresAt) return false;
+  return new Date() > this.expiresAt;
+};
+
+/**
+ * 회의 시작
+ */
+channelSchema.methods.startMeeting = function() {
+  this.status = 'active';
+  this.startedAt = new Date();
   return this.save();
 };
 
-// 메서드: 관리자 확인
-ChannelSchema.methods.isAdmin = function(userId) {
-  return this.admins.some(id => id.equals(userId));
-};
-
-// 메서드: 멤버 확인
-ChannelSchema.methods.isMember = function(userId) {
-  return this.members.some(id => id.equals(userId));
-};
-
-// 메서드: 메시지 카운트 증가
-ChannelSchema.methods.incrementMessageCount = function() {
-  this.stats.messageCount += 1;
-  this.stats.lastMessageAt = new Date();
+/**
+ * 회의 종료
+ */
+channelSchema.methods.endMeeting = function() {
+  this.status = 'ended';
+  this.endedAt = new Date();
   return this.save();
 };
 
-// Static: 사용자의 채널 목록 조회
-ChannelSchema.statics.findByUser = function(userId) {
-  return this.find({
-    members: userId,
-    'settings.archived': false
-  }).sort({ 'stats.lastMessageAt': -1 });
-};
-
-// Static: DM 채널 찾기 또는 생성
-ChannelSchema.statics.findOrCreateDM = async function(user1Id, user2Id) {
-  // 기존 DM 찾기
-  let dm = await this.findOne({
-    type: 'dm',
-    dmParticipants: { $all: [user1Id, user2Id] }
-  });
-  
-  if (!dm) {
-    // 새 DM 생성
-    dm = await this.create({
-      name: `dm_${user1Id}_${user2Id}`,
-      displayName: 'Direct Message',
-      type: 'dm',
-      createdBy: user1Id,
-      members: [user1Id, user2Id],
-      dmParticipants: [user1Id, user2Id]
-    });
-  }
-  
-  return dm;
-};
-
-module.exports = mongoose.model('Channel', ChannelSchema);
+module.exports = mongoose.model('Channel', channelSchema);
