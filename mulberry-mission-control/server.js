@@ -85,6 +85,24 @@ app.use('/api/email', emailRoutes);
 const mhcRoutes = require('./routes/mhc');
 app.use('/api/mhc', mhcRoutes);
 
+// ==================== DASHBOARD API (Koda DAY2) ====================
+const dashboardRoutes = require('./routes/dashboard');
+const eventsRoutes = require('./routes/events');
+const regionsRoutes = require('./routes/regions');
+const agentsRoutes = require('./routes/agents');
+const trustRoutes = require('./routes/trust');
+const actionsRoutes = require('./routes/actions');
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/events', eventsRoutes);
+app.use('/api/regions', regionsRoutes);
+app.use('/api/agents', agentsRoutes);
+app.use('/api/trust', trustRoutes);
+app.use('/api/actions', actionsRoutes);
+
+// ⚠️ TEST ONLY - Remove after testing!
+const testRoutes = require('./routes/test');
+app.use('/api/test', testRoutes);
+
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mulberry-mission-control';
 
