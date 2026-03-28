@@ -9,13 +9,12 @@
 
 const express = require('express');
 const router = express.Router();
-const { jwtMiddleware } = require('../middleware/auth');
 
 /**
  * GET /api/regions/:regionName/overview
  * 지역 개요
  */
-router.get('/:regionName/overview', jwtMiddleware, async (req, res) => {
+router.get('/:regionName/overview', async (req, res) => {
   try {
     const { regionName } = req.params;
     const overview = await getRegionOverview(regionName);
@@ -29,7 +28,7 @@ router.get('/:regionName/overview', jwtMiddleware, async (req, res) => {
  * GET /api/regions/:regionName/sensors
  * 지역 내 센서 상태
  */
-router.get('/:regionName/sensors', jwtMiddleware, async (req, res) => {
+router.get('/:regionName/sensors', async (req, res) => {
   try {
     const { regionName } = req.params;
     const sensors = await getRegionSensors(regionName);
