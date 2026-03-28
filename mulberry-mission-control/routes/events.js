@@ -10,7 +10,6 @@ const express = require('express');
 const router = express.Router();
 const SkillBank = require('../agents/skillbank-core');
 const { NegotiationAgent } = require('../agents/negotiation-agent-v2');
-const { jwtMiddleware } = require('../middleware/auth');
 
 const skillBank = new SkillBank();
 
@@ -59,7 +58,7 @@ router.post('/health-check', async (req, res) => {
  * POST /api/events/group-buy
  * 공동구매 이벤트 → 협상 에이전트 생성
  */
-router.post('/group-buy', jwtMiddleware, async (req, res) => {
+router.post('/group-buy', async (req, res) => {
   try {
     const { userId, commodity, quantity, targetPrice, maslowLevel = 3 } = req.body;
     if (!userId || !commodity) {
