@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <!--
-  ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-  ð¾ Mulberry Mission Control â MCCC Dashboard
-  ìíì¬ë§í ì ë¡ íë¡ì í¸ | ì¸ì êµ° íì¥ ê´ì 
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  🌾 Mulberry Mission Control — MCCC Dashboard
+  식품사막화 제로 프로젝트 | 인제군 현장 관제
 
-  [ì¥ì¹ë°°ê¸°] ì´ HTMLì ì°ë¦¬ ë§ìì ì¼êµ´ìëë¤.
+  [장승배기] 이 HTML은 우리 마을의 얼굴입니다.
   Design: CSA Kbin  |  Implementation: Trang Manager
-  Team: re.eul(CEO) Â· Koda(CTO) Â· Trang(PM) Â· Kbin(CSA) Â· Malu(ë²ë¥ ìë¬¸)
-  ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  Team: re.eul(CEO) · Koda(CTO) · Trang(PM) · Kbin(CSA) · Malu(법률자문)
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 -->
 <html lang="ko">
 <head>
@@ -16,7 +16,7 @@
   <title>Mulberry Mission Control</title>
   <script src="/socket.io/socket.io.js"></script>
   <style>
-    /* âââ RESET & BASE âââ */
+    /* ━━━ RESET & BASE ━━━ */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -26,7 +26,7 @@
       overflow-x: hidden;
     }
 
-    /* âââ HEADER âââ */
+    /* ━━━ HEADER ━━━ */
     .header {
       background: #12082e;
       border-bottom: 1px solid rgba(139,92,246,0.4);
@@ -59,7 +59,7 @@
     }
     .header h1 span { color: #a78bfa; }
 
-    /* âââ STATS BAR âââ */
+    /* ━━━ STATS BAR ━━━ */
     .stats-bar {
       background: #160d30;
       border-bottom: 1px solid rgba(255,255,255,0.06);
@@ -93,7 +93,7 @@
     }
     .sys-status-text { font-size: 13px; font-weight: 600; color: #10b981; }
 
-    /* âââ MAIN GRID âââ */
+    /* ━━━ MAIN GRID ━━━ */
     .main-grid {
       display: grid;
       grid-template-columns: 340px 1fr 300px;
@@ -102,7 +102,7 @@
       min-height: calc(100vh - 92px);
     }
 
-    /* âââ PANELS âââ */
+    /* ━━━ PANELS ━━━ */
     .panel {
       background: rgba(255,255,255,0.04);
       border: 1px solid rgba(139,92,246,0.15);
@@ -128,14 +128,14 @@
     .panel-dots { display: flex; gap: 4px; }
     .dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.2); }
 
-    /* âââ LEFT COLUMN âââ */
+    /* ━━━ LEFT COLUMN ━━━ */
     .left-col {
       display: flex;
       flex-direction: column;
       gap: 12px;
     }
 
-    /* âââ REGION MAP âââ */
+    /* ━━━ REGION MAP ━━━ */
     .map-panel { flex: 1; min-height: 340px; }
     #mapCanvas {
       width: 100%;
@@ -165,7 +165,7 @@
     .ind-green { background: #10b981; box-shadow: 0 0 6px #10b981; }
     .ind-amber { background: #f59e0b; box-shadow: 0 0 6px #f59e0b; }
 
-    /* âââ MODULE STATUS âââ */
+    /* ━━━ MODULE STATUS ━━━ */
     .module-panel {}
     .module-header-inner {
       padding: 10px 16px 6px;
@@ -200,14 +200,14 @@
     .badge-standby { background: rgba(245,158,11,0.15); color: #f59e0b; }
     .badge-active { background: rgba(139,92,246,0.2); color: #a78bfa; }
 
-    /* âââ CENTER COLUMN âââ */
+    /* ━━━ CENTER COLUMN ━━━ */
     .center-col {
       display: flex;
       flex-direction: column;
       gap: 12px;
     }
 
-    /* âââ MCCC CORE âââ */
+    /* ━━━ MCCC CORE ━━━ */
     .mccc-tabs {
       display: flex;
       gap: 0;
@@ -234,7 +234,7 @@
       padding: 0 8px;
     }
 
-    /* âââ LIVE FEED âââ */
+    /* ━━━ LIVE FEED ━━━ */
     .feed-list { padding: 8px 16px 12px; }
     .feed-item {
       display: flex;
@@ -258,7 +258,7 @@
     .fs-alert   { color: #f59e0b; }
     .fs-done    { color: #60a5fa; }
 
-    /* âââ AGENT TEAM âââ */
+    /* ━━━ AGENT TEAM ━━━ */
     .team-scroll {
       padding: 12px 16px;
       display: flex;
@@ -324,14 +324,14 @@
       transition: width 0.5s;
     }
 
-    /* âââ RIGHT COLUMN âââ */
+    /* ━━━ RIGHT COLUMN ━━━ */
     .right-col {
       display: flex;
       flex-direction: column;
       gap: 12px;
     }
 
-    /* âââ ACTION PANEL âââ */
+    /* ━━━ ACTION PANEL ━━━ */
     .action-list { padding: 8px 16px 12px; display: flex; flex-direction: column; gap: 8px; }
     .action-btn {
       display: flex;
@@ -361,7 +361,7 @@
     .action-btn.warning { border-color: rgba(245,158,11,0.2); }
     .action-btn.warning:hover { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.4); }
 
-    /* âââ TRUST & EVENTS âââ */
+    /* ━━━ TRUST & EVENTS ━━━ */
     .trust-body { padding: 12px 16px; }
     .trust-score-row {
       display: flex;
@@ -391,7 +391,7 @@
     .event-time { color: #64748b; min-width: 36px; }
     .event-desc { color: #cbd5e1; }
 
-    /* âââ TOAST âââ */
+    /* ━━━ TOAST ━━━ */
     .toast {
       position: fixed;
       bottom: 24px; right: 24px;
@@ -410,7 +410,7 @@
     }
     .toast.show { opacity: 1; transform: translateY(0); }
 
-    /* âââ RESPONSIVE âââ */
+    /* ━━━ RESPONSIVE ━━━ */
     @media (max-width: 1200px) {
       .main-grid { grid-template-columns: 300px 1fr 260px; }
     }
@@ -422,35 +422,35 @@
 </head>
 <body>
 
-<!-- âââ HEADER âââ -->
+<!-- ━━━ HEADER ━━━ -->
 <div class="header">
   <div class="header-logo">
-    <div class="logo-icon">ð¾</div>
+    <div class="logo-icon">🌾</div>
     <h1><span>Mulberry</span> Mission Control</h1>
   </div>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px;font-size:12px;color:#64748b;">
     <span id="headerTime">--:--:--</span>
-    <span id="wsStatus" style="color:#10b981;">â LIVE</span>
+    <span id="wsStatus" style="color:#10b981;">● LIVE</span>
   </div>
 </div>
 
-<!-- âââ STATS BAR âââ -->
+<!-- ━━━ STATS BAR ━━━ -->
 <div class="stats-bar">
   <div class="stat-item">
     <span class="stat-label">Active Agents:</span>
-    <span class="stat-val" id="statAgents">â</span>
+    <span class="stat-val" id="statAgents">—</span>
   </div>
   <div class="stat-item">
     <span class="stat-label">Communities Active:</span>
-    <span class="stat-val" id="statCommunities">â</span>
+    <span class="stat-val" id="statCommunities">—</span>
   </div>
   <div class="stat-item">
     <span class="stat-label">Risk Alerts:</span>
-    <span class="stat-val highlight" id="statAlerts">â</span>
+    <span class="stat-val highlight" id="statAlerts">—</span>
   </div>
   <div class="stat-item">
     <span class="stat-label">Transactions Today:</span>
-    <span class="stat-val" id="statTx">â</span>
+    <span class="stat-val" id="statTx">—</span>
   </div>
   <div class="sys-status">
     <div class="status-dot-live"></div>
@@ -458,17 +458,17 @@
   </div>
 </div>
 
-<!-- âââ MAIN GRID âââ -->
+<!-- ━━━ MAIN GRID ━━━ -->
 <div class="main-grid">
 
-  <!-- âââ LEFT COLUMN âââ -->
+  <!-- ━━━ LEFT COLUMN ━━━ -->
   <div class="left-col">
 
     <!-- REGION OVERVIEW -->
     <div class="panel map-panel">
       <div class="panel-header">
         <div class="panel-title">
-          <span class="icon">ðºï¸</span> Region Overview
+          <span class="icon">🗺️</span> Region Overview
         </div>
         <div class="panel-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
       </div>
@@ -476,13 +476,13 @@
       <div class="map-footer">
         <div class="map-stat-row">
           <div class="map-stat-label">
-            <span class="map-stat-icon">ð¡</span> Sensors Active
+            <span class="map-stat-icon">📡</span> Sensors Active
           </div>
           <div class="indicator-dot ind-green"></div>
         </div>
         <div class="map-stat-row">
           <div class="map-stat-label">
-            <span class="map-stat-icon">ð</span> Delivery in Transit
+            <span class="map-stat-icon">🚚</span> Delivery in Transit
           </div>
           <div class="indicator-dot ind-amber"></div>
         </div>
@@ -492,39 +492,39 @@
     <!-- MODULE STATUS -->
     <div class="panel">
       <div class="module-header-inner">
-        <span>âï¸</span> Module Status
+        <span>⚙️</span> Module Status
         <div class="panel-dots" style="margin-left:auto"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
       </div>
       <div class="module-list">
         <div class="module-item">
-          <div class="module-name"><span class="module-icon">ðªª</span> Passport API</div>
-          <span class="module-badge badge-ok" id="mod-passport">â OK</span>
+          <div class="module-name"><span class="module-icon">🪪</span> Passport API</div>
+          <span class="module-badge badge-ok" id="mod-passport">● OK</span>
         </div>
         <div class="module-item">
-          <div class="module-name"><span class="module-icon">ð³</span> Payment API</div>
-          <span class="module-badge badge-ok" id="mod-payment">â OK</span>
+          <div class="module-name"><span class="module-icon">💳</span> Payment API</div>
+          <span class="module-badge badge-ok" id="mod-payment">● OK</span>
         </div>
         <div class="module-item">
-          <div class="module-name"><span class="module-icon">ð¡</span> Sensor API</div>
-          <span class="module-badge badge-active" id="mod-sensor">â Active</span>
+          <div class="module-name"><span class="module-icon">📡</span> Sensor API</div>
+          <span class="module-badge badge-active" id="mod-sensor">● Active</span>
         </div>
         <div class="module-item">
-          <div class="module-name"><span class="module-icon">ð</span> Recovery API</div>
-          <span class="module-badge badge-standby" id="mod-recovery">â Standby</span>
+          <div class="module-name"><span class="module-icon">🔄</span> Recovery API</div>
+          <span class="module-badge badge-standby" id="mod-recovery">● Standby</span>
         </div>
       </div>
     </div>
 
   </div><!-- /left-col -->
 
-  <!-- âââ CENTER COLUMN âââ -->
+  <!-- ━━━ CENTER COLUMN ━━━ -->
   <div class="center-col">
 
     <!-- MCCC CORE -->
     <div class="panel">
       <div class="panel-header">
         <div class="panel-title">
-          <span class="icon">ð®</span> MCCC Core
+          <span class="icon">🔮</span> MCCC Core
         </div>
         <div class="panel-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
       </div>
@@ -546,7 +546,7 @@
     <div class="panel">
       <div class="panel-header">
         <div class="panel-title">
-          <span class="icon">ð¡</span> Live Feed
+          <span class="icon">📡</span> Live Feed
         </div>
         <div class="panel-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
       </div>
@@ -554,19 +554,19 @@
         <div class="feed-item">
           <div class="feed-dot fd-green"></div>
           <span class="feed-agent">Agent_01</span>
-          <span class="feed-action">Â· Negotiation Â·</span>
+          <span class="feed-action">· Negotiation ·</span>
           <span class="feed-status fs-success">Success</span>
         </div>
         <div class="feed-item">
           <div class="feed-dot fd-amber"></div>
           <span class="feed-agent">Agent_07</span>
-          <span class="feed-action">Â· Fall Detected Â·</span>
+          <span class="feed-action">· Fall Detected ·</span>
           <span class="feed-status fs-alert">Alert</span>
         </div>
         <div class="feed-item">
           <div class="feed-dot fd-blue"></div>
           <span class="feed-agent">Agent_03</span>
-          <span class="feed-action">Â· Payment Â·</span>
+          <span class="feed-action">· Payment ·</span>
           <span class="feed-status fs-done">Completed</span>
         </div>
       </div>
@@ -576,40 +576,40 @@
     <div class="panel">
       <div class="panel-header">
         <div class="panel-title">
-          <span class="icon">ð¥</span> Agent Team
+          <span class="icon">👥</span> Agent Team
         </div>
         <div class="panel-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
       </div>
       <div class="team-scroll" id="agentTeamRow">
-        <!-- JSë¡ ëì  ë ë -->
+        <!-- JS로 동적 렌더 -->
       </div>
     </div>
 
   </div><!-- /center-col -->
 
-  <!-- âââ RIGHT COLUMN âââ -->
+  <!-- ━━━ RIGHT COLUMN ━━━ -->
   <div class="right-col">
 
     <!-- ACTION PANEL -->
     <div class="panel">
       <div class="panel-header">
         <div class="panel-title">
-          <span class="icon">ð®</span> Action Panel
+          <span class="icon">🎮</span> Action Panel
         </div>
         <div class="panel-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
       </div>
       <div class="action-list">
         <button class="action-btn danger" onclick="doAction('override-agent')">
-          Override Agent <span class="arrow">âº</span>
+          Override Agent <span class="arrow">›</span>
         </button>
         <button class="action-btn warning" onclick="doAction('trigger-recovery')">
-          Trigger Recovery <span class="arrow">âº</span>
+          Trigger Recovery <span class="arrow">›</span>
         </button>
         <button class="action-btn" onclick="doAction('send-broadcast')">
-          Send Broadcast <span class="arrow">âº</span>
+          Send Broadcast <span class="arrow">›</span>
         </button>
         <button class="action-btn" onclick="doAction('escalate-to-human')">
-          Escalate to Human <span class="arrow">âº</span>
+          Escalate to Human <span class="arrow">›</span>
         </button>
       </div>
     </div>
@@ -618,18 +618,18 @@
     <div class="panel">
       <div class="panel-header">
         <div class="panel-title">
-          <span class="icon">ð¡ï¸</span> Trust &amp; Events
+          <span class="icon">🛡️</span> Trust &amp; Events
         </div>
         <div class="panel-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
       </div>
       <div class="trust-body">
         <div class="trust-score-row">
           <div class="trust-label"><div class="trust-dot"></div> Trust Score:</div>
-          <div class="trust-score-val" id="trustScore">â</div>
+          <div class="trust-score-val" id="trustScore">—</div>
         </div>
         <div class="risk-row">
           <div class="risk-label"><div class="risk-dot"></div> Community Risk:</div>
-          <div class="risk-val" id="communityRisk">â</div>
+          <div class="risk-val" id="communityRisk">—</div>
         </div>
         <div class="events-list" id="eventsList">
           <div class="event-item">
@@ -655,11 +655,11 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// âââââââââââââââââââââââââââââââââââââââââââââ
-// ð¾ Mulberry Mission Control â JS Core
-// âââââââââââââââââââââââââââââââââââââââââââââ
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 🌾 Mulberry Mission Control — JS Core
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-// ââ ìê³ ââ
+// ── 시계 ──
 function tickClock() {
   const now = new Date();
   document.getElementById('headerTime').textContent =
@@ -668,7 +668,7 @@ function tickClock() {
 setInterval(tickClock, 1000);
 tickClock();
 
-// ââ Toast ââ
+// ── Toast ──
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -676,24 +676,24 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// âââ INJE COUNTY MAP (Canvas) âââ
+// ━━━ INJE COUNTY MAP (Canvas) ━━━
 (function drawMap() {
   const canvas = document.getElementById('mapCanvas');
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
 
-  // ì§ì­ ë¸ë (ì¸ì êµ° ê±°ì )
+  // 지역 노드 (인제군 거점)
   const nodes = [
-    { x: 0.45, y: 0.18, label: 'ì¸ì ì',   type: 'hub',    color: '#fb923c' },
-    { x: 0.28, y: 0.38, label: 'ë¶ë©´',      type: 'agent',  color: '#4ade80' },
-    { x: 0.62, y: 0.32, label: 'ê¸°ë¦°ë©´',    type: 'agent',  color: '#4ade80' },
-    { x: 0.38, y: 0.55, label: 'ìíë©´',    type: 'alert',  color: '#ef4444' },
-    { x: 0.55, y: 0.65, label: 'ë¨ë©´',      type: 'agent',  color: '#4ade80' },
-    { x: 0.22, y: 0.72, label: 'ìë¨ë©´',    type: 'agent',  color: '#4ade80' },
-    { x: 0.70, y: 0.75, label: 'ê¸°ë¦°2ë¦¬',   type: 'hub',    color: '#fb923c' },
+    { x: 0.45, y: 0.18, label: '인제읍',   type: 'hub',    color: '#fb923c' },
+    { x: 0.28, y: 0.38, label: '북면',      type: 'agent',  color: '#4ade80' },
+    { x: 0.62, y: 0.32, label: '기린면',    type: 'agent',  color: '#4ade80' },
+    { x: 0.38, y: 0.55, label: '서화면',    type: 'alert',  color: '#ef4444' },
+    { x: 0.55, y: 0.65, label: '남면',      type: 'agent',  color: '#4ade80' },
+    { x: 0.22, y: 0.72, label: '상남면',    type: 'agent',  color: '#4ade80' },
+    { x: 0.70, y: 0.75, label: '기린2리',   type: 'hub',    color: '#fb923c' },
   ];
 
-  // ëë¡ ì°ê²°ì 
+  // 도로 연결선
   const roads = [
     [0,1],[0,2],[0,3],[0,4],[1,3],[2,4],[3,5],[4,6]
   ];
@@ -703,14 +703,14 @@ function showToast(msg) {
   function draw() {
     ctx.clearRect(0, 0, W, H);
 
-    // ë°°ê²½
+    // 배경
     const bg = ctx.createRadialGradient(W*0.45, H*0.4, 10, W*0.5, H*0.5, W*0.6);
     bg.addColorStop(0, '#1a0a3e');
     bg.addColorStop(1, '#0a0520');
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, W, H);
 
-    // ê²©ì (ë¯¸ì¸í ë°°ê²½)
+    // 격자 (미세한 배경)
     ctx.strokeStyle = 'rgba(139,92,246,0.07)';
     ctx.lineWidth = 1;
     for (let x = 0; x < W; x += 30) {
@@ -720,7 +720,7 @@ function showToast(msg) {
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
     }
 
-    // ëë¡
+    // 도로
     roads.forEach(([a, b]) => {
       const na = nodes[a], nb = nodes[b];
       const grd = ctx.createLinearGradient(na.x*W, na.y*H, nb.x*W, nb.y*H);
@@ -734,7 +734,7 @@ function showToast(msg) {
       ctx.stroke();
     });
 
-    // ì´ë íí°í´ (ëë¡ ì íë¥´ë ì )
+    // 이동 파티클 (도로 위 흐르는 점)
     frame++;
     roads.forEach(([a, b], i) => {
       const t = ((frame * 0.8 + i * 40) % 100) / 100;
@@ -747,12 +747,12 @@ function showToast(msg) {
       ctx.fill();
     });
 
-    // ë¸ë
+    // 노드
     nodes.forEach((n, i) => {
       const x = n.x * W, y = n.y * H;
       const pulse = Math.sin(frame * 0.05 + i) * 0.3 + 0.7;
 
-      // ê¸ë¡ì°
+      // 글로우
       const glow = ctx.createRadialGradient(x, y, 0, x, y, n.type==='hub' ? 22 : 14);
       glow.addColorStop(0, n.color + '60');
       glow.addColorStop(1, 'transparent');
@@ -761,26 +761,26 @@ function showToast(msg) {
       ctx.arc(x, y, n.type==='hub' ? 22 : 14, 0, Math.PI*2);
       ctx.fill();
 
-      // ì¸ê³½ ë§
+      // 외곽 링
       ctx.strokeStyle = n.color + Math.floor(pulse * 200).toString(16).padStart(2,'0');
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.arc(x, y, n.type==='hub' ? 14 : 9, 0, Math.PI*2);
       ctx.stroke();
 
-      // ë´ë¶ ì 
+      // 내부 점
       ctx.fillStyle = n.color;
       ctx.beginPath();
       ctx.arc(x, y, n.type==='hub' ? 7 : 5, 0, Math.PI*2);
       ctx.fill();
 
-      // ìì´ì½ (hub: house, alert: !)
+      // 아이콘 (hub: house, alert: !)
       if (n.type === 'agent') {
         ctx.fillStyle = '#fff';
         ctx.font = '10px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('â', x, y);
+        ctx.fillText('⌂', x, y);
       } else if (n.type === 'alert') {
         ctx.fillStyle = '#fff';
         ctx.font = 'bold 10px sans-serif';
@@ -790,7 +790,7 @@ function showToast(msg) {
       }
     });
 
-    // ì§ëª
+    // 지명
     ctx.font = '10px sans-serif';
     ctx.textAlign = 'center';
     nodes.forEach(n => {
@@ -798,7 +798,7 @@ function showToast(msg) {
       ctx.fillText(n.label, n.x*W, n.y*H + 18);
     });
 
-    // Inje County ë ì´ë¸
+    // Inje County 레이블
     ctx.font = 'bold 13px sans-serif';
     ctx.fillStyle = 'rgba(255,255,255,0.9)';
     ctx.textAlign = 'left';
@@ -809,7 +809,7 @@ function showToast(msg) {
   draw();
 })();
 
-// âââ WAVE ANIMATION (MCCC Core) âââ
+// ━━━ WAVE ANIMATION (MCCC Core) ━━━
 (function drawWave() {
   const canvas = document.getElementById('waveCanvas');
   const ctx = canvas.getContext('2d');
@@ -823,7 +823,7 @@ function showToast(msg) {
     { color: '#60a5fa', amp: 12, freq: 0.055, speed: 0.03, offset: 4 },
   ];
 
-  // êµ¬ì¬ ë¸ë
+  // 구슬 노드
   const orbs = [
     { x: 0.15, amp: 28, freq: 0.035, speed: 0.04, offset: 0, color: '#a78bfa', r: 10 },
     { x: 0.35, amp: 16, freq: 0.045, speed: 0.06, offset: 2, color: '#f472b6', r: 7 },
@@ -840,7 +840,7 @@ function showToast(msg) {
 
     const cy = H / 2;
 
-    // íí ê·¸ë¦¬ê¸°
+    // 파형 그리기
     waves.forEach(w => {
       ctx.beginPath();
       for (let x = 0; x <= W; x += 2) {
@@ -852,7 +852,7 @@ function showToast(msg) {
       ctx.stroke();
     });
 
-    // êµ¬ì¬
+    // 구슬
     orbs.forEach(o => {
       const x = o.x * W;
       const y = cy + Math.sin(x * o.freq + frame * o.speed + o.offset) * o.amp;
@@ -869,7 +869,7 @@ function showToast(msg) {
       ctx.beginPath(); ctx.arc(x - o.r*0.25, y - o.r*0.3, o.r*0.25, 0, Math.PI*2); ctx.fill();
     });
 
-    // ë¨ì´ì§ë íí°í´ (ë°ì´í° ë¹)
+    // 떨어지는 파티클 (데이터 비)
     for (let i = 0; i < 6; i++) {
       const px = ((i * 137 + frame * 1.5) % W);
       const py = ((frame * 1.2 + i * 40) % H);
@@ -882,13 +882,13 @@ function showToast(msg) {
   draw();
 })();
 
-// âââ AGENT TEAM RENDER âââ
+// ━━━ AGENT TEAM RENDER ━━━
 const maul_role_signs = [
-  { id: 'reul',  emoji: 'ð', name: 're.eul',  role: 'CEO',    spirit: 98, status: 'online', img: '/avatars/avatar-reul.png' },
-  { id: 'koda',  emoji: 'ð§', name: 'Koda',    role: 'CTO',    spirit: 82, status: 'online' },
-  { id: 'trang', emoji: 'ð¿', name: 'Trang',   role: 'PM',     spirit: 95, status: 'online' },
-  { id: 'kbin',  emoji: 'ðï¸', name: 'Kbin',    role: 'CSA',    spirit: 90, status: 'online' },
-  { id: 'malu',  emoji: 'âï¸', name: 'Malu',    role: 'Legal',  spirit: 87, status: 'online' },
+  { id: 'reul',  emoji: '👑', name: 're.eul',  role: 'CEO',    spirit: 98, status: 'online', img: '/avatars/avatar-reul.png' },
+  { id: 'koda',  emoji: '🔧', name: 'Koda',    role: 'CTO',    spirit: 82, status: 'online' },
+  { id: 'trang', emoji: '🌿', name: 'Trang',   role: 'PM',     spirit: 95, status: 'online' },
+  { id: 'kbin',  emoji: '🏛️', name: 'Kbin',    role: 'CSA',    spirit: 90, status: 'online' },
+  { id: 'malu',  emoji: '⚖️', name: 'Malu',    role: 'Legal',  spirit: 87, status: 'online' },
 ];
 
 function statusBadgeClass(s) {
@@ -916,16 +916,16 @@ function hanmadang_team_roll_call() {
 }
 hanmadang_team_roll_call();
 
-// âââ API CALLS âââ
+// ━━━ API CALLS ━━━
 async function pungpungso_pulse() {
   try {
     const r = await fetch('/api/dashboard/stats');
     const d = await r.json();
     if (d.success) {
       const s = d.stats;
-      document.getElementById('statAgents').textContent = s.agents?.total ?? 'â';
-      document.getElementById('statCommunities').textContent = s.network?.nodes ?? 'â';
-      document.getElementById('statTx').textContent = s.transactions?.today ?? 'â';
+      document.getElementById('statAgents').textContent = s.agents?.total ?? '—';
+      document.getElementById('statCommunities').textContent = s.network?.nodes ?? '—';
+      document.getElementById('statTx').textContent = s.transactions?.today ?? '—';
     }
   } catch(e) { console.log('dashboard stats:', e.message); }
 }
@@ -957,7 +957,7 @@ async function loadEvents() {
         </div>
       `).join('');
     }
-  } catch(e) { /* fallback ë°ì´í° ì ì§ */ }
+  } catch(e) { /* fallback 데이터 유지 */ }
 }
 
 async function loadRiskAlerts() {
@@ -970,7 +970,7 @@ async function loadRiskAlerts() {
   }
 }
 
-// âââ ACTION HANDLERS âââ
+// ━━━ ACTION HANDLERS ━━━
 async function doAction(type) {
   const labels = {
     'override-agent': 'Override Agent',
@@ -978,7 +978,7 @@ async function doAction(type) {
     'send-broadcast': 'Send Broadcast',
     'escalate-to-human': 'Escalate to Human',
   };
-  showToast(`â¡ ${labels[type]} ì¤í ì¤...`);
+  showToast(`⚡ ${labels[type]} 실행 중...`);
   try {
     const endpoint = {
       'override-agent': '/api/actions/override-agent',
@@ -992,22 +992,22 @@ async function doAction(type) {
       body: JSON.stringify({ source: 'dashboard', timestamp: new Date().toISOString() })
     });
     const d = await r.json();
-    showToast(`â ${labels[type]}: ${d.message || 'OK'}`);
+    showToast(`✅ ${labels[type]}: ${d.message || 'OK'}`);
     addFeedItem(type);
   } catch(e) {
-    showToast(`â ${labels[type]} ìì²­ ì ì¡ë¨`);
+    showToast(`✅ ${labels[type]} 요청 전송됨`);
   }
 }
 
-// âââ LIVE FEED ìë°ì´í¸ âââ
+// ━━━ LIVE FEED 업데이트 ━━━
 function addFeedItem(type) {
   const feed = document.getElementById('liveFeed');
   const now = new Date().toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' });
   const map = {
-    'override-agent':    { dot:'fd-amber', agent:'Dashboard', action:'Â· Override Â·', status:'fs-alert', label:'Executed' },
-    'trigger-recovery':  { dot:'fd-blue',  agent:'Dashboard', action:'Â· Recovery Â·',  status:'fs-done',  label:'Triggered' },
-    'send-broadcast':    { dot:'fd-green', agent:'Dashboard', action:'Â· Broadcast Â·', status:'fs-success', label:'Sent' },
-    'escalate-to-human': { dot:'fd-amber', agent:'Dashboard', action:'Â· Escalate Â·',  status:'fs-alert', label:'Escalated' },
+    'override-agent':    { dot:'fd-amber', agent:'Dashboard', action:'· Override ·', status:'fs-alert', label:'Executed' },
+    'trigger-recovery':  { dot:'fd-blue',  agent:'Dashboard', action:'· Recovery ·',  status:'fs-done',  label:'Triggered' },
+    'send-broadcast':    { dot:'fd-green', agent:'Dashboard', action:'· Broadcast ·', status:'fs-success', label:'Sent' },
+    'escalate-to-human': { dot:'fd-amber', agent:'Dashboard', action:'· Escalate ·',  status:'fs-alert', label:'Escalated' },
   };
   const m = map[type];
   const item = document.createElement('div');
@@ -1022,23 +1022,23 @@ function addFeedItem(type) {
   if (feed.children.length > 6) feed.removeChild(feed.lastChild);
 }
 
-// âââ WEBSOCKET âââ
+// ━━━ WEBSOCKET ━━━
 try {
   const socket = io();
   socket.on('connect', () => {
-    document.getElementById('wsStatus').textContent = 'â LIVE';
+    document.getElementById('wsStatus').textContent = '● LIVE';
     document.getElementById('wsStatus').style.color = '#10b981';
   });
   socket.on('disconnect', () => {
-    document.getElementById('wsStatus').textContent = 'â OFFLINE';
-    document.getElementById('wsStatus').style.color: 'color': '#ef4444';
+    document.getElementById('wsStatus').textContent = '● OFFLINE';
+    document.getElementById('wsStatus').style.color: = '#ef4444';
   });
   socket.on('field_update', (data) => {
     if (data.type === 'event') addFeedItem(data.eventType || 'send-broadcast');
   });
 } catch(e) { console.log('Socket.IO not available'); }
 
-// âââ INIT âââ
+// ━━━ INIT ━━━
 pungpungso_pulse();
 loadTrust();
 loadEvents();
