@@ -11,14 +11,14 @@
 const express = require('express');
 const router = express.Router();
 const Agent = require('../models/Agent');
-const { jwtMiddleware } = require('../middleware/auth');
+const { requireAuth } = require('../middleware/auth');
 
 /**
  * POST /api/agents/create
  * 
  * Agent 생성 (3문항 기반 타입 자동 판별)
  */
-router.post('/create', jwtMiddleware, async (req, res) => {
+router.post('/create', requireAuth, async (req, res) => {
   try {
     const {
       name,
@@ -173,7 +173,7 @@ router.post('/create', jwtMiddleware, async (req, res) => {
  * 
  * 내가 생성한 Agent 목록
  */
-router.get('/my', jwtMiddleware, async (req, res) => {
+router.get('/my', requireAuth, async (req, res) => {
   try {
     const userId = req.user.userId;
     
@@ -213,7 +213,7 @@ router.get('/my', jwtMiddleware, async (req, res) => {
  * 
  * Agent 상세 정보
  */
-router.get('/:passportId', jwtMiddleware, async (req, res) => {
+router.get('/:passportId', requireAuth, async (req, res) => {
   try {
     const { passportId } = req.params;
     
@@ -249,7 +249,7 @@ router.get('/:passportId', jwtMiddleware, async (req, res) => {
  * 
  * Agent 상태 변경
  */
-router.put('/:passportId/status', jwtMiddleware, async (req, res) => {
+router.put('/:passportId/status', requireAuth, async (req, res) => {
   try {
     const { passportId } = req.params;
     const { status } = req.body;
@@ -305,7 +305,7 @@ router.put('/:passportId/status', jwtMiddleware, async (req, res) => {
  * 
  * 전체 Agent 통계
  */
-router.get('/stats/overview', jwtMiddleware, async (req, res) => {
+router.get('/stats/overview', requireAuth, async (req, res) => {
   try {
     const totalAgents = await Agent.countDocuments();
     const type1Count = await Agent.countDocuments({ type: 'type1_system' });
