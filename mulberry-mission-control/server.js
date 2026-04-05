@@ -346,22 +346,164 @@ app.post('/api/field/initialize', async (req, res) => {
   }
 });
 
-// ==================== WebSocket ====================
+// ==================== WebSocket (그룹채팅 통합) ====================
+
+// 온라인 유저 추적
+const onlineUsers = new Map(); // socketId → { userId, userName, channelId }
 
 io.on('connection', (socket) => {
   console.log('✅ Client connected:', socket.id);
-  
+
+  // ── 인증 (JWT 토큰으로 유저 확인) ──────────────────────────────
+  const token = socket.handshake.auth?.token;
+  let socketUser = null;
+  if (token) {
+    try {
+      const jwt = require('jsonwebtoken');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'mulberry-jwt-secret-2026');
+      socketUser = decoded;
+      onlineUsers.set(socket.id, { userId: decoded.id || decoded._id, userName: decoded.displayName || decoded.username });
+    } catch (e) {
+      console.warn('⚠️ Socket auth token invalid:', e.message);
+    }
+  }
+
+  // ── 1. 기존: Field Monitoring 구독 (유지) ──────────────────────
   socket.on('subscribe', (data) => {
     console.log('📡 Client subscribed to field monitoring');
     socket.join('field-monitoring');
   });
-  
+
+  // ── 2. 채널(방) 입장 ───────────────────────────────────────────
+  socket.on('join-channel', async ({ channelId, userId, userName }) => {
+    if (!channelId) return;
+    socket.join(`channel:${channelId}`);
+
+    const user = onlineUsers.get(socket.id) || {};
+    user.channelId = channelId;
+    onlineUsers.set(socket.id, user);
+
+    // 같은 채널에 있는 다른 사람에게 알림
+    socket.to(`channel:${channelId}`).emit('user-joined', {
+      userId: userId || user.userId,
+      userName: userName || user.userName,
+      timestamp: new Date()
+    });
+    console.log(`👥 [channel:${channelId}] ${userName || userId} 입장`);
+  });
+
+  // ── 3. 채널(방) 퇴장 ───────────────────────────────────────────
+  socket.on('leave-channel', ({ channelId, userId, userName }) => {
+    if (!channelId) return;
+    socket.leave(`channel:${channelId}`);
+    socket.to(`channel:${channelId}`).emit('user-left', {
+      userId,
+      userName,
+      timestamp: new Date()
+    });
+    console.log(`🚪 [channel:${channelId}] ${userName || userId} 퇴장`);
+  });
+
+  // ── 4. 실시간 메시지 브로드캐스트 ─────────────────────────────
+  // (REST API로 저장 후, 프론트에서 이 이벤트로 다른 멤버에게 전파)
+  socket.on('send-message', ({ channelId, message }) => {
+    if (!channelId || !message) return;
+    // 보낸 사람 제외 → 같은 채널 전원에게 전송
+    socket.to(`channel:${channelId}`).emit('new-message', message);
+    console.log(`💬 [channel:${channelId}] 메시지 브로드캐스트`);
+  });
+
+  // ── 5. 타이핑 시작 ────────────────────────────────────────────
+  socket.on('typing-start', ({ channelId, userId, userName }) => {
+    if (!channelId) return;
+    socket.to(`channel:${channelId}`).emit('user-typing', {
+      userId,
+      userName,
+      isTyping: true
+    });
+  });
+
+  // ── 6. 타이핑 중지 ────────────────────────────────────────────
+  socket.on('typing-stop', ({ channelId, userId }) => {
+    if (!channelId) return;
+    socket.to(`channel:${channelId}`).emit('user-typing', {
+      userId,
+      isTyping: false
+    });
+  });
+
+  // ── 7. 리액션 (이모지 반응) ───────────────────────────────────
+  socket.on('message-reaction', ({ channelId, messageId, emoji, userId }) => {
+    if (!channelId) return;
+    io.to(`channel:${channelId}`).emit('reaction-updated', {
+      messageId,
+      emoji,
+      userId,
+      timestamp: new Date()
+    });
+  });
+
+  // ── 8. 회의실 입장 ────────────────────────────────────────────
+  socket.on('join-meeting', ({ meetingId, userId, userInfo }) => {
+    if (!meetingId) return;
+    socket.join(`meeting:${meetingId}`);
+    io.to(`meeting:${meetingId}`).emit('participant-joined', {
+      userId,
+      userInfo,
+      timestamp: new Date()
+    });
+    console.log(`📹 [meeting:${meetingId}] ${userId} 참가`);
+  });
+
+  // ── 9. 회의실 퇴장 ────────────────────────────────────────────
+  socket.on('leave-meeting', ({ meetingId, userId }) => {
+    if (!meetingId) return;
+    socket.leave(`meeting:${meetingId}`);
+    io.to(`meeting:${meetingId}`).emit('participant-left', {
+      userId,
+      timestamp: new Date()
+    });
+  });
+
+  // ── 10. 회의 종료 (호스트) — 게스트 전원 강제 퇴장 ──────────
+  socket.on('end-meeting', ({ meetingId, hostId }) => {
+    if (!meetingId) return;
+    io.to(`meeting:${meetingId}`).emit('meeting-ended', {
+      meetingId,
+      endedBy: hostId,
+      timestamp: new Date()
+    });
+    // 해당 방의 모든 소켓 퇴장
+    io.in(`meeting:${meetingId}`).socketsLeave(`meeting:${meetingId}`);
+    console.log(`🔴 [meeting:${meetingId}] 회의 종료 — 전원 퇴장`);
+  });
+
+  // ── 11. 회의 참여자 수 조회 ───────────────────────────────────
+  socket.on('get-participants', ({ meetingId }) => {
+    if (!meetingId) return;
+    const room = io.sockets.adapter.rooms.get(`meeting:${meetingId}`);
+    socket.emit('participants-list', {
+      meetingId,
+      count: room ? room.size : 0,
+      timestamp: new Date()
+    });
+  });
+
+  // ── 12. 연결 해제 ─────────────────────────────────────────────
   socket.on('disconnect', () => {
-    console.log('❌ Client disconnected:', socket.id);
+    const user = onlineUsers.get(socket.id);
+    if (user?.channelId) {
+      socket.to(`channel:${user.channelId}`).emit('user-left', {
+        userId: user.userId,
+        userName: user.userName
+      });
+    }
+    onlineUsers.delete(socket.id);
+    console.log('❌ Client disconnected:', socket.id, `(${user?.userName || 'unknown'})`);
   });
 });
 
-// Broadcast real-time updates every 5 seconds
+// ── Field Monitoring 실시간 Stats 브로드캐스트 (기존 유지) ──────
 setInterval(async () => {
   try {
     const stats = await Transaction.aggregate([
@@ -379,13 +521,14 @@ setInterval(async () => {
         }
       }
     ]);
-    
+
     io.to('field-monitoring').emit('statsUpdate', {
       timestamp: new Date(),
-      stats: stats[0]
+      stats: stats[0],
+      onlineCount: onlineUsers.size
     });
   } catch (error) {
-    console.error('Stats broadcast error:', error);
+    // MongoDB 없을 때 조용히 무시
   }
 }, 5000);
 
