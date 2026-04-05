@@ -8,7 +8,7 @@
   <style>
 :root {
   --bg:#0d1117; --bg-2:#161b22; --bg-3:#21262d; --border:#30363d;
-  --text:#e6edf3; --text-2:#8b949e; --text-3:#484f58;
+  --text:#e6edf3; --text-2:#8b949e; --text-3:#6e7681;
   --accent:#388bfd; --accent-h:#58a6ff;
   --green:#3fb950; --red:#f85149; --orange:#d29922; --purple:#8b5cf6;
   --my-bg:#1a3a5c; --other-bg:#21262d; --radius:10px;
@@ -48,7 +48,7 @@ nav{height:52px;background:var(--bg-2);border-bottom:1px solid var(--border);dis
 .ch-item .ch-icon{font-size:12px;flex-shrink:0;}
 .ch-item .ch-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .ch-item .ch-badge{background:var(--accent);color:#fff;font-size:10px;font-weight:700;border-radius:10px;padding:1px 6px;min-width:18px;text-align:center;flex-shrink:0;}
-.ch-add{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--text-3);transition:color .15s;}
+.ch-add{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px;color:#ffffff;transition:color .15s;}
 .ch-add:hover{color:var(--accent);}
 .online-section{border-top:1px solid var(--border);padding:8px 4px 6px;}
 .online-title{font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.7px;padding:0 10px 6px;}
@@ -60,7 +60,7 @@ nav{height:52px;background:var(--bg-2);border-bottom:1px solid var(--border);dis
 .me-info{flex:1;min-width:0;}
 .me-name{font-size:12px;font-weight:600;}
 .me-role{font-size:10px;color:var(--text-2);}
-.logout-btn{background:none;border:none;cursor:pointer;color:var(--text-3);font-size:14px;padding:3px;border-radius:4px;transition:color .15s;}
+.logout-btn{background:none;border:none;cursor:pointer;color:#ffffff;font-size:14px;padding:3px;border-radius:4px;transition:color .15s;}
 .logout-btn:hover{color:var(--red);}
 
 /* ── 채팅 영역 ── */
@@ -102,7 +102,7 @@ nav{height:52px;background:var(--bg-2);border-bottom:1px solid var(--border);dis
 .input-box:focus-within{border-color:var(--accent);}
 #msg-in{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:13.5px;line-height:1.5;resize:none;max-height:110px;font-family:inherit;}
 #msg-in::placeholder{color:var(--text-3);}
-.ib-btn{background:none;border:none;cursor:pointer;color:var(--text-3);font-size:17px;padding:3px 4px;border-radius:5px;transition:color .15s;line-height:1;}
+.ib-btn{background:none;border:none;cursor:pointer;color:#ffffff;font-size:17px;padding:3px 4px;border-radius:5px;transition:color .15s;line-height:1;}
 .ib-btn:hover{color:var(--text-2);}
 .send-btn{background:var(--accent);border:none;cursor:pointer;color:#fff;font-size:14px;padding:6px 11px;border-radius:7px;transition:background .15s;line-height:1;}
 .send-btn:hover{background:var(--accent-h);}
@@ -425,7 +425,7 @@ async function doLogin(){
     const d = await res.json();
     const token=d.token||d.data?.token;
     me=d.user||d.data?.user;
-    if(!token) throw new Error('�� 없음');
+    if(!token) throw new Error('�a`큰 없음');
     localStorage.setItem('mc_token',token);
     localStorage.setItem('mc_user',JSON.stringify(me));
     $('overlay').style.display='none';
