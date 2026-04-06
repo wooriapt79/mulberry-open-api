@@ -103,6 +103,10 @@ app.use('/api/actions', actionsRoutes);
 const testRoutes = require('./routes/test');
 app.use('/api/test', testRoutes);
 
+// State-Life Agent API (Koda - 2026-04-05)
+const stateLifeAgentRoutes = require('./routes/state-life-agents');
+app.use('/api/agents', stateLifeAgentRoutes);
+
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mulberry-mission-control';
 
