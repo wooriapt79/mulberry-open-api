@@ -419,8 +419,248 @@
       .stats-bar { gap: 16px; }
     }
   </style>
+  <link rel="stylesheet" href="/css/navigation.css">
 </head>
 <body>
+<!-- 
+  Mission Control 네비게이션 구조
+  
+  index.html에 추가할 부분
+  
+  @author CTO Koda
+  @date 2026-04-05
+-->
+
+<!-- ==================== 메인 네비게이션 바 ==================== -->
+<nav class="mission-control-nav">
+  <!-- 모바일 메뉴 토글 -->
+  <button class="mobile-menu-toggle" onclick="MissionControl.toggleMobileMenu()">
+    <span class="hamburger">☰</span>
+  </button>
+
+  <!-- 로고 -->
+  <div class="nav-logo">
+    <a href="#mhc">
+      <span class="logo-icon">🌾</span>
+      <span class="logo-text">Mulberry</span>
+    </a>
+  </div>
+
+  <!-- 메인 네비게이션 (자동 생성됨) -->
+  <div id="main-navigation" class="main-nav">
+    <!-- JavaScript로 자동 생성 -->
+  </div>
+
+  <!-- 사용자 메뉴 -->
+  <div class="user-menu">
+    <div class="user-info">
+      <span class="user-avatar">👤</span>
+      <span class="user-name">Admin</span>
+    </div>
+    <div class="user-dropdown">
+      <a href="#settings/profile">프로필</a>
+      <a href="#settings">설정</a>
+      <a href="/logout">로그아웃</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ==================== 서브 네비게이션 (섹션별) ==================== -->
+<nav class="sub-navigation-bar">
+  <div id="sub-navigation" class="sub-nav">
+    <!-- JavaScript로 자동 생성 -->
+  </div>
+</nav>
+
+<!-- ==================== 모듈 컨테이너 ==================== -->
+<div class="modules-container">
+  
+  <!-- 1. Mission Health Check (메인 대시보드) -->
+  <div id="module-mhc" class="module-container">
+    <div class="module-header">
+      <h1>🎯 Mission Control</h1>
+      <p>MCCC 통합 모니터링 대시보드</p>
+    </div>
+    
+    <!-- Overview Section -->
+    <div id="section-mhc-overview" class="section-container">
+      <h2>📊 Overview</h2>
+      <div class="dashboard-grid">
+        <!-- 기존 Mission Control Dashboard 내용 -->
+      </div>
+    </div>
+    
+    <!-- Region Map Section -->
+    <div id="section-mhc-region-map" class="section-container">
+      <h2>🗺️ Region Map</h2>
+      <!-- Region Map 내용 -->
+    </div>
+    
+    <!-- Module Status Section -->
+    <div id="section-mhc-module-status" class="section-container">
+      <h2>⚙️ Module Status</h2>
+      <!-- Module Status 내용 -->
+    </div>
+  </div>
+
+  <!-- 2. AI Agents -->
+  <div id="module-agents" class="module-container">
+    <div class="module-header">
+      <h1>🤖 AI Agents</h1>
+      <p>Agent 생성, 관리, 모니터링</p>
+    </div>
+    
+    <!-- Agent 생성 Section -->
+    <div id="section-agents-create" class="section-container">
+      <h2>➕ Agent 생성</h2>
+      
+      <div class="agent-create-options">
+        <!-- Type 1/2/3 Agent 생성 -->
+        <div class="create-option">
+          <h3>일반 Agent 생성 (Type 1/2/3)</h3>
+          <button onclick="openAgentCreateForm('normal')">생성하기</button>
+        </div>
+        
+        <!-- State-Life Agent -->
+        <div class="create-option">
+          <h3>State-Life Agent (네이버/카카오)</h3>
+          <button onclick="openAgentCreateForm('statelife')">생성하기</button>
+        </div>
+        
+        <!-- Sr./Jr. 페어 -->
+        <div class="create-option">
+          <h3>Sr./Jr. 페어 생성 (최대 50개)</h3>
+          <button onclick="openAgentCreateForm('pair')">생성하기</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Agent 목록 Section -->
+    <div id="section-agents-list" class="section-container">
+      <h2>📋 Agent 목록</h2>
+      <div id="agent-list-container">
+        <!-- Agent 목록 표시 -->
+      </div>
+    </div>
+    
+    <!-- State-Life Section -->
+    <div id="section-agents-state-life" class="section-container">
+      <h2>📱 State-Life (네이버/카카오)</h2>
+      <div id="statelife-agents-container">
+        <!-- State-Life Agent 목록 -->
+      </div>
+    </div>
+    
+    <!-- MARRF Logger Section -->
+    <div id="section-agents-marrf" class="section-container">
+      <h2>📊 MARRF Logger</h2>
+      <div id="marrf-logger-container">
+        <!-- MARRF Logger 통계 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Team Chat -->
+  <div id="module-chat" class="module-container">
+    <div class="module-header">
+      <h1>💬 Team Chat</h1>
+      <p>팀 단체 채팅 및 회의</p>
+    </div>
+    
+    <!-- 채널 목록 Section -->
+    <div id="section-chat-channels" class="section-container">
+      <h2>📁 채널 목록</h2>
+      <div id="chat-channels-container">
+        <!-- 채널 목록 -->
+      </div>
+    </div>
+    
+    <!-- 메시지 Section -->
+    <div id="section-chat-messages" class="section-container">
+      <h2>✉️ 메시지</h2>
+      <div id="chat-messages-container">
+        <!-- 채팅 메시지 -->
+      </div>
+    </div>
+    
+    <!-- 회의실 Section -->
+    <div id="section-chat-meetings" class="section-container">
+      <h2>🎥 회의실</h2>
+      <div id="meetings-container">
+        <!-- 회의실 목록 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Skill Bank -->
+  <div id="module-skills" class="module-container">
+    <div class="module-header">
+      <h1>💡 Skill Bank</h1>
+      <p>스킬 관리 및 배포</p>
+    </div>
+    
+    <div id="section-skills-catalog" class="section-container">
+      <h2>📚 스킬 카탈로그</h2>
+      <!-- Skill Bank 내용 -->
+    </div>
+  </div>
+
+  <!-- 5. Co-op Buy -->
+  <div id="module-coopbuy" class="module-container">
+    <div class="module-header">
+      <h1>🛒 Co-op Buy</h1>
+      <p>공동구매 관리</p>
+    </div>
+    
+    <div id="section-coopbuy-active" class="section-container">
+      <h2>🔄 진행 중인 공구</h2>
+      <!-- 공구 목록 -->
+    </div>
+  </div>
+
+  <!-- 6. Field Operations -->
+  <div id="module-field" class="module-container">
+    <div class="module-header">
+      <h1>🌾 Field Operations</h1>
+      <p>현장 운영 모니터링</p>
+    </div>
+    
+    <div id="section-field-devices" class="section-container">
+      <h2>🖥️ 라즈베리파이</h2>
+      <!-- 디바이스 목록 -->
+    </div>
+  </div>
+
+  <!-- 7. Analytics -->
+  <div id="module-analytics" class="module-container">
+    <div class="module-header">
+      <h1>📈 Analytics</h1>
+      <p>통계 및 리포트</p>
+    </div>
+    
+    <div id="section-analytics-dashboard" class="section-container">
+      <h2>📊 대시보드</h2>
+      <!-- Analytics Dashboard -->
+    </div>
+  </div>
+
+  <!-- 8. Settings -->
+  <div id="module-settings" class="module-container">
+    <div class="module-header">
+      <h1>⚙️ Settings</h1>
+      <p>시스템 설정</p>
+    </div>
+    
+    <div id="section-settings-profile" class="section-container">
+      <h2>👤 프로필</h2>
+      <!-- 프로필 설정 -->
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== 스크립트 로드 ==================== -->
+<script src="/js/mission-control-menu-router.js"></script>
 
 <!-- ━━━ HEADER ━━━ -->
 <div class="header">
@@ -1047,5 +1287,6 @@ setInterval(pungpungso_pulse, 15000);
 setInterval(loadTrust, 30000);
 setInterval(loadEvents, 10000);
 </script>
+  <script src="/js/mission-control-menu-router.js"></script>
 </body>
 </html>
