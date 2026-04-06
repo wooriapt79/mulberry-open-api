@@ -111,7 +111,7 @@ const stateLifeAgentSchema = new mongoose.Schema({
         likeCount: Number
       }],
       reputation: {                 // 평판 지표
-        helpfulness: Number,  2     // 도움됨 지표
+        helpfulness: Number,        // 도움됨 지표
         trustworthiness: Number,    // 신뢰도
         engagement: Number          // 참여도
       }
@@ -131,7 +131,7 @@ const stateLifeAgentSchema = new mongoose.Schema({
     // 4. 성공 로직 (Success Logic)
     successLogic: {
       effectivePhrases: [{          // 먹혔던 멘트
-  2     phrase: String,
+        phrase: String,
         usedCount: Number,
         successRate: Number,        // 성공률 (0~1)
         context: String             // 어떤 상황에서
@@ -142,7 +142,7 @@ const stateLifeAgentSchema = new mongoose.Schema({
         conversionRate: Number      // 전환율
       }],
       conversionEvents: [{          // 성공 벡터
-     2  eventType: String,          // 'first_reply', 'price_reveal', 'closing'
+        eventType: String,          // 'first_reply', 'price_reveal', 'closing'
         successPattern: String,
         avgResponseTime: Number     // 평균 응답 시간 (분)
       }]
@@ -151,10 +151,10 @@ const stateLifeAgentSchema = new mongoose.Schema({
   
   // ==================== 페르소나 ====================
   persona: {
-    personality: String,       2    // 성격 설명
+    personality: String,            // 성격 설명
     toneStyle: String,              // 말투 스타일
     activityRhythm: String,         // 활동 리듬
-    role: String,  2                // 역할
+    role: String,                   // 역할
     specialty: String               // 전문 분야
   },
   
@@ -162,7 +162,7 @@ const stateLifeAgentSchema = new mongoose.Schema({
   skillSet: [{
     name: String,                   // 스킬 이름
     description: String,            // 스킬 설명
-    level: {                      2 // 숙련도
+    level: {                        // 숙련도
       type: String,
       enum: ['beginner', 'intermediate', 'expert']
     },
@@ -190,7 +190,7 @@ const stateLifeAgentSchema = new mongoose.Schema({
       min: 0,
       max: 1
     },
-    promotionReadiness: {       2   // Sr. 승격 준비도
+    promotionReadiness: {           // Sr. 승격 준비도
       type: Number,
       default: 0,
       min: 0,
