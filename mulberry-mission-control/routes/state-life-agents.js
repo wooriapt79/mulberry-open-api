@@ -118,7 +118,7 @@ router.post('/create-batch', jwtMiddleware, async (req, res) => {
               warningStack: 0
             },
             conversationLogs: [],
-      2     successLogic: {
+            successLogic: {
               effectivePhrases: [],
               peakTimes: [],
               conversionEvents: []
@@ -219,7 +219,7 @@ router.post('/create-sr-jr-pair', jwtMiddleware, async (req, res) => {
           residentialIP: stateLifeConfig?.residentialIP || '',
           cookies: {},
           userAgent: stateLifeConfig?.userAgent || '',
-    2     location: stateLifeConfig?.location || 'Seoul, Korea'
+          location: stateLifeConfig?.location || 'Seoul, Korea'
         },
         communityReputation: {
           platform: platform,
@@ -257,10 +257,10 @@ router.post('/create-sr-jr-pair', jwtMiddleware, async (req, res) => {
         srAgentId: srPassportId,
         stateLife: {
           digitalIdentity: {
-   2        residentialIP: stateLifeConfig?.residentialIP || '',
+            residentialIP: stateLifeConfig?.residentialIP || '',
             cookies: {},
             userAgent: stateLifeConfig?.userAgent || '',
-      2     location: stateLifeConfig?.location || 'Seoul, Korea'
+            location: stateLifeConfig?.location || 'Seoul, Korea'
           },
           communityReputation: {
             platform: platform,
@@ -295,7 +295,7 @@ router.post('/create-sr-jr-pair', jwtMiddleware, async (req, res) => {
     // ==================== 응답 ====================
     res.json({
       success: true,
-  2   message: `Sr./Jr. 페어 생성 완료! (Sr. 1명 + Jr. ${jrCount}명) 🎉`,
+      message: `Sr./Jr. 페어 생성 완료! (Sr. 1명 + Jr. ${jrCount}명) 🎉`,
       data: {
         sr: {
           passportId: srAgent.passportId,
@@ -331,7 +331,7 @@ router.get('/state-life/my', jwtMiddleware, async (req, res) => {
     if (platform) query.platform = platform;
     if (agentType) query.agentType = agentType;
     
-  2 const agents = await StateLifeAgent.find(query)
+    const agents = await StateLifeAgent.find(query)
       .sort({ createdAt: -1 });
     
     // Sr./Jr. 그룹화
@@ -341,7 +341,7 @@ router.get('/state-life/my', jwtMiddleware, async (req, res) => {
     res.json({
       success: true,
       data: {
-       2total: agents.length,
+        total: agents.length,
         sr: srAgents.length,
         jr: jrAgents.length,
         byPlatform: {
