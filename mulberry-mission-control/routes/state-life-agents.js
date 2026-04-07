@@ -13,14 +13,14 @@ const express = require('express');
 const router = express.Router();
 const Agent = require('../models/Agent');
 const StateLifeAgent = require('../models/StateLifeAgent');
-const { jwtMiddleware } = require('../middleware/auth');
+const { requireAuth } = require('../middleware/auth');
 
 /**
  * POST /api/agents/create-batch
  * 
  * Agent 멀티 생성 (최대 50개)
  */
-router.post('/create-batch', jwtMiddleware, async (req, res) => {
+router.post('/create-batch', requireAuth, async (req, res) => {
   try {
     const {
       count,           // 생성할 Agent 수 (최대 50)
@@ -193,7 +193,7 @@ router.post('/create-batch', jwtMiddleware, async (req, res) => {
  * 
  * Sr./Jr. Agent 페어 생성
  */
-router.post('/create-sr-jr-pair', jwtMiddleware, async (req, res) => {
+router.post('/create-sr-jr-pair', requireAuth, async (req, res) => {
   try {
     const {
       srName,
@@ -322,7 +322,7 @@ router.post('/create-sr-jr-pair', jwtMiddleware, async (req, res) => {
  * 
  * State-Life Agent 목록 조회
  */
-router.get('/state-life/my', jwtMiddleware, async (req, res) => {
+router.get('/state-life/my', requireAuth, async (req, res) => {
   try {
     const userId = req.user.userId;
     const { platform, agentType } = req.query;
