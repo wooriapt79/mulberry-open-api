@@ -103,6 +103,16 @@ app.use('/api/actions', actionsRoutes);
 const testRoutes = require('./routes/test');
 app.use('/api/test', testRoutes);
 
+// ==================== MISSION CONTROL v1 API (Trang 2026-04-12) ====================
+const metricsRoutes = require('./routes/metrics');
+const systemModulesRoutes = require('./routes/system-modules');
+const riskEventsRoutes = require('./routes/risk-events');
+
+app.use('/api/v1/metrics', metricsRoutes);
+app.use('/api/v1/system/modules', systemModulesRoutes);
+app.use('/api/v1/risk', riskEventsRoutes);
+app.use('/api/v1/events', riskEventsRoutes);
+
 // State-Life Agent API (Koda - 2026-04-05)
 // const stateLifeAgentRoutes = require('./routes/state-life-agents');
 // app.use('/api/agents', stateLifeAgentRoutes);
