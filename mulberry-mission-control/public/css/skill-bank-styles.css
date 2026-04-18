@@ -1,0 +1,548 @@
+/**
+ * Skill Bank Styles
+ * 
+ * @author CTO Koda
+ * @date 2026-04-11
+ */
+
+/* ==================== 레이아웃 ==================== */
+
+.skill-bank-container {
+  min-height: 100vh;
+  background: #0d1117;
+  color: #c9d1d9;
+  padding: 20px;
+}
+
+.skill-bank-header {
+  max-width: 1400px;
+  margin: 0 auto 30px;
+}
+
+.skill-bank-header h1 {
+  font-size: 32px;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+
+.skill-bank-header p {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ==================== 검색 및 필터 영역 ==================== */
+
+.skill-controls {
+  max-width: 1400px;
+  margin: 0 auto 30px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+#skill-search {
+  flex: 1;
+  min-width: 300px;
+  padding: 12px 16px;
+  background: #161b22;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #c9d1d9;
+  font-size: 14px;
+}
+
+#skill-search:focus {
+  outline: none;
+  border-color: #1f6feb;
+}
+
+#skill-sort {
+  padding: 12px 16px;
+  background: #161b22;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #c9d1d9;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* ==================== 카테고리 필터 ==================== */
+
+.category-filters {
+  max-width: 1400px;
+  margin: 0 auto 30px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.category-btn {
+  padding: 10px 20px;
+  background: #161b22;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #c9d1d9;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.category-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.category-btn.active {
+  background: var(--category-color, #1f6feb);
+  border-color: var(--category-color, #1f6feb);
+  color: #ffffff;
+}
+
+/* ==================== 스킬 카드 그리드 ==================== */
+
+.skill-grid {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.skill-card {
+  background: #161b22;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.skill-card:hover {
+  border-color: rgba(31, 111, 235, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.skill-card.installed {
+  border-color: rgba(63, 185, 80, 0.3);
+  background: linear-gradient(135deg, #161b22 0%, rgba(63, 185, 80, 0.05) 100%);
+}
+
+/* ==================== 스킬 카드 헤더 ==================== */
+
+.skill-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.skill-icon {
+  font-size: 36px;
+  line-height: 1;
+}
+
+.skill-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skill-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  width: fit-content;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-active {
+  background: rgba(63, 185, 80, 0.2);
+  color: #3fb950;
+}
+
+.status-beta {
+  background: rgba(255, 166, 87, 0.2);
+  color: #ffa657;
+}
+
+.status-deprecated {
+  background: rgba(139, 148, 158, 0.2);
+  color: #8b949e;
+}
+
+/* ==================== 스킬 카드 본문 ==================== */
+
+.skill-body {
+  flex: 1;
+  margin-bottom: 16px;
+}
+
+.skill-name {
+  font-size: 18px;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+.skill-description {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.skill-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.tag {
+  padding: 4px 10px;
+  background: rgba(31, 111, 235, 0.15);
+  border-radius: 12px;
+  font-size: 11px;
+  color: #58a6ff;
+}
+
+.skill-stats {
+  display: flex;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.stat-icon {
+  font-size: 14px;
+}
+
+.stat-value {
+  font-weight: 500;
+}
+
+/* ==================== 스킬 카드 푸터 ==================== */
+
+.skill-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.skill-author {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.skill-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ==================== 버튼 스타일 ==================== */
+
+.btn-primary {
+  padding: 8px 16px;
+  background: #1f6feb;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.btn-primary:hover {
+  background: #388bfd;
+}
+
+.btn-secondary {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #c9d1d9;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-ghost {
+  padding: 8px 16px;
+  background: transparent;
+  color: #58a6ff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.btn-ghost:hover {
+  background: rgba(88, 166, 255, 0.1);
+}
+
+/* ==================== Empty State ==================== */
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+}
+
+.empty-state h3 {
+  font-size: 24px;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+
+.empty-state p {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ==================== 모달 ==================== */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: #161b22;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.skill-icon-large {
+  font-size: 48px;
+}
+
+.modal-header h2 {
+  font-size: 24px;
+  color: #ffffff;
+  margin: 0;
+}
+
+.skill-version {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 4px 0 0;
+}
+
+.modal-close {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: background 0.3s ease;
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.detail-section {
+  margin-bottom: 24px;
+}
+
+.detail-section h3 {
+  font-size: 16px;
+  color: #ffffff;
+  margin-bottom: 12px;
+}
+
+.detail-section p {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.6;
+}
+
+.dependency-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.dependency-list li {
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #c9d1d9;
+}
+
+.skill-stats-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.modal-footer {
+  padding: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+/* ==================== 알림 ==================== */
+
+.notification {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  display: none;
+  z-index: 1001;
+  animation: slideIn 0.3s ease;
+}
+
+.notification-success {
+  background: #3fb950;
+  color: #ffffff;
+}
+
+.notification-error {
+  background: #f85149;
+  color: #ffffff;
+}
+
+.notification-info {
+  background: #1f6feb;
+  color: #ffffff;
+}
+
+/* ==================== 애니메이션 ==================== */
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ==================== 반응형 ==================== */
+
+@media (max-width: 768px) {
+  .skill-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .category-filters {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+  
+  .skill-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  #skill-search {
+    min-width: auto;
+  }
+}
+
+/* ==================== 스크롤바 ==================== */
+
+.modal-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}

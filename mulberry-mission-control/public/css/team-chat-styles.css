@@ -1,0 +1,420 @@
+/**
+ * Team Chat Styles
+ * 
+ * @author CTO Koda
+ * @date 2026-04-11
+ */
+
+/* ==================== 채팅 레이아웃 ==================== */
+
+.team-chat-container {
+  display: flex;
+  height: calc(100vh - 60px);
+  background: #0d1117;
+  color: #c9d1d9;
+}
+
+/* ==================== 채널 사이드바 ==================== */
+
+.channel-sidebar {
+  width: 250px;
+  background: #161b22;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.channel-header {
+  padding: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.channel-header h2 {
+  font-size: 18px;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+
+.new-channel-btn {
+  width: 100%;
+  padding: 8px 12px;
+  background: #1f6feb;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s ease;
+}
+
+.new-channel-btn:hover {
+  background: #388bfd;
+}
+
+.channel-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.channel-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  margin-bottom: 4px;
+}
+
+.channel-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.channel-item.active {
+  background: rgba(31, 111, 235, 0.2);
+}
+
+.channel-icon {
+  font-size: 20px;
+}
+
+.channel-info {
+  flex: 1;
+}
+
+.channel-name {
+  font-size: 14px;
+  color: #c9d1d9;
+  font-weight: 500;
+}
+
+.channel-members {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ==================== 채팅 영역 ==================== */
+
+.chat-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-header {
+  padding: 20px;
+  background: #161b22;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chat-header h3 {
+  font-size: 18px;
+  color: #ffffff;
+}
+
+.connection-status {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+.status-connected {
+  background: rgba(46, 160, 67, 0.2);
+  color: #3fb950;
+}
+
+.status-disconnected {
+  background: rgba(248, 81, 73, 0.2);
+  color: #f85149;
+}
+
+/* ==================== 메시지 영역 ==================== */
+
+.message-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.date-divider {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  margin: 20px 0;
+  position: relative;
+}
+
+.date-divider::before,
+.date-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 40%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.date-divider::before {
+  left: 0;
+}
+
+.date-divider::after {
+  right: 0;
+}
+
+.message {
+  display: flex;
+  gap: 12px;
+  animation: fadeIn 0.3s ease;
+}
+
+.message-own {
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+}
+
+.message-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1f6feb 0%, #388bfd 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.message-content {
+  max-width: 60%;
+}
+
+.message-sender {
+  font-size: 12px;
+  color: #58a6ff;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.message-text {
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  word-wrap: break-word;
+  background: #21262d;
+}
+
+.message-own .message-text {
+  background: #1f6feb;
+  color: #ffffff;
+}
+
+.message-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.message-time {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.message-reactions {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.reaction {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.reaction:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.system-message {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  margin: 8px 0;
+}
+
+/* ==================== 타이핑 인디케이터 ==================== */
+
+#typing-indicator {
+  padding: 8px 20px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+  display: none;
+}
+
+/* ==================== 메시지 입력 영역 ==================== */
+
+.message-input-container {
+  padding: 20px;
+  background: #161b22;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.message-input-wrapper {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+#message-input {
+  flex: 1;
+  padding: 12px 16px;
+  background: #0d1117;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #c9d1d9;
+  font-size: 14px;
+  resize: none;
+  min-height: 44px;
+  max-height: 120px;
+  font-family: inherit;
+}
+
+#message-input:focus {
+  outline: none;
+  border-color: #1f6feb;
+}
+
+#send-button {
+  padding: 12px 24px;
+  background: #1f6feb;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.3s ease;
+}
+
+#send-button:hover {
+  background: #388bfd;
+}
+
+#send-button:active {
+  background: #1f6feb;
+}
+
+/* ==================== 에러 메시지 ==================== */
+
+#error-message {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  padding: 12px 20px;
+  background: #f85149;
+  color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  display: none;
+  animation: slideIn 0.3s ease;
+  z-index: 1000;
+}
+
+/* ==================== 모바일 반응형 ==================== */
+
+@media (max-width: 768px) {
+  .team-chat-container {
+    flex-direction: column;
+  }
+  
+  .channel-sidebar {
+    width: 100%;
+    height: 200px;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .channel-list {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 10px;
+  }
+  
+  .channel-item {
+    min-width: 150px;
+    margin-right: 8px;
+  }
+  
+  .message-content {
+    max-width: 80%;
+  }
+}
+
+/* ==================== 애니메이션 ==================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* ==================== 스크롤바 커스터마이징 ==================== */
+
+.channel-list::-webkit-scrollbar,
+.message-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.channel-list::-webkit-scrollbar-track,
+.message-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.channel-list::-webkit-scrollbar-thumb,
+.message-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.channel-list::-webkit-scrollbar-thumb:hover,
+.message-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
