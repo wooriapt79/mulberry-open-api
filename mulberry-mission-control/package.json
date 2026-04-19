@@ -1,6 +1,7 @@
 {
   "name": "mulberry-mission-control-field",
   "version": "1.0.0",
+      "_build": "20260419-cache-bust",
   "description": "Mulberry Field Monitoring System - 인제군 현장 모니터링",
   "main": "server.js",
   "scripts": {
