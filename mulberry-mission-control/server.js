@@ -1,576 +1,455 @@
 /**
- * Mulberry Mission Control - Field Monitoring System
- * 인제군 현장 모니터링 + 에이전트 추적 + 거래 현황
+ * Team Chat Backend with Redis
  * 
- * CEO: re.eul
- * CTO: Koda
+ * Railway Redis 연동으로 성능 향상
+ * 
+ * @author CTO Koda
+ * @date 2026-04-19
+ * @version 2.0 (Redis Integration)
  */
 
 const express = require('express');
 const http = require('http');
-const socketIo = require('socket.io');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const helmet = require('helmet');
-const session = require('express-session');
-const passport = require('passport');
-const path = require('path');
+const socketIO = require('socket.io');
+const Redis = require('ioredis');
+const { createAdapter } = require('@socket.io/redis-adapter');
 
-// Initialize Express
-const app = express();
-const server = http.createServer(app);
-const io = socketIo(server, {
-  cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
-    credentials: true
-  }
-});
+// ==================== Redis 설정 ====================
+const REDIS_CONFIG = {
+  url: process.env.REDIS_URL,
+  host: process.env.REDIS_HOST,
+  port: process.env.REDIS_PORT || 6379,
+  // Railway Redis는 보통 비밀번호 필요 없음
+  // password: process.env.REDIS_PASSWORD,
+  retryStrategy: (times) => {
+    const delay = Math.min(times * 50, 2000);
+    return delay;
+  },
+  maxRetriesPerRequest: 3
+};
 
-// Middleware
-app.use(helmet({
-  contentSecurityPolicy: false // For development
-}));
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
-  credentials: true
-}));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// ==================== Redis Client 생성 ====================
+let redisClient = null;
+let redisPubClient = null;
+let redisSubClient = null;
 
-// Session
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'mulberry-secret-key-2026',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
-}));
-
-// Passport
-app.use(passport.initialize());
-app.use(passport.session());
-
-// Static files
-app.use(express.static(path.join(__dirname, 'public')));
-
-// ==================== ROUTES (탭별) ====================
-
-// TAB 1: Authentication
-const authRoutes = require('./routes/auth');
-app.use('/api/auth', authRoutes);
-
-// TAB 2: Users Management
-const usersRoutes = require('./routes/users');
-app.use('/api/users', usersRoutes);
-
-// TAB 3: Channels Management
-const channelsRoutes = require('./routes/channels');
-app.use('/api/channels', channelsRoutes);
-
-// TAB 4: Team Chat
-const chatRoutes = require('./routes/chat');
-app.use('/api/chat', chatRoutes);
-
-// TAB 5: Notifications
-const notificationsRoutes = require('./routes/notifications');
-app.use('/api/notifications', notificationsRoutes);
-
-// TAB 6: Email AI
-const emailRoutes = require('./routes/email');
-app.use('/api/email', emailRoutes);
-
-// TAB 7: mHC Dashboard
-const mhcRoutes = require('./routes/mhc');
-app.use('/api/mhc', mhcRoutes);
-
-// ==================== DASHBOARD API (Koda DAY2) ====================
-const dashboardRoutes = require('./routes/dashboard');
-const eventsRoutes = require('./routes/events');
-const regionsRoutes = require('./routes/regions');
-const agentsRoutes = require('./routes/agents');
-const trustRoutes = require('./routes/trust');
-const actionsRoutes = require('./routes/actions');
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/events', eventsRoutes);
-app.use('/api/regions', regionsRoutes);
-app.use('/api/agents', agentsRoutes);
-app.use('/api/trust', trustRoutes);
-app.use('/api/actions', actionsRoutes);
-
-// ⚠️ TEST ONLY - Remove after testing!
-const testRoutes = require('./routes/test');
-app.use('/api/test', testRoutes);
-
-// ==================== MISSION CONTROL v1 API (Trang 2026-04-12) ====================
-const metricsRoutes = require('./routes/metrics');
-const systemModulesRoutes = require('./routes/system-modules');
-const riskEventsRoutes = require('./routes/risk-events');
-
-app.use('/api/v1/metrics', metricsRoutes);
-app.use('/api/v1/system/modules', systemModulesRoutes);
-app.use('/api/v1/risk', riskEventsRoutes);
-app.use('/api/v1/events', riskEventsRoutes);
-
-// State-Life Agent API (Koda - 2026-04-05)
-// const stateLifeAgentRoutes = require('./routes/state-life-agents');
-// app.use('/api/agents', stateLifeAgentRoutes);
-
-// MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mulberry-mission-control';
-
-mongoose.connect(MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log('✅ MongoDB connected'))
-.catch(err => console.error('❌ MongoDB connection error:', err));
-
-// Models - Field Monitoring (기존)
-const Agent = require('./models/Agent');
-const Transaction = require('./models/Transaction');
-const SystemStat = require('./models/SystemStat');
-
-// Models - Community Control Center (신규)
-const User = require('./models/User');
-const Channel = require('./models/Channel');
-const Message = require('./models/Message');
-const Notification = require('./models/Notification');
-const MHC_Log = require('./models/MHC_Log');
-const Email = require('./models/Email');
-
-// Routes
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'healthy',
-    timestamp: new Date(),
-    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
-  });
-});
-
-// ==================== FIELD MONITORING API ====================
-
-// Get all agents with real-time status
-app.get('/api/field/agents', async (req, res) => {
+function createRedisClients() {
   try {
-    const agents = await Agent.find().sort({ spiritScore: -1 });
-    
-    res.json({
-      success: true,
-      count: agents.length,
-      agents: agents.map(agent => ({
-        id: agent._id,
-        name: agent.name,
-        age: agent.age,
-        region: agent.region,
-        spiritScore: agent.spiritScore,
-        transactions: agent.transactions,
-        status: agent.status,
-        lastActive: agent.lastActive,
-        location: agent.location,
-        skills: agent.skills
-      }))
+    console.log('🔌 Connecting to Redis...');
+    console.log('Redis Config:', {
+      url: REDIS_CONFIG.url ? 'SET' : 'NOT SET',
+      host: REDIS_CONFIG.host,
+      port: REDIS_CONFIG.port
     });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// Get agent by ID
-app.get('/api/field/agents/:id', async (req, res) => {
-  try {
-    const agent = await Agent.findById(req.params.id);
-    if (!agent) {
-      return res.status(404).json({ success: false, error: 'Agent not found' });
+    
+    if (REDIS_CONFIG.url) {
+      // Railway REDIS_URL 사용
+      redisClient = new Redis(REDIS_CONFIG.url);
+      redisPubClient = new Redis(REDIS_CONFIG.url);
+      redisSubClient = new Redis(REDIS_CONFIG.url);
+    } else if (REDIS_CONFIG.host && REDIS_CONFIG.port) {
+      // REDIS_HOST, REDIS_PORT 사용
+      const options = {
+        host: REDIS_CONFIG.host,
+        port: REDIS_CONFIG.port,
+        retryStrategy: REDIS_CONFIG.retryStrategy,
+        maxRetriesPerRequest: REDIS_CONFIG.maxRetriesPerRequest
+      };
+      
+      redisClient = new Redis(options);
+      redisPubClient = new Redis(options);
+      redisSubClient = new Redis(options);
+    } else {
+      console.warn('⚠️ Redis not configured, falling back to memory');
+      return null;
     }
     
-    res.json({
-      success: true,
-      agent
+    // Redis 이벤트 핸들러
+    redisClient.on('connect', () => {
+      console.log('✅ Redis connected');
     });
+    
+    redisClient.on('error', (err) => {
+      console.error('❌ Redis error:', err);
+    });
+    
+    redisClient.on('reconnecting', () => {
+      console.log('🔄 Redis reconnecting...');
+    });
+    
+    return {
+      client: redisClient,
+      pub: redisPubClient,
+      sub: redisSubClient
+    };
+    
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('❌ Redis client creation failed:', error);
+    return null;
   }
-});
+}
 
-// Get recent transactions
-app.get('/api/field/transactions', async (req, res) => {
-  try {
-    const limit = parseInt(req.query.limit) || 50;
-    const status = req.query.status;
-    
-    let query = {};
-    if (status) {
-      query.status = status;
-    }
-    
-    const transactions = await Transaction.find(query)
-      .sort({ timestamp: -1 })
-      .limit(limit)
-      .populate('agentId', 'name region');
-    
-    res.json({
-      success: true,
-      count: transactions.length,
-      transactions
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+// ==================== Team Chat Server ====================
+class TeamChatServer {
+  constructor(app) {
+    this.app = app;
+    this.server = http.createServer(app);
+    this.io = null;
+    this.redis = null;
+    this.channels = new Map();
+    this.users = new Map();
   }
-});
-
-// Get transaction statistics
-app.get('/api/field/stats', async (req, res) => {
-  try {
-    const totalTransactions = await Transaction.countDocuments();
-    const successfulTransactions = await Transaction.countDocuments({ status: 'success' });
-    const totalVolume = await Transaction.aggregate([
-      { $group: { _id: null, total: { $sum: '$amount' } } }
-    ]);
+  
+  /**
+   * 초기화
+   */
+  async init() {
+    console.log('🚀 Initializing Team Chat Server...');
     
-    const activeAgents = await Agent.countDocuments({ status: 'active' });
-    const totalAgents = await Agent.countDocuments();
+    // Redis 연결
+    this.redis = createRedisClients();
     
-    const avgSpiritScore = await Agent.aggregate([
-      { $group: { _id: null, avg: { $avg: '$spiritScore' } } }
-    ]);
-    
-    res.json({
-      success: true,
-      stats: {
-        transactions: {
-          total: totalTransactions,
-          successful: successfulTransactions,
-          successRate: totalTransactions > 0 ? (successfulTransactions / totalTransactions * 100).toFixed(1) : 0,
-          totalVolume: totalVolume[0]?.total || 0
-        },
-        agents: {
-          total: totalAgents,
-          active: activeAgents,
-          avgSpiritScore: avgSpiritScore[0]?.avg?.toFixed(1) || 0
-        },
-        timestamp: new Date()
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// Get transactions by agent
-app.get('/api/field/agents/:id/transactions', async (req, res) => {
-  try {
-    const transactions = await Transaction.find({ agentId: req.params.id })
-      .sort({ timestamp: -1 })
-      .limit(100);
-    
-    res.json({
-      success: true,
-      count: transactions.length,
-      transactions
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// Create transaction (for testing)
-app.post('/api/field/transactions', async (req, res) => {
-  try {
-    const transaction = new Transaction(req.body);
-    await transaction.save();
-    
-    // Update agent stats
-    await Agent.findByIdAndUpdate(req.body.agentId, {
-      $inc: { transactions: 1 },
-      lastActive: new Date()
-    });
-    
-    // Broadcast to all connected clients
-    io.emit('transaction', transaction);
-    
-    res.json({
-      success: true,
-      transaction
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// Update agent status
-app.put('/api/field/agents/:id/status', async (req, res) => {
-  try {
-    const { status, location } = req.body;
-    
-    const agent = await Agent.findByIdAndUpdate(
-      req.params.id,
-      { 
-        status,
-        location,
-        lastActive: new Date()
+    // Socket.IO 설정
+    this.io = socketIO(this.server, {
+      cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
       },
-      { new: true }
-    );
-    
-    // Broadcast to all connected clients
-    io.emit('agentUpdate', agent);
-    
-    res.json({
-      success: true,
-      agent
+      transports: ['websocket', 'polling']
     });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// Initialize sample data
-app.post('/api/field/initialize', async (req, res) => {
-  try {
-    // Check if already initialized
-    const existingAgents = await Agent.countDocuments();
-    if (existingAgents > 0) {
-      return res.json({
-        success: true,
-        message: 'Data already initialized',
-        agents: existingAgents
-      });
+    
+    // Redis Adapter 설정 (스케일링 지원)
+    if (this.redis) {
+      try {
+        this.io.adapter(createAdapter(this.redis.pub, this.redis.sub));
+        console.log('✅ Socket.IO Redis Adapter enabled');
+      } catch (error) {
+        console.error('❌ Redis Adapter setup failed:', error);
+      }
     }
     
-    // Create sample agents (from paper data)
-    const sampleAgents = [
-      { name: '김순자', age: 68, region: '남면', spiritScore: 4.2, transactions: 127, skills: ['협상', '배송'] },
-      { name: '이영희', age: 71, region: '북면', spiritScore: 4.5, transactions: 143, skills: ['고객관리', '품질검수'] },
-      { name: '박철수', age: 65, region: '인제읍', spiritScore: 3.9, transactions: 98, skills: ['재고관리', '물류'] },
-      { name: '최민수', age: 73, region: '기린면', spiritScore: 4.7, transactions: 156, skills: ['협상', '고객관리'] },
-      { name: '강미란', age: 69, region: '상남면', spiritScore: 4.1, transactions: 112, skills: ['배송', '품질검수'] }
-    ];
+    // Socket.IO 이벤트 핸들러
+    this.setupSocketHandlers();
     
-    const agents = await Agent.insertMany(sampleAgents);
+    // 채널 데이터 로드
+    await this.loadChannels();
     
-    res.json({
-      success: true,
-      message: 'Sample data initialized',
-      agents: agents.length
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.log('✅ Team Chat Server initialized');
   }
-});
-
-// ==================== WebSocket (그룹채팅 통합) ====================
-
-// 온라인 유저 추적
-const onlineUsers = new Map(); // socketId → { userId, userName, channelId }
-
-io.on('connection', (socket) => {
-  console.log('✅ Client connected:', socket.id);
-
-  // ── 인증 (JWT 토큰으로 유저 확인) ──────────────────────────────
-  const token = socket.handshake.auth?.token;
-  let socketUser = null;
-  if (token) {
+  
+  /**
+   * Socket.IO 이벤트 핸들러 설정
+   */
+  setupSocketHandlers() {
+    this.io.on('connection', (socket) => {
+      console.log('👤 User connected:', socket.id);
+      
+      // 사용자 정보 저장
+      this.users.set(socket.id, {
+        id: socket.id,
+        username: 'Anonymous',
+        connectedAt: new Date()
+      });
+      
+      // 채널 목록 요청
+      socket.on('get_channels', async () => {
+        const channels = await this.getChannels();
+        socket.emit('channels_list', channels);
+      });
+      
+      // 채널 생성
+      socket.on('create_channel', async (data) => {
+        const channel = await this.createChannel(data);
+        this.io.emit('channel_created', channel);
+      });
+      
+      // 채널 참여
+      socket.on('join_channel', async (channelId) => {
+        await this.joinChannel(socket, channelId);
+      });
+      
+      // 채널 나가기
+      socket.on('leave_channel', async (channelId) => {
+        await this.leaveChannel(socket, channelId);
+      });
+      
+      // 메시지 전송
+      socket.on('send_message', async (data) => {
+        await this.sendMessage(socket, data);
+      });
+      
+      // 타이핑 시작
+      socket.on('typing_start', (channelId) => {
+        socket.to(channelId).emit('user_typing', {
+          userId: socket.id,
+          username: this.users.get(socket.id)?.username
+        });
+      });
+      
+      // 타이핑 종료
+      socket.on('typing_stop', (channelId) => {
+        socket.to(channelId).emit('user_stop_typing', {
+          userId: socket.id
+        });
+      });
+      
+      // 연결 해제
+      socket.on('disconnect', () => {
+        console.log('👋 User disconnected:', socket.id);
+        this.users.delete(socket.id);
+      });
+    });
+  }
+  
+  /**
+   * 채널 목록 가져오기 (Redis 캐싱)
+   */
+  async getChannels() {
     try {
-      const jwt = require('jsonwebtoken');
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'mulberry-jwt-secret-2026');
-      socketUser = decoded;
-      onlineUsers.set(socket.id, { userId: decoded.id || decoded._id, userName: decoded.displayName || decoded.username });
-    } catch (e) {
-      console.warn('⚠️ Socket auth token invalid:', e.message);
-    }
-  }
-
-  // ── 1. 기존: Field Monitoring 구독 (유지) ──────────────────────
-  socket.on('subscribe', (data) => {
-    console.log('📡 Client subscribed to field monitoring');
-    socket.join('field-monitoring');
-  });
-
-  // ── 2. 채널(방) 입장 ───────────────────────────────────────────
-  socket.on('join-channel', async ({ channelId, userId, userName }) => {
-    if (!channelId) return;
-    socket.join(`channel:${channelId}`);
-
-    const user = onlineUsers.get(socket.id) || {};
-    user.channelId = channelId;
-    onlineUsers.set(socket.id, user);
-
-    // 같은 채널에 있는 다른 사람에게 알림
-    socket.to(`channel:${channelId}`).emit('user-joined', {
-      userId: userId || user.userId,
-      userName: userName || user.userName,
-      timestamp: new Date()
-    });
-    console.log(`👥 [channel:${channelId}] ${userName || userId} 입장`);
-  });
-
-  // ── 3. 채널(방) 퇴장 ───────────────────────────────────────────
-  socket.on('leave-channel', ({ channelId, userId, userName }) => {
-    if (!channelId) return;
-    socket.leave(`channel:${channelId}`);
-    socket.to(`channel:${channelId}`).emit('user-left', {
-      userId,
-      userName,
-      timestamp: new Date()
-    });
-    console.log(`🚪 [channel:${channelId}] ${userName || userId} 퇴장`);
-  });
-
-  // ── 4. 실시간 메시지 브로드캐스트 ─────────────────────────────
-  // (REST API로 저장 후, 프론트에서 이 이벤트로 다른 멤버에게 전파)
-  socket.on('send-message', ({ channelId, message }) => {
-    if (!channelId || !message) return;
-    // 보낸 사람 제외 → 같은 채널 전원에게 전송
-    socket.to(`channel:${channelId}`).emit('new-message', message);
-    console.log(`💬 [channel:${channelId}] 메시지 브로드캐스트`);
-  });
-
-  // ── 5. 타이핑 시작 ────────────────────────────────────────────
-  socket.on('typing-start', ({ channelId, userId, userName }) => {
-    if (!channelId) return;
-    socket.to(`channel:${channelId}`).emit('user-typing', {
-      userId,
-      userName,
-      isTyping: true
-    });
-  });
-
-  // ── 6. 타이핑 중지 ────────────────────────────────────────────
-  socket.on('typing-stop', ({ channelId, userId }) => {
-    if (!channelId) return;
-    socket.to(`channel:${channelId}`).emit('user-typing', {
-      userId,
-      isTyping: false
-    });
-  });
-
-  // ── 7. 리액션 (이모지 반응) ───────────────────────────────────
-  socket.on('message-reaction', ({ channelId, messageId, emoji, userId }) => {
-    if (!channelId) return;
-    io.to(`channel:${channelId}`).emit('reaction-updated', {
-      messageId,
-      emoji,
-      userId,
-      timestamp: new Date()
-    });
-  });
-
-  // ── 8. 회의실 입장 ────────────────────────────────────────────
-  socket.on('join-meeting', ({ meetingId, userId, userInfo }) => {
-    if (!meetingId) return;
-    socket.join(`meeting:${meetingId}`);
-    io.to(`meeting:${meetingId}`).emit('participant-joined', {
-      userId,
-      userInfo,
-      timestamp: new Date()
-    });
-    console.log(`📹 [meeting:${meetingId}] ${userId} 참가`);
-  });
-
-  // ── 9. 회의실 퇴장 ────────────────────────────────────────────
-  socket.on('leave-meeting', ({ meetingId, userId }) => {
-    if (!meetingId) return;
-    socket.leave(`meeting:${meetingId}`);
-    io.to(`meeting:${meetingId}`).emit('participant-left', {
-      userId,
-      timestamp: new Date()
-    });
-  });
-
-  // ── 10. 회의 종료 (호스트) — 게스트 전원 강제 퇴장 ──────────
-  socket.on('end-meeting', ({ meetingId, hostId }) => {
-    if (!meetingId) return;
-    io.to(`meeting:${meetingId}`).emit('meeting-ended', {
-      meetingId,
-      endedBy: hostId,
-      timestamp: new Date()
-    });
-    // 해당 방의 모든 소켓 퇴장
-    io.in(`meeting:${meetingId}`).socketsLeave(`meeting:${meetingId}`);
-    console.log(`🔴 [meeting:${meetingId}] 회의 종료 — 전원 퇴장`);
-  });
-
-  // ── 11. 회의 참여자 수 조회 ───────────────────────────────────
-  socket.on('get-participants', ({ meetingId }) => {
-    if (!meetingId) return;
-    const room = io.sockets.adapter.rooms.get(`meeting:${meetingId}`);
-    socket.emit('participants-list', {
-      meetingId,
-      count: room ? room.size : 0,
-      timestamp: new Date()
-    });
-  });
-
-  // ── 12. 연결 해제 ─────────────────────────────────────────────
-  socket.on('disconnect', () => {
-    const user = onlineUsers.get(socket.id);
-    if (user?.channelId) {
-      socket.to(`channel:${user.channelId}`).emit('user-left', {
-        userId: user.userId,
-        userName: user.userName
-      });
-    }
-    onlineUsers.delete(socket.id);
-    console.log('❌ Client disconnected:', socket.id, `(${user?.userName || 'unknown'})`);
-  });
-});
-
-// ── Field Monitoring 실시간 Stats 브로드캐스트 (기존 유지) ──────
-setInterval(async () => {
-  try {
-    const stats = await Transaction.aggregate([
-      {
-        $facet: {
-          total: [{ $count: 'count' }],
-          successful: [
-            { $match: { status: 'success' } },
-            { $count: 'count' }
-          ],
-          recentVolume: [
-            { $match: { timestamp: { $gte: new Date(Date.now() - 60000) } } },
-            { $group: { _id: null, total: { $sum: '$amount' } } }
-          ]
+      if (this.redis) {
+        // Redis에서 캐시된 채널 목록 가져오기
+        const cached = await this.redis.client.get('channels:list');
+        if (cached) {
+          return JSON.parse(cached);
         }
       }
-    ]);
-
-    io.to('field-monitoring').emit('statsUpdate', {
-      timestamp: new Date(),
-      stats: stats[0],
-      onlineCount: onlineUsers.size
-    });
-  } catch (error) {
-    // MongoDB 없을 때 조용히 무시
+      
+      // 캐시 없으면 메모리에서 가져오기
+      const channels = Array.from(this.channels.values());
+      
+      // Redis에 캐싱 (1시간)
+      if (this.redis) {
+        await this.redis.client.setex(
+          'channels:list',
+          3600,
+          JSON.stringify(channels)
+        );
+      }
+      
+      return channels;
+      
+    } catch (error) {
+      console.error('❌ Get channels error:', error);
+      return Array.from(this.channels.values());
+    }
   }
-}, 5000);
+  
+  /**
+   * 채널 생성
+   */
+  async createChannel(data) {
+    const channel = {
+      id: `channel_${Date.now()}`,
+      name: data.name,
+      description: data.description || '',
+      createdAt: new Date(),
+      members: []
+    };
+    
+    this.channels.set(channel.id, channel);
+    
+    // Redis에 저장
+    if (this.redis) {
+      await this.redis.client.setex(
+        `channel:${channel.id}`,
+        86400, // 24시간
+        JSON.stringify(channel)
+      );
+      
+      // 캐시 무효화
+      await this.redis.client.del('channels:list');
+    }
+    
+    console.log('📁 Channel created:', channel.name);
+    return channel;
+  }
+  
+  /**
+   * 채널 참여
+   */
+  async joinChannel(socket, channelId) {
+    socket.join(channelId);
+    
+    const user = this.users.get(socket.id);
+    
+    // 채널 멤버에 추가
+    const channel = this.channels.get(channelId);
+    if (channel) {
+      channel.members.push(socket.id);
+      
+      // Redis 업데이트
+      if (this.redis) {
+        await this.redis.client.setex(
+          `channel:${channelId}`,
+          86400,
+          JSON.stringify(channel)
+        );
+      }
+    }
+    
+    // 입장 알림
+    socket.to(channelId).emit('user_joined', {
+      userId: socket.id,
+      username: user?.username,
+      timestamp: new Date()
+    });
+    
+    // 최근 메시지 전송
+    const messages = await this.getRecentMessages(channelId);
+    socket.emit('channel_messages', messages);
+    
+    console.log(`👤 User ${socket.id} joined channel ${channelId}`);
+  }
+  
+  /**
+   * 채널 나가기
+   */
+  async leaveChannel(socket, channelId) {
+    socket.leave(channelId);
+    
+    const channel = this.channels.get(channelId);
+    if (channel) {
+      channel.members = channel.members.filter(id => id !== socket.id);
+      
+      // Redis 업데이트
+      if (this.redis) {
+        await this.redis.client.setex(
+          `channel:${channelId}`,
+          86400,
+          JSON.stringify(channel)
+        );
+      }
+    }
+    
+    // 퇴장 알림
+    socket.to(channelId).emit('user_left', {
+      userId: socket.id,
+      timestamp: new Date()
+    });
+    
+    console.log(`👋 User ${socket.id} left channel ${channelId}`);
+  }
+  
+  /**
+   * 메시지 전송 (Redis 캐싱)
+   */
+  async sendMessage(socket, data) {
+    const message = {
+      id: `msg_${Date.now()}`,
+      channelId: data.channelId,
+      userId: socket.id,
+      username: this.users.get(socket.id)?.username || 'Anonymous',
+      content: data.content,
+      timestamp: new Date()
+    };
+    
+    // Redis에 메시지 저장 (Sorted Set 사용)
+    if (this.redis) {
+      try {
+        await this.redis.client.zadd(
+          `messages:${data.channelId}`,
+          Date.now(),
+          JSON.stringify(message)
+        );
+        
+        // 최근 100개만 유지
+        await this.redis.client.zremrangebyrank(
+          `messages:${data.channelId}`,
+          0,
+          -101
+        );
+      } catch (error) {
+        console.error('❌ Redis message save error:', error);
+      }
+    }
+    
+    // 채널에 메시지 브로드캐스트
+    this.io.to(data.channelId).emit('new_message', message);
+    
+    console.log(`💬 Message sent in ${data.channelId}`);
+  }
+  
+  /**
+   * 최근 메시지 가져오기 (Redis)
+   */
+  async getRecentMessages(channelId, limit = 50) {
+    try {
+      if (this.redis) {
+        const messages = await this.redis.client.zrevrange(
+          `messages:${channelId}`,
+          0,
+          limit - 1
+        );
+        
+        return messages.map(msg => JSON.parse(msg));
+      }
+      
+      return [];
+      
+    } catch (error) {
+      console.error('❌ Get messages error:', error);
+      return [];
+    }
+  }
+  
+  /**
+   * 채널 데이터 로드
+   */
+  async loadChannels() {
+    // 기본 채널 생성
+    const defaultChannels = [
+      { name: 'General', description: '일반 대화' },
+      { name: 'Random', description: '자유로운 대화' },
+      { name: 'Dev Team', description: '개발팀 채널' }
+    ];
+    
+    for (const channelData of defaultChannels) {
+      await this.createChannel(channelData);
+    }
+  }
+  
+  /**
+   * 서버 시작
+   */
+  listen(port) {
+    this.server.listen(port, () => {
+      console.log(`🚀 Team Chat Server running on port ${port}`);
+    });
+  }
+}
 
-// ==================== START SERVER ====================
+// ==================== Express App ====================
+const app = express();
+app.use(express.json());
 
-const PORT = process.env.PORT || 5000;
-
-server.listen(PORT, () => {
-  console.log(`
-╔════════════════════════════════════════════╗
-║  🌾 Mulberry Mission Control - Field      ║
-║     Monitoring System                     ║
-║                                           ║
-║  Status: ✅ Running                       ║
-║  Port: ${PORT}                               ║
-║  MongoDB: ${mongoose.connection.readyState === 1 ? '✅ Connected' : '❌ Disconnected'}                   ║
-║                                           ║
-║  Endpoints:                               ║
-║  - GET  /api/field/agents                 ║
-║  - GET  /api/field/transactions           ║
-║  - GET  /api/field/stats                  ║
-║  - POST /api/field/initialize             ║
-║                                           ║
-║  WebSocket: ✅ Active                     ║
-║                                           ║
-║  🌾 One Team! 🌿                          ║
-╚════════════════════════════════════════════╝
-  `);
+// Health Check
+app.get('/health', async (req, res) => {
+  const health = {
+    status: 'ok',
+    redis: redisClient ? 'connected' : 'disconnected',
+    timestamp: new Date()
+  };
+  
+  if (redisClient) {
+    try {
+      await redisClient.ping();
+      health.redis = 'connected';
+    } catch (error) {
+      health.redis = 'error';
+      health.redisError = error.message;
+    }
+  }
+  
+  res.json(health);
 });
 
-module.exports = { app, server, io };
+// ==================== 초기화 및 시작 ====================
+const teamChatServer = new TeamChatServer(app);
+
+teamChatServer.init().then(() => {
+  const PORT = process.env.PORT || 3000;
+  teamChatServer.listen(PORT);
+});
+
+// ==================== Export ====================
+module.exports = teamChatServer;
