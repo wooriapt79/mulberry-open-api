@@ -267,12 +267,23 @@ function navigateTo(moduleId, sectionId = null) {
 
 // ==================== 이벤트 리스너 ====================
 
-window.addEventListener('hashchange', () => {
-  initializeRouter();
-});
-
-window.addEventListener('DOMContentLoaded', () => {
+// Initialize on DOMContentLoaded or immediately if DOM is ready
+function initializeApp() {
+  console.log('🚀 Initializing Mission Control Router...');
   renderMainNavigation();
+  initializeRouter();
+  console.log('✅ Router initialized');
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+  // DOM is already ready, initialize immediately
+  initializeApp();
+}
+
+// Also listen for hash changes
+window.addEventListener('hashchange', () => {
   initializeRouter();
 });
 
