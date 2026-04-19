@@ -10,6 +10,7 @@
 
 const express = require('express');
 const http = require('http');
+const path = require('path');
 const socketIO = require('socket.io');
 const Redis = require('ioredis');
 const { createAdapter } = require('@socket.io/redis-adapter');
@@ -421,6 +422,29 @@ class TeamChatServer {
 // ==================== Express App ====================
 const app = express();
 app.use(express.json());
+
+// ✅ 정적 파일 서빙 (Trang 긴급 수정 v2 2026-04-19)
+// Railway 환경에서 process.cwd() 기준 상대 경로 사용
+app.use(express.static('public'));
+app.use(express.static(path.join(process.cwd(), 'public')));
+app.use(express.static(path.join(__dirname, 'public')));
+
+// SPA Fallback: / 요청 → index.html
+app.get('/', (req, res) => {
+  const indexPaths = [
+    path.join(process.cwd(), 'public', 'index.html'),
+    path.join(__dirname, 'public', 'index.html'),
+    'public/index.html'
+  ];
+  // 존재하는 경로 찾아서 서빙
+  const fs = require('fs');
+  for (const p of indexPaths) {
+    if (fs.existsSync(p)) {
+      return res.sendFile(p);
+    }
+  }
+  res.status(404).send('index.html not found. Public path: ' + process.cwd());
+});
 
 // Health Check
 app.get('/health', async (req, res) => {
