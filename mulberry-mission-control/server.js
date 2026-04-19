@@ -19,8 +19,7 @@ const REDIS_CONFIG = {
   url: process.env.REDIS_URL,
   host: process.env.REDIS_HOST,
   port: process.env.REDIS_PORT || 6379,
-  // Railway Redis는 보통 비밀번호 필요 없음
-  // password: process.env.REDIS_PASSWORD,
+  password: process.env.REDIS_PASSWORD,
   retryStrategy: (times) => {
     const delay = Math.min(times * 50, 2000);
     return delay;
@@ -52,6 +51,7 @@ function createRedisClients() {
       const options = {
         host: REDIS_CONFIG.host,
         port: REDIS_CONFIG.port,
+        password: REDIS_CONFIG.password,
         retryStrategy: REDIS_CONFIG.retryStrategy,
         maxRetriesPerRequest: REDIS_CONFIG.maxRetriesPerRequest
       };
