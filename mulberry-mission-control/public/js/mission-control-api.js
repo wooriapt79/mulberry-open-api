@@ -360,16 +360,33 @@ function updateLastSync(elementId, timestamp) {
 async function initializeDashboard() {
   console.log('🚀 Initializing Mission Control Dashboard...');
   
-  await Promise.all([
-    updateKPICards(),
-    updateModuleStatus(),
-    updateActivityStream()
-  ]);
-  
-  setInterval(updateKPICards, 30000);
-  setInterval(updateModuleStatus, 10000);
-  
-  console.log('✅ Dashboard initialized');
+  try {
+    // Try to load data from API
+    await Promise.all([
+      updateKPICards().catch(err => {
+        console.warn('KPI cards failed, using empty state:', err);
+        showEmptyState('kpi-container', 'NO_DATA');
+      }),
+      updateModuleStatus().catch(err => {
+        console.warn('Module status failed, using empty state:', err);
+        showEmptyState('module-status-container', 'NO_DATA');
+      }),
+      updateActivityStream().catch(err => {
+        console.warn('Activity stream failed, using empty state:', err);
+        showEmptyState('activity-stream', 'NO_DATA');
+      })
+    ]);
+    
+    // Set up polling intervals
+    setInterval(updateKPICards, 30000);
+    setInterval(updateModuleStatus, 10000);
+    
+    console.log('✅ Dashboard initialized');
+    
+  } catch (error) {
+    console.error('Dashboard initialization error:', error);
+    // Dashboard still works, just with empty states
+  }
 }
 
 if (document.readyState === 'loading') {
