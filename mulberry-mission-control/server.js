@@ -443,6 +443,18 @@ app.get('/health', async (req, res) => {
   res.json(health);
 });
 
+// Root path handler
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'Mulberry Mission Control - Team Chat Backend',
+    version: '2.0',
+    redis: redisClient ? 'connected' : 'disconnected',
+    socketIO: 'enabled',
+    timestamp: new Date()
+  });
+});
+
 // ==================== 초기화 및 시작 ====================
 const teamChatServer = new TeamChatServer(app);
 
