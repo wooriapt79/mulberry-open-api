@@ -37,13 +37,32 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Session
+// Redis session store
+const redis = require('redis');
+const RedisStore = require('connect-redis').default;
+
+// Create Redis client
+const redisClient = redis.createClient({
+  host: process.env.REDIS_HOST || 'localhost',
+  port: process.env.REDIS_PORT || 6379,
+  password: process.env.REDIS_PASSWORD || undefined,
+  db: 0
+});
+
+redisClient.connect().catch(err => {
+  console.warn('⚠️ Redis connection warning:', err.message);
+  console.log('Falling back to in-memory session store (development only)');
+});
+
+// Session middleware with Redis store
 app.use(session({
+  store: new RedisStore({ client: redisClient }),
   secret: process.env.SESSION_SECRET || 'mulberry-secret-key-2026',
   resave: false,
   saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
@@ -126,6 +145,10 @@ mongoose.connect(MONGODB_URI, {
 })
 .then(() => console.log('✅ MongoDB connected'))
 .catch(err => console.error('❌ MongoDB connection error:', err));
+
+// Redis connection status
+redisClient.on('connect', () => console.log('✅ Redis connected'));
+redisClient.on('error', (err) => console.error('❌ Redis error:', err));
 
 // Models - Field Monitoring (기존)
 const Agent = require('./models/Agent');
