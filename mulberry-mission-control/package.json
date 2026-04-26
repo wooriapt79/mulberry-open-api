@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "description": "Mulberry Mission Control Center with Redis Integration",
   "main": "server.js",
-  "_build": "20260420-v31-static-fix",
+  "_build": "20260426-v32-redis-fix",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"
