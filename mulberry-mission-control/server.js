@@ -5,8 +5,8 @@
  *
  * @author CTO Koda (Redis) + Trang Manager (정적 파일 복원)
  * @date 2026-04-20
- * @version 3.1 (Static Fix FINAL)
- * @cache-bust 20260420-v33
+ * @version 3.2 (Redis Auth + Error Handler Fix)
+ * @cache-bust 20260426-v34
  */
 
 const express = require('express');
@@ -21,6 +21,7 @@ const REDIS_CONFIG = {
   url: process.env.REDIS_URL,
   host: process.env.REDIS_HOST,
   port: process.env.REDIS_PORT || 6379,
+  password: process.env.REDIS_PASSWORD,
   retryStrategy: (times) => {
     const delay = Math.min(times * 50, 2000);
     return delay;
@@ -43,6 +44,7 @@ function createRedisClients() {
       const options = {
         host: REDIS_CONFIG.host,
         port: REDIS_CONFIG.port,
+        password: REDIS_CONFIG.password,
         retryStrategy: REDIS_CONFIG.retryStrategy,
         maxRetriesPerRequest: REDIS_CONFIG.maxRetriesPerRequest
       };
@@ -55,6 +57,8 @@ function createRedisClients() {
     }
     redisClient.on('connect', () => console.log('✅ Redis connected'));
     redisClient.on('error', (err) => console.error('❌ Redis error:', err));
+    redisPubClient.on('error', (err) => console.error('❌ Redis Pub error:', err));
+    redisSubClient.on('error', (err) => console.error('❌ Redis Sub error:', err));
     return { client: redisClient, pub: redisPubClient, sub: redisSubClient };
   } catch (error) {
     console.error('❌ Redis client creation failed:', error);
@@ -68,7 +72,7 @@ const server = http.createServer(app);
 
 app.use(express.json());
 
-// ✅ 정적 파일 서빙 (원본 검증된 패턴 그대로 사용)
+// ✅ 정적 파일 서빙
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ==================== Socket.IO ====================
@@ -162,7 +166,7 @@ io.on('connection', (socket) => {
 app.get('/health', async (req, res) => {
   const health = {
     status: 'ok',
-    version: '3.1',
+    version: '3.2',
     redis: redisClient ? 'connected' : 'disconnected',
     timestamp: new Date()
   };
@@ -198,7 +202,7 @@ async function loadDefaultChannels() {
 const PORT = process.env.PORT || 3000;
 
 async function start() {
-  console.log('🚀 Mulberry Mission Control Starting (v3.1)...');
+  console.log('🚀 Mulberry Mission Control Starting (v3.2)...');
   await setupRedis();
   await loadDefaultChannels();
 
