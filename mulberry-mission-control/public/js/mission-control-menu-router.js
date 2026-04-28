@@ -457,3 +457,170 @@ window.MissionControlRouter = MissionControlRouter;
 window.missionControlRouter = missionControlRouter;
 window.moduleInstances = moduleInstances;
 window.moduleStates = moduleStates;
+
+// ==================== 모듈 정의 (상단 메뉴 데이터) ====================
+// ⚠️ v3.1 패치: 리팩토링 시 누락된 모듈 정의 + 메뉴 렌더링 복원
+// Author: Trang Manager (2026-04-29)
+
+const MissionControlModules = {
+  mhc: {
+    id: 'mhc', name: 'Mission Control', icon: '🎯',
+    description: 'MCCC 통합 모니터링 대시보드', route: '#mhc',
+    sections: [
+      { id: 'overview', name: 'Overview', icon: '📊' },
+      { id: 'region-map', name: 'Region Map', icon: '🗺️' },
+      { id: 'module-status', name: 'Module Status', icon: '⚙️' },
+      { id: 'live-feed', name: 'Live Feed', icon: '📡' },
+      { id: 'agent-team', name: 'Agent Team', icon: '👥' },
+      { id: 'trust-events', name: 'Trust & Events', icon: '🔒' }
+    ]
+  },
+  agents: {
+    id: 'agents', name: 'AI Agents', icon: '🤖',
+    description: 'Agent 생성, 관리, 모니터링', route: '#agents',
+    sections: [
+      { id: 'create', name: 'Agent 생성', icon: '➕' },
+      { id: 'list', name: 'Agent 목록', icon: '📋' },
+      { id: 'state-life', name: 'State-Life', icon: '📱' },
+      { id: 'sr-jr-pairs', name: 'Sr./Jr. 페어', icon: '🤝' },
+      { id: 'marrf', name: 'MARRF Logger', icon: '📊' },
+      { id: 'statistics', name: '통계', icon: '📈' }
+    ]
+  },
+  chat: {
+    id: 'chat', name: 'Team Chat', icon: '💬',
+    description: '팀 단체 채팅 및 회의', route: '#chat',
+    sections: [
+      { id: 'channels', name: '채널 목록', icon: '📁' },
+      { id: 'messages', name: '메시지', icon: '✉️' },
+      { id: 'meetings', name: '회의실', icon: '🎥' },
+      { id: 'settings', name: '설정', icon: '⚙️' }
+    ]
+  },
+  skills: {
+    id: 'skills', name: 'Skill Bank', icon: '💡',
+    description: '스킬 관리 및 배포', route: '#skills',
+    sections: [
+      { id: 'catalog', name: '스킬 카탈로그', icon: '📚' },
+      { id: 'upload', name: '스킬 업로드', icon: '📤' },
+      { id: 'deploy', name: '배포 관리', icon: '🚀' },
+      { id: 'analytics', name: '사용 분석', icon: '📊' }
+    ]
+  },
+  coopbuy: {
+    id: 'coopbuy', name: '공동구매', icon: '🛒',
+    description: '공동구매 관리 및 모니터링', route: '#coopbuy',
+    sections: [
+      { id: 'active', name: '진행 중', icon: '🔴' },
+      { id: 'planning', name: '기획 중', icon: '📝' },
+      { id: 'completed', name: '완료', icon: '✅' },
+      { id: 'analytics', name: '분석', icon: '📊' }
+    ]
+  },
+  field: {
+    id: 'field', name: '현장 운영', icon: '🚛',
+    description: '현장 거점 및 배달 관리', route: '#field',
+    sections: [
+      { id: 'map', name: '거점 지도', icon: '🗺️' },
+      { id: 'staff', name: '거점 직원', icon: '👷' },
+      { id: 'delivery', name: '배달 현황', icon: '📦' },
+      { id: 'emergency', name: '긴급 공급', icon: '🚨' }
+    ]
+  },
+  analytics: {
+    id: 'analytics', name: '분석', icon: '📈',
+    description: '데이터 분석 및 리포트', route: '#analytics',
+    sections: [
+      { id: 'kpi', name: 'KPI', icon: '🎯' },
+      { id: 'region', name: '지역별', icon: '🗺️' },
+      { id: 'agent', name: 'Agent 성과', icon: '🤖' },
+      { id: 'trend', name: '트렌드', icon: '📊' }
+    ]
+  },
+  settings: {
+    id: 'settings', name: '설정', icon: '⚙️',
+    description: '시스템 설정 및 관리', route: '#settings',
+    sections: [
+      { id: 'profile', name: '프로필', icon: '👤' },
+      { id: 'notifications', name: '알림', icon: '🔔' },
+      { id: 'api', name: 'API Keys', icon: '🔑' },
+      { id: 'billing', name: '과금', icon: '💳' }
+    ]
+  }
+};
+
+// ==================== 메뉴 렌더링 ====================
+
+function isCurrentModule(moduleId) {
+  const hash = window.location.hash || '#mhc';
+  return hash.startsWith('#' + moduleId);
+}
+
+function isCurrentSection(sectionId) {
+  const hash = window.location.hash || '';
+  return hash.includes('/' + sectionId);
+}
+
+function renderMainNavigation() {
+  const nav = document.getElementById('main-navigation');
+  if (!nav) return;
+  const modules = Object.values(MissionControlModules);
+  nav.innerHTML = modules.map(m => `
+    <a href="${m.route}"
+       class="nav-item ${isCurrentModule(m.id) ? 'active' : ''}"
+       data-module="${m.id}"
+       title="${m.description}">
+      <span class="nav-icon">${m.icon}</span>
+      <span class="nav-label">${m.name}</span>
+    </a>
+  `).join('');
+}
+
+function renderSubNavigation(moduleId) {
+  const subNav = document.getElementById('sub-navigation');
+  if (!subNav) return;
+  const module = MissionControlModules[moduleId];
+  if (!module || !module.sections) { subNav.innerHTML = ''; return; }
+  subNav.innerHTML = module.sections.map(s => `
+    <a href="${module.route}/${s.id}"
+       class="sub-nav-item ${isCurrentSection(s.id) ? 'active' : ''}"
+       data-section="${s.id}">
+      <span class="section-icon">${s.icon}</span>
+      <span class="section-label">${s.name}</span>
+    </a>
+  `).join('');
+}
+
+function navigateTo(moduleId, sectionId) {
+  const module = MissionControlModules[moduleId];
+  if (!module) return;
+  const route = sectionId ? `${module.route}/${sectionId}` : module.route;
+  window.location.hash = route;
+}
+
+function toggleMobileMenu() {
+  const nav = document.querySelector('.mission-control-nav');
+  if (nav) nav.classList.toggle('mobile-open');
+}
+
+// 초기 메뉴 렌더링 + hash 변경 시 active 상태 갱신
+document.addEventListener('DOMContentLoaded', () => {
+  renderMainNavigation();
+  const initHash = (window.location.hash || '#mhc').slice(1).split('/')[0];
+  renderSubNavigation(initHash);
+});
+
+window.addEventListener('hashchange', () => {
+  renderMainNavigation();
+  const moduleId = (window.location.hash || '#mhc').slice(1).split('/')[0];
+  renderSubNavigation(moduleId);
+});
+
+// ==================== window.MissionControl export (복원) ====================
+window.MissionControl = {
+  modules: MissionControlModules,
+  navigateTo,
+  toggleMobileMenu,
+  renderMainNavigation,
+  renderSubNavigation
+};
