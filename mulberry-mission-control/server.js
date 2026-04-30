@@ -5,8 +5,8 @@
  *
  * @author CTO Koda (Redis) + Trang Manager (정적 파일 복원)
  * @date 2026-04-20
- * @version 3.2 (Redis Auth + Error Handler Fix)
- * @cache-bust 20260426-v34
+ * @version 3.2.1 (Redis Auth + Error Handler Fix)
+ * @cache-bust 20260430-v35
  */
 
 const express = require('express');
@@ -71,6 +71,13 @@ const app = express();
 const server = http.createServer(app);
 
 app.use(express.json());
+
+// ==================== UTF-8 인코딩 설정 ====================
+// v3.2.1 - 이모지 깨짐 수정 (Koda patch, 2026-04-30)
+app.use((req, res, next) => {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    next();
+});
 
 // ✅ 정적 파일 서빙
 app.use(express.static(path.join(__dirname, 'public')));
