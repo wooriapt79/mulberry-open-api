@@ -5,8 +5,8 @@
  *
  * @author CTO Koda (Redis) + Trang Manager (정적 파일 복원)
  * @date 2026-04-20
- * @version 3.2.1 (Redis Auth + Error Handler Fix)
- * @cache-bust 20260516-v36
+ * @version 3.2.1 h(Redis Auth + Error Handler Fix)
+ * @cache-bust 20260517-v37
  */
 
 const express = require('express');
@@ -213,9 +213,9 @@ app.get('/api/health', async (req, res) => {
 app.get('/v1/tools', (req, res) => {
   res.json({
     tools: [
-      { id: 'malu.vision.image_generate', spirit_score: 0.88, status: 'active', description: '이미지 생성 도구' },
-      { id: 'trang.passport.agent_restore', spirit_score: 0.95, status: 'active', description: '에이전트 페르소나 복구' },
-      { id: 'trang.agent.image_advertising', spirit_score: 0.85, status: 'active', description: '광고 자동화 도구' }
+      { id: 'malu.vision.image_generate', spirit_score: 0.88, status: 'active', description: '이미지 생성 도구', endpoint: 'https://loving-education-production-cc9e.up.railway.app/v1/tools/invoke' },
+      { id: 'trang.passport.agent_restore', spirit_score: 0.95, status: 'active', description: '에이전트 페르소나 복구', endpoint: 'https://loving-education-production-cc9e.up.railway.app/v1/tools/invoke' },
+      { id: 'trang.agent.image_advertising', spirit_score: 0.85, status: 'active', description: '광고 자동화 도구', endpoint: 'https://loving-education-production-cc9e.up.railway.app/v1/tools/invoke' }
     ],
     count: 3,
     spirit_gate: 0.75,
@@ -246,7 +246,7 @@ const PORT = process.env.PORT || 3000;
 async function start() {
   console.log('🚀 Mulberry Mission Control Starting (v3.2)...');
   await setupRedis();
-  await loadDefaultChannels();
+  await loadDefaultChannels();h
 
   server.listen(PORT, () => {
     console.log(`✅ Server running on port ${PORT}`);
