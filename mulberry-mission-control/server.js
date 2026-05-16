@@ -6,7 +6,7 @@
  * @author CTO Koda (Redis) + Trang Manager (정적 파일 복원)
  * @date 2026-04-20
  * @version 3.2.1 (Redis Auth + Error Handler Fix)
- * @cache-bust 20260430-v35
+ * @cache-bust 20260516-v36
  */
 
 const express = require('express');
