@@ -188,6 +188,41 @@ app.get('/health', async (req, res) => {
   res.json(health);
 });
 
+// /api/health alias — P1 안정화 (Trang 2026-05-16)
+app.get('/api/health', async (req, res) => {
+  const health = {
+    status: 'ok',
+    service: 'mulberry-mission-control',
+    version: '3.2.1',
+    redis: redisClient ? 'connected' : 'disconnected',
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date()
+  };
+  if (redisClient) {
+    try {
+      await redisClient.ping();
+      health.redis = 'connected';
+    } catch (error) {
+      health.redis = 'error';
+    }
+  }
+  res.json(health);
+});
+
+// /v1/tools — 공유 도구 레지스트리 (Trang 2026-05-16)
+app.get('/v1/tools', (req, res) => {
+  res.json({
+    tools: [
+      { id: 'malu.vision.image_generate', spirit_score: 0.88, status: 'active', description: '이미지 생성 도구' },
+      { id: 'trang.passport.agent_restore', spirit_score: 0.95, status: 'active', description: '에이전트 페르소나 복구' },
+      { id: 'trang.agent.image_advertising', spirit_score: 0.85, status: 'active', description: '광고 자동화 도구' }
+    ],
+    count: 3,
+    spirit_gate: 0.75,
+    timestamp: new Date()
+  });
+});
+
 // 기본 채널 생성
 async function loadDefaultChannels() {
   const defaultChannels = [
