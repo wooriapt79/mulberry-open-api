@@ -246,7 +246,7 @@ const PORT = process.env.PORT || 3000;
 async function start() {
   console.log('🚀 Mulberry Mission Control Starting (v3.2)...');
   await setupRedis();
-  await loadDefaultChannels();h
+  await loadDefaultChannels();
 
   server.listen(PORT, () => {
     console.log(`✅ Server running on port ${PORT}`);
