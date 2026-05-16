@@ -494,7 +494,73 @@
     <div id="section-mhc-overview" class="section-container">
       <h2>📊 Overview</h2>
       <div class="dashboard-grid">
-        <!-- 기존 Mission Control Dashboard 내용 -->
+<!-- Mulberry Mission Control Overview - Trang 2026-05-16 -->
+          <div class="overview-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;padding:16px 0">
+
+            <!-- 핵심 지표 카드 -->
+            <div class="stat-card" style="background:#1a0f3a;border:1px solid #4c1d95;border-radius:12px;padding:20px;text-align:center">
+              <div style="font-size:2rem;font-weight:700;color:#a78bfa">3,247</div>
+              <div style="color:#94a3b8;margin-top:6px;font-size:0.85rem">총 거래 건수</div>
+              <div style="color:#34d399;font-size:0.75rem;margin-top:4px">&#x2b06; 전월 대비 +12%</div>
+            </div>
+
+            <div class="stat-card" style="background:#1a0f3a;border:1px solid #4c1d95;border-radius:12px;padding:20px;text-align:center">
+              <div style="font-size:2rem;font-weight:700;color:#34d399">97.2%</div>
+              <div style="color:#94a3b8;margin-top:6px;font-size:0.85rem">성공률</div>
+              <div style="color:#34d399;font-size:0.75rem;margin-top:4px">Spirit Score &#x2265; 0.75</div>
+            </div>
+
+            <div class="stat-card" style="background:#1a0f3a;border:1px solid #4c1d95;border-radius:12px;padding:20px;text-align:center">
+              <div style="font-size:2rem;font-weight:700;color:#f59e0b">&#x20a9;4.2M</div>
+              <div style="color:#94a3b8;margin-top:6px;font-size:0.85rem">총 거래액</div>
+              <div style="color:#94a3b8;font-size:0.75rem;margin-top:4px">인제군 공동구매</div>
+            </div>
+
+            <div class="stat-card" style="background:#1a0f3a;border:1px solid #4c1d95;border-radius:12px;padding:20px;text-align:center">
+              <div style="font-size:2rem;font-weight:700;color:#60a5fa">8 / 8</div>
+              <div style="color:#94a3b8;margin-top:6px;font-size:0.85rem">활성 에이전트</div>
+              <div style="color:#34d399;font-size:0.75rem;margin-top:4px">&#x25cf; 전원 정상</div>
+            </div>
+
+            <div class="stat-card" style="background:#1a0f3a;border:1px solid #4c1d95;border-radius:12px;padding:20px;text-align:center">
+              <div style="font-size:2rem;font-weight:700;color:#f472b6">147</div>
+              <div style="color:#94a3b8;margin-top:6px;font-size:0.85rem">지원 어르신</div>
+              <div style="color:#a78bfa;font-size:0.75rem;margin-top:4px">식품접근성 +148%</div>
+            </div>
+
+            <div class="stat-card" style="background:#1a0f3a;border:1px solid #4c1d95;border-radius:12px;padding:20px;text-align:center">
+              <div style="font-size:2rem;font-weight:700;color:#34d399">99.92%</div>
+              <div style="color:#94a3b8;margin-top:6px;font-size:0.85rem">서버 가동률</div>
+              <div style="color:#94a3b8;font-size:0.75rem;margin-top:4px">Latency P50: 170ms</div>
+            </div>
+          </div>
+
+          <!-- 시스템 상태 패널 -->
+          <div style="background:#1a0f3a;border:1px solid #312e81;border-radius:12px;padding:20px;margin-top:8px">
+            <h3 style="color:#a78bfa;margin-bottom:12px;font-size:1rem">&#x1f4e1; 시스템 상태</h3>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="color:#34d399">&#x25cf;</span>
+                <span style="color:#e2e8f0;font-size:0.85rem">Mission Control API</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="color:#34d399">&#x25cf;</span>
+                <span style="color:#e2e8f0;font-size:0.85rem">Redis</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="color:#34d399">&#x25cf;</span>
+                <span style="color:#e2e8f0;font-size:0.85rem">Socket.IO</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="color:#34d399">&#x25cf;</span>
+                <span style="color:#e2e8f0;font-size:0.85rem">Agent Gateway</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px" id="health-api-status">
+                <span style="color:#fbbf24" id="health-dot">&#x25cf;</span>
+                <span style="color:#e2e8f0;font-size:0.85rem">/api/health</span>
+              </div>
+            </div>
+          </div>
       </div>
     </div>
     
