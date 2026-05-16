@@ -1279,7 +1279,7 @@ try {
   });
   socket.on('disconnect', () => {
     document.getElementById('wsStatus').textContent = '● OFFLINE';
-    document.getElementById('wsStatus').style.color: = '#ef4444';
+    document.getElementById('wsStatus').style.color = '#ef4444';
   });
   socket.on('field_update', (data) => {
     if (data.type === 'event') addFeedItem(data.eventType || 'send-broadcast');
