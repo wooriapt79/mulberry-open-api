@@ -223,6 +223,20 @@ app.get('/v1/tools', (req, res) => {
   });
 });
 
+// /api/services — 배포 서비스 현황 (Trang 2026-05-18)
+app.get('/api/services', (req, res) => {
+    res.json({
+          services: [
+            { id: 'mission-control', name: 'Mission Control', description: '통합 관제 시스템', url: 'https://mulberry-mission-control-production.up.railway.app', version: 'v3.2.2', status: 'active', icon: '🎯' },
+            { id: 'agent-gateway', name: 'Agent Gateway', description: 'AI 도구 게이트웨이 (FastAPI)', url: 'https://loving-education-production-cc9e.up.railway.app', version: 'v1.0', status: 'active', icon: '🔗' },
+            { id: 'open-api', name: 'Mulberry Open API', description: 'Streamlit 에이전트 인터페이스', url: 'https://mulberry-open-api-production.up.railway.app', version: 'v1.0', status: 'active', icon: '📡' },
+            { id: 'research-lab', name: 'Research Lab', description: '연구 플랫폼 (FastAPI)', url: 'https://mulberry-research-lab-production.up.railway.app', version: 'v1.0', status: 'active', icon: '🔬' }
+                ],
+          count: 4,
+          timestamp: new Date()
+    });
+});
+
 // 기본 채널 생성
 async function loadDefaultChannels() {
   const defaultChannels = [
