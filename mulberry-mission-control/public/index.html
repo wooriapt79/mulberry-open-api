@@ -493,7 +493,7 @@
     <!-- Overview Section -->
     <div id="section-mhc-overview" class="section-container">
       <h2>📊 Overview</h2>
-      <div class="dashboard-grid">
+      <div class="dashboard-grid"><div id="deployed-services" style="margin-bottom:24px;padding:16px 0"><h3 style="color:#a78bfa;margin-bottom:14px;font-size:0.85rem;letter-spacing:1.5px;text-transform:uppercase">🚀 배포 서비스 현황</h3><div id="services-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px"></div></div>
 <!-- Mulberry Mission Control Overview - Trang 2026-05-16 -->
           <div class="overview-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;padding:16px 0">
 
@@ -973,7 +973,7 @@
 // 🌾 Mulberry Mission Control — JS Core
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-// ── 시계 ──
+fetch('/api/services').then(r=>r.json()).then(d=>{const g=document.getElementById('services-grid');if(g)g.innerHTML=d.services.map(s=>`<a href="${s.url}" target="_blank" style="text-decoration:none"><div style="background:#1a0f3a;border:1px solid #4c1d95;border-radius:10px;padding:14px;margin:2px;transition:border-color 0.2s" onmouseover="this.style.borderColor='#a78bfa'" onmouseout="this.style.borderColor='#4c1d95'"><div style="font-size:1.3rem">${s.icon}</div><div style="font-weight:700;color:#f1f5f9;font-size:0.82rem;margin:4px 0">${s.name}</div><div style="color:#94a3b8;font-size:0.72rem;margin-bottom:6px">${s.description}</div><span style="font-size:0.68rem;color:#34d399;background:rgba(16,185,129,0.1);padding:2px 6px;border-radius:4px">${s.version} ● 운영중</span></div></a>`).join('')}).catch(e=>console.warn('서비스 로드 실패',e)); // ── 시계 ──ashboard-grid"><div id="deployed-services" style="margin-bottom:24px;padding:16px 0"><h3 style="color:#a78bfa;margin-bottom:14px;font-size:0.85rem;letter-spacing:1.5px;text-transform:uppercase">🚀 배포 서비스 현황</h3><div id="services-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px"></div></div>
 function tickClock() {
   const now = new Date();
   document.getElementById('headerTime').textContent =
