@@ -418,3 +418,27 @@
   font-size: 16px;
   margin-bottom: 12px;
 }
+
+/* ===== CSS Specificity Fix — Trang 2026-06-13 ===== */
+/* 브라우저 기본 a:link 파란색 오버라이드 */
+a.nav-item,
+a.nav-item:link,
+a.nav-item:visited {
+  color: rgba(255, 255, 255, 0.8) !important;
+  text-decoration: none !important;
+}
+a.nav-item:hover { color: #ffffff !important; }
+a.nav-item.active,
+a.nav-item.active:link,
+a.nav-item.active:visited { color: #ffffff !important; }
+a.sub-nav-item,
+a.sub-nav-item:link,
+a.sub-nav-item:visited {
+  color: rgba(255, 255, 255, 0.7) !important;
+  text-decoration: none !important;
+}
+a.sub-nav-item:hover { color: #ffffff !important; }
+a.sub-nav-item.active,
+a.sub-nav-item.active:link { color: #58a6ff !important; }
+.user-dropdown a:link,
+.user-dropdown a:visited { color: #c9d1d9 !important; }
