@@ -176,35 +176,31 @@ class StewardPassportPanel {
     return 'trang'; // 기본값
   }
 
-  // Passport 로드 (현재: mock, 추후: /api/passport/:id)
+  // Passport 로드 — /api/passport/:id (Issue #21 Phase 1, Koda 2026-06-13)
   async _loadPassport() {
     try {
-      // TODO: Koda API 완성 후 활성화
-      // const res = await fetch(`/api/passport/${this.currentUser}`, {
-      //   headers: { 'Authorization': 'Bearer ' + localStorage.getItem('mulberry_token') }
-      // });
-      // this.passport = await res.json();
-
-      // 현재: mock 데이터
-      this.passport = MOCK_PASSPORTS[this.currentUser] || MOCK_PASSPORTS['trang'];
+      const res = await fetch(`/api/passport/${this.currentUser}`);
+      if (!res.ok) throw new Error(`passport API ${res.status}`);
+      this.passport = await res.json();
     } catch(e) {
-      console.error('Passport load failed:', e);
-      this.passport = MOCK_PASSPORTS['trang'];
+      console.error('Passport load failed, fallback to mock:', e);
+      this.passport = MOCK_PASSPORTS[this.currentUser] || MOCK_PASSPORTS['trang'];
     }
   }
 
-  // Mandate 로드 (현재: mock, 추후: /api/mandate/:id)
+  // Mandate 로드 — /api/mandate/:id (Issue #21 Phase 1, Koda 2026-06-13)
   async _loadMandate() {
     try {
-      // TODO: Koda API 완성 후 활성화
-      // const res = await fetch(`/api/mandate/${this.currentUser}`, {
-      //   headers: { 'Authorization': 'Bearer ' + localStorage.getItem('mulberry_token') }
-      // });
-      // this.mandate = await res.json();
-
-      this.mandate = MOCK_MANDATES[this.currentUser] || null;
+      const res = await fetch(`/api/mandate/${this.currentUser}`);
+      if (!res.ok) {
+        // mandate 없는 사용자(예: kbin, malu)는 정상적으로 404 — 패널에서 mandate 섹션만 생략
+        this.mandate = null;
+        return;
+      }
+      this.mandate = await res.json();
     } catch(e) {
-      console.error('Mandate load failed:', e);
+      console.error('Mandate load failed, fallback to mock:', e);
+      this.mandate = MOCK_MANDATES[this.currentUser] || null;
     }
   }
 

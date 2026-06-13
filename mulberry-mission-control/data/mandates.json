@@ -1,0 +1,32 @@
+{
+  "trang": {
+    "title": "Operation Manager — Phase 2",
+    "authorizedTasks": [
+      "History.md 관리 및 기록",
+      "팀 조율 및 보고",
+      "Profiling 연구",
+      "GitHub Issue 관리",
+      "Steward Workspace 프론트 구현"
+    ],
+    "restrictions": [
+      "docs/architecture/ 수정 불가 → Kbin 승인 필요",
+      "Railway 배포 불가 → Koda 권한",
+      "비즈니스 계약 결정 불가 → CEO 판단"
+    ],
+    "issuedBy": "CEO re.eul",
+    "validUntil": null
+  },
+  "koda": {
+    "title": "CTO — DAY2 개발",
+    "authorizedTasks": [
+      "Railway 전체 배포 및 관리",
+      "Issue #98 AI-SIEM 착수",
+      "Issue #102 Aurora Retry 재정의",
+      "Issue #21 Steward API 구현",
+      "서버·인프라 전권"
+    ],
+    "restrictions": ["전략 방향 변경 → CEO 승인"],
+    "issuedBy": "CEO re.eul",
+    "validUntil": null
+  }
+}
