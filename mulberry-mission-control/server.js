@@ -237,6 +237,29 @@ app.get('/api/services', (req, res) => {
     });
 });
 
+// ==================== Steward Workspace API (Issue #21, Koda 2026-06-13) ====================
+// Phase 1: Passport / Mandate 조회 — steward-workspace-ui.js의 MOCK_PASSPORTS / MOCK_MANDATES 대체
+const PASSPORTS = require('./data/passports.json');
+const MANDATES = require('./data/mandates.json');
+
+// GET /api/passport/:id — Steward Workspace Passport Panel
+app.get('/api/passport/:id', (req, res) => {
+  const passport = PASSPORTS[req.params.id];
+  if (!passport) {
+    return res.status(404).json({ error: `passport not found: ${req.params.id}` });
+  }
+  res.json(passport);
+});
+
+// GET /api/mandate/:id — Steward Workspace Mandate Panel
+app.get('/api/mandate/:id', (req, res) => {
+  const mandate = MANDATES[req.params.id];
+  if (!mandate) {
+    return res.status(404).json({ error: `mandate not found: ${req.params.id}` });
+  }
+  res.json(mandate);
+});
+
 // 기본 채널 생성
 async function loadDefaultChannels() {
   const defaultChannels = [
