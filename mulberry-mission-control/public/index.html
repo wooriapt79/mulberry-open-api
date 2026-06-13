@@ -1362,5 +1362,16 @@ setInterval(loadTrust, 30000);
 setInterval(loadEvents, 10000);
 </script>
   <script src="/js/mission-control-menu-router.js"></script>
+<style>
+/* ===== Nav Color Fix — Trang 2026-06-13 inline fallback ===== */
+/* 외부 CSS 캐시 우회 — 인라인 !important 오버라이드 */
+a.nav-item,a.nav-item:link,a.nav-item:visited{color:rgba(255,255,255,.8)!important;text-decoration:none!important}
+a.nav-item:hover{color:#fff!important}
+a.nav-item.active,a.nav-item.active:link,a.nav-item.active:visited{color:#fff!important}
+a.sub-nav-item,a.sub-nav-item:link,a.sub-nav-item:visited{color:rgba(255,255,255,.7)!important;text-decoration:none!important}
+a.sub-nav-item:hover{color:#fff!important}
+a.sub-nav-item.active,a.sub-nav-item.active:link{color:#58a6ff!important}
+.user-dropdown a:link,.user-dropdown a:visited{color:#c9d1d9!important}
+</style>
 </body>
 </html>
