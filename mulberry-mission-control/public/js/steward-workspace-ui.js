@@ -398,6 +398,101 @@ class StewardUserSelector {
   }
 }
 
+// ─── 팀 액티비티 피드 ────────────────────────────────────────────────────────────
+// TODO: /api/context/:workspaceId 연동 (Issue #21)
+const MOCK_ACTIVITY_FEED = [
+  {
+    type: 'system',
+    emoji: '🌿',
+    text: 'Steward Workspace에 오신 것을 환영합니다. 접속 즉시 Passport가 로드됩니다. 블랙아웃 후 복귀해도 혼선 없이 작업을 시작할 수 있습니다.',
+    time: null
+  },
+  {
+    type: 'message',
+    author: 'Trang Manager',
+    emoji: '🌿',
+    role: 'Operation Manager · PM',
+    text: 'Issue #21 생성 완료했습니다, 대표님. Koda에게 Passport API 스펙 전달했어요.',
+    time: '2026-06-13 오후'
+  },
+  {
+    type: 'status',
+    author: 'Koda',
+    emoji: '🔧',
+    role: 'CTO',
+    text: 'DAY2 착수 대기 중',
+    subtext: 'Issue #98 (AI-SIEM), Issue #102 (Aurora Retry), Issue #21 (Steward API)',
+    time: '2026-06-12'
+  },
+  {
+    type: 'system',
+    emoji: '🌿',
+    text: 'Nguyen Trang 패스포트 로드됨',
+    time: null
+  }
+];
+
+function renderChatFeed() {
+  const container = document.getElementById('chat-messages-container');
+  if (!container) return;
+
+  container.innerHTML = MOCK_ACTIVITY_FEED.map(item => {
+    if (item.type === 'system') {
+      return `
+        <div style="
+          display:flex; align-items:flex-start; gap:8px;
+          padding:10px 12px; margin-bottom:8px;
+          background:rgba(88,166,255,0.06);
+          border-left:2px solid rgba(88,166,255,0.4);
+          border-radius:0 6px 6px 0;
+        ">
+          <span style="font-size:14px;">${item.emoji}</span>
+          <span style="color:#8b949e; font-size:12px; line-height:1.5;">${item.text}</span>
+        </div>`;
+    }
+    if (item.type === 'message') {
+      return `
+        <div style="display:flex; gap:10px; padding:10px 0; margin-bottom:4px;">
+          <div style="
+            width:32px; height:32px; border-radius:50%; flex-shrink:0;
+            background:rgba(88,166,255,0.15);
+            display:flex; align-items:center; justify-content:center;
+            font-size:16px;
+          ">${item.emoji}</div>
+          <div style="flex:1;">
+            <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:3px;">
+              <span style="color:#c9d1d9; font-size:13px; font-weight:600;">${item.author}</span>
+              <span style="color:#484f58; font-size:11px;">${item.role}</span>
+              <span style="color:#484f58; font-size:10px; margin-left:auto;">${item.time}</span>
+            </div>
+            <div style="color:#b1bac4; font-size:13px; line-height:1.5;">${item.text}</div>
+          </div>
+        </div>`;
+    }
+    if (item.type === 'status') {
+      return `
+        <div style="display:flex; gap:10px; padding:10px 0; margin-bottom:4px;">
+          <div style="
+            width:32px; height:32px; border-radius:50%; flex-shrink:0;
+            background:rgba(245,158,11,0.15);
+            display:flex; align-items:center; justify-content:center;
+            font-size:16px;
+          ">${item.emoji}</div>
+          <div style="flex:1;">
+            <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:3px;">
+              <span style="color:#c9d1d9; font-size:13px; font-weight:600;">${item.author}</span>
+              <span style="color:#484f58; font-size:11px;">${item.role}</span>
+              <span style="color:#484f58; font-size:10px; margin-left:auto;">${item.time}</span>
+            </div>
+            <div style="color:#f59e0b; font-size:13px; font-weight:600; margin-bottom:2px;">⏳ ${item.text}</div>
+            <div style="color:#8b949e; font-size:11px;">${item.subtext}</div>
+          </div>
+        </div>`;
+    }
+    return '';
+  }).join('<div style="border-top:1px solid rgba(255,255,255,0.05); margin:2px 0;"></div>');
+}
+
 // ─── 초기화 ───────────────────────────────────────────────────────────────────
 const stewardPassportPanel = new StewardPassportPanel('steward-passport-panel');
 const stewardSelector = new StewardUserSelector('steward-user-selector', stewardPassportPanel);
@@ -405,6 +500,7 @@ const stewardSelector = new StewardUserSelector('steward-user-selector', steward
 document.addEventListener('DOMContentLoaded', async () => {
   stewardSelector.render();
   await stewardPassportPanel.init();
+  renderChatFeed();
   console.log('🌿 Steward Workspace initialized');
 });
 
