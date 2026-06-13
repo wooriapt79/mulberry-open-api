@@ -53,22 +53,22 @@ const MOCK_PASSPORTS = {
       pendingItems: ['Koda DAY2 지시서', 'Phase 2 Checkpoint (6/22)', 'Steward Workspace 프론트']
     }
   },
-  koda': {
+  'koda': {
     passportId: 'KD-2026-001',
     participantType: 'Agent',
     displayName: 'CTO Koda',
-    role: '최고기숀책을자',
+    role: '최고기술책임자',
     status: 'Active',
     emoji: '🔧',
     capabilities: {
-      toolAccess: ['Railway 배포', 'GitHub', 'DB', 'Server', '모든기숈 시숤템'],
-      canBorrow: ['전략 판단 → CEO', '운영 왔의 → Trang'],
-      canLend: ['Railway 배포 권한', 'API 개발', 'DB 쀑근']
+      toolAccess: ['Railway 배포', 'GitHub', 'DB', 'Server', '모든 기술 시스템'],
+      canBorrow: ['전략 판단 → CEO', '문서화 → Trang'],
+      canLend: ['Railway 배포 권한', 'API 개발', 'DB 접근']
     },
     lastSession: {
       date: '2026-06-12',
-      summary: 'PR #104 Ɒ야 Claude 전환 완료. PR #99 TrendCache 완료.',
-      pendingItems: ['Issue #98 AK-SIEM 착수', 'Issue #102 Aurora Retry 재정 의', 'Issue #21 Steward API']
+      summary: 'PR #104 백야 Claude 전환 완료. PR #99 TrendCache 완료.',
+      pendingItems: ['Issue #98 AI-SIEM 착수', 'Issue #102 Aurora Retry 재정의', 'Issue #21 Steward API']
     }
   },
   'kbin': {
