@@ -44,7 +44,7 @@ const MOCK_PASSPORTS = {
     emoji: '🌿',
     capabilities: {
       toolAccess: ['Cowork(Claude)', 'GitHub Editor', 'History.md', 'research/'],
-      canBorrow: ['Railway 배포 → Kode', 'DB 접근 → Koda', 'docs/architecture/ → Kbin 승인'],
+      canBorrow: ['Railway 배포 → Koda', 'DB 접근 → Koda', 'docs/architecture/ → Kbin 승인'],
       canLend: ['History.md', 'research/ 폴더', 'Profiling Study 시리즈']
     },
     lastSession: {
@@ -53,22 +53,22 @@ const MOCK_PASSPORTS = {
       pendingItems: ['Koda DAY2 지시서', 'Phase 2 Checkpoint (6/22)', 'Steward Workspace 프론트']
     }
   },
-  'koda': {
+  koda': {
     passportId: 'KD-2026-001',
     participantType: 'Agent',
     displayName: 'CTO Koda',
-    role: '최고기술책임자',
+    role: '최고기숀책을자',
     status: 'Active',
     emoji: '🔧',
     capabilities: {
-      toolAccess: ['Railway 배포', 'GitHub', 'DB', 'Server', '모든 기술 시스템'],
-      canBorrow: ['전략 판단 → CEO', '문서화 → Trang'],
-      canLend: ['Railway 배포 권한', 'API 개발', 'DB 접근']
+      toolAccess: ['Railway 배포', 'GitHub', 'DB', 'Server', '모든기숈 시숤템'],
+      canBorrow: ['전략 판단 → CEO', '운영 왔의 → Trang'],
+      canLend: ['Railway 배포 권한', 'API 개발', 'DB 쀑근']
     },
     lastSession: {
       date: '2026-06-12',
-      summary: 'PR #104 백야 Claude 전환 완료. PR #99 TrendCache 완료.',
-      pendingItems: ['Issue #98 AI-SIEM 착수', 'Issue #102 Aurora Retry 재정의', 'Issue #21 Steward API']
+      summary: 'PR #104 Ɒ야 Claude 전환 완료. PR #99 TrendCache 완료.',
+      pendingItems: ['Issue #98 AK-SIEM 착수', 'Issue #102 Aurora Retry 재정 의', 'Issue #21 Steward API']
     }
   },
   'kbin': {
@@ -395,6 +395,7 @@ class StewardUserSelector {
 
   select(userId) {
     this.passportPanel.switchUser(userId);
+    if (typeof updateChatInputUser === 'function') updateChatInputUser(userId);
   }
 }
 
@@ -493,7 +494,118 @@ function renderChatFeed() {
   }).join('<div style="border-top:1px solid rgba(255,255,255,0.05); margin:2px 0;"></div>');
 }
 
-// ─── 초기화 ───────────────────────────────────────────────────────────────────
+// ─── 채팅 입력창 ─────────────────────────────────────────────────────────────
+function renderChatInput() {
+  const section = document.getElementById('section-chat-messages');
+  if (!section) return;
+
+  // 중복 생성 방지
+  if (document.getElementById('chat-input-wrapper')) return;
+
+  const currentUser = localStorage.getItem('mulberry_user_id') || 'trang';
+  const passport = MOCK_PASSPORTS[currentUser] || MOCK_PASSPORTS['trang'];
+
+  const wrapper = document.createElement('div');
+  wrapper.id = 'chat-input-wrapper';
+  wrapper.style.cssText = 'margin-top:16px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.1);';
+  wrapper.innerHTML = `
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div id="chat-input-avatar" style="
+        width:32px; height:32px; border-radius:50%; flex-shrink:0;
+        background:rgba(88,166,255,0.15);
+        display:flex; align-items:center; justify-content:center;
+        font-size:16px;
+      " title="${passport.displayName}">${passport.emoji}</div>
+      <input
+        id="chat-input-field"
+        type="text"
+        placeholder="팀에게 메시지 보내기..."
+        style="
+          flex:1;
+          background:rgba(255,255,255,0.06);
+          border:1px solid rgba(255,255,255,0.15);
+          border-radius:8px;
+          padding:9px 14px;
+          color:#c9d1d9;
+          font-size:13px;
+          font-family:'Segoe UI',sans-serif;
+          outline:none;
+          transition:border-color 0.2s;
+        "
+        onfocus="this.style.borderColor='rgba(88,166,255,0.5)'"
+        onblur="this.style.borderColor='rgba(255,255,255,0.15)'"
+        onkeydown="if(event.key==='Enter') sendChatMessage()"
+      />
+      <button onclick="sendChatMessage()" style="
+        background:rgba(88,166,255,0.2);
+        border:1px solid rgba(88,166,255,0.4);
+        border-radius:8px;
+        color:#58a6ff;
+        padding:8px 14px;
+        font-size:13px;
+        cursor:pointer;
+        white-space:nowrap;
+        transition:all 0.2s;
+      "
+      onmouseover="this.style.background='rgba(88,166,255,0.35)'"
+      onmouseout="this.style.background='rgba(88,166,255,0.2)'"
+      >전송 ↵</button>
+    </div>
+    <div id="chat-input-hint" style="color:#484f58; font-size:10px; margin-top:5px; padding-left:42px;">
+      ${passport.displayName} · ${passport.role} · Enter 또는 전송 버튼
+    </div>
+  `;
+
+  section.appendChild(wrapper);
+}
+
+function sendChatMessage() {
+  const input = document.getElementById('chat-input-field');
+  if (!input) return;
+
+  const text = input.value.trim();
+  if (!text) return;
+
+  const currentUser = localStorage.getItem('mulberry_user_id') || 'trang';
+  const passport = MOCK_PASSPORTS[currentUser] || MOCK_PASSPORTS['trang'];
+
+  const now = new Date();
+  const timeStr = now.toLocaleString('ko-KR', {
+    month: 'long', day: 'numeric',
+    hour: 'numeric', minute: '2-digit'
+  });
+
+  // 새 메시지 피드 맨 아래에 추가 (시간순)
+  MOCK_ACTIVITY_FEED.push({
+    type: 'message',
+    author: passport.displayName,
+    emoji: passport.emoji,
+    role: passport.role,
+    text: text,
+    time: timeStr
+  });
+
+  renderChatFeed();
+
+  // 입력창 초기화 후 포커스
+  input.value = '';
+  input.focus();
+
+  // 메시지 목록 스크롤 맨 아래로
+  const container = document.getElementById('chat-messages-container');
+  if (container) container.scrollTop = container.scrollHeight;
+}
+
+// 사용자 전환 시 입력창 아바타·힌트 업데이트
+function updateChatInputUser(userId) {
+  const passport = MOCK_PASSPORTS[userId] || MOCK_PASSPORTS['trang'];
+  const avatar = document.getElementById('chat-input-avatar');
+  const hint = document.getElementById('chat-input-hint');
+  if (avatar) { avatar.textContent = passport.emoji; avatar.title = passport.displayName; }
+  if (hint) hint.textContent = `${passport.displayName} · ${passport.role} · Enter 또는 전송 버튼`;
+}
+
+// ─── 초기화 ──────────────────────────────────────────────────────────────────
 const stewardPassportPanel = new StewardPassportPanel('steward-passport-panel');
 const stewardSelector = new StewardUserSelector('steward-user-selector', stewardPassportPanel);
 
@@ -501,8 +613,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   stewardSelector.render();
   await stewardPassportPanel.init();
   renderChatFeed();
+  renderChatInput();
   console.log('🌿 Steward Workspace initialized');
 });
 
 window.stewardPassportPanel = stewardPassportPanel;
 window.stewardSelector = stewardSelector;
+window.sendChatMessage = sendChatMessage;
+window.renderChatInput = renderChatInput;
+window.updateChatInputUser = updateChatInputUser;
