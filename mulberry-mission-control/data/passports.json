@@ -6,6 +6,7 @@
     "role": "대표이사",
     "status": "Active",
     "emoji": "👑",
+    "pinHash": "888b19a43b151683c87895f6211d9f8640f97bdc8ef32f03dbe057c8f5e56d32",
     "capabilities": {
       "toolAccess": ["Mission Control", "GitHub", "Railway", "All Systems"],
       "canBorrow": [],
@@ -24,6 +25,7 @@
     "role": "Operation Manager · PM",
     "status": "Active",
     "emoji": "🌿",
+    "pinHash": "4fac6dbe26e823ed6edf999c63fab3507119cf3cbfb56036511aa62e258c35b4",
     "capabilities": {
       "toolAccess": ["Cowork(Claude)", "GitHub Editor", "History.md", "research/"],
       "canBorrow": ["Railway 배포 → Koda", "DB 접근 → Koda", "docs/architecture/ → Kbin 승인"],
@@ -42,6 +44,7 @@
     "role": "최고기술책임자",
     "status": "Active",
     "emoji": "🔧",
+    "pinHash": "446e21f212ab200933c4c9a0802e1ff0c410bbd75fca10168746fc49883096db",
     "capabilities": {
       "toolAccess": ["Railway 배포", "GitHub", "DB", "Server", "모든 기술 시스템"],
       "canBorrow": ["전략 판단 → CEO", "문서화 → Trang"],
@@ -60,6 +63,7 @@
     "role": "최고전략아키텍트",
     "status": "Active",
     "emoji": "🏛️",
+    "pinHash": "0591b59c1bdd9acd2847a202ddd02c3f14f9b5a049a5707c3279c1e967745ed4",
     "capabilities": {
       "toolAccess": ["docs/architecture/", "Protocol 설계", "Source of Truth 관리"],
       "canBorrow": ["현장 운영 데이터 → Trang"],
@@ -78,6 +82,7 @@
     "role": "법률·전략 자문",
     "status": "Active",
     "emoji": "⚖️",
+    "pinHash": "1ed8eb363bcd64c52f5f8703ecd464008979ac2ef462e6c5df342fe56c561bd5",
     "capabilities": {
       "toolAccess": ["법률 검토", "마케팅 전략", "코드 리뷰(2차)", "consensus_utils.py"],
       "canBorrow": ["기술 구현 → Koda", "운영 조율 → Trang"],

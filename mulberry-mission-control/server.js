@@ -260,6 +260,112 @@ app.get('/api/mandate/:id', (req, res) => {
   res.json(mandate);
 });
 
+// ==================== Steward Workspace API Phase 2 (Issue #21, Koda 2026-06-15) ====================
+// POST /api/auth/steward-login + GET/POST /api/context/:workspaceId + POST /api/messages
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'mulberry-steward-secret-2026';
+const STEWARD_WORKSPACE_ID = 'mulberry-steward-ws';
+
+function sha256(value) {
+  return crypto.createHash('sha256').update(String(value)).digest('hex');
+}
+
+// POST /api/auth/steward-login — passportId + pin → JWT
+app.post('/api/auth/steward-login', (req, res) => {
+  const { passportId, pin } = req.body || {};
+  const entry = Object.values(PASSPORTS).find(p => p.passportId === passportId);
+
+  if (!entry || !entry.pinHash || sha256(pin) !== entry.pinHash) {
+    return res.status(401).json({ error: 'invalid passportId or pin' });
+  }
+
+  const token = jwt.sign(
+    { passportId: entry.passportId, displayName: entry.displayName, role: entry.role },
+    JWT_SECRET,
+    { expiresIn: '24h' }
+  );
+
+  res.json({ token, workspaceId: STEWARD_WORKSPACE_ID });
+});
+
+// Steward JWT 인증 미들웨어
+function requireStewardAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'missing bearer token' });
+  }
+  try {
+    req.steward = jwt.verify(authHeader.slice(7), JWT_SECRET);
+    next();
+  } catch (e) {
+    return res.status(401).json({ error: 'invalid or expired token' });
+  }
+}
+
+// GET /api/context/:workspaceId — Shared Context 조회
+app.get('/api/context/:workspaceId', requireStewardAuth, async (req, res) => {
+  if (!redisClient) {
+    return res.json({ workspaceId: req.params.workspaceId, context: {} });
+  }
+  try {
+    const raw = await redisClient.get(`context:${req.params.workspaceId}`);
+    res.json({ workspaceId: req.params.workspaceId, context: raw ? JSON.parse(raw) : {} });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/context/:workspaceId — Shared Context 갱신 (merge)
+app.post('/api/context/:workspaceId', requireStewardAuth, async (req, res) => {
+  if (!redisClient) {
+    return res.status(503).json({ error: 'Redis unavailable' });
+  }
+  try {
+    const key = `context:${req.params.workspaceId}`;
+    const existingRaw = await redisClient.get(key);
+    const existing = existingRaw ? JSON.parse(existingRaw) : {};
+    const updated = {
+      ...existing,
+      ...req.body,
+      updatedBy: req.steward.passportId,
+      updatedAt: new Date()
+    };
+    await redisClient.set(key, JSON.stringify(updated));
+    res.json({ workspaceId: req.params.workspaceId, context: updated });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/messages — Steward Workspace 채팅 메시지 (Socket.IO send_message와 동일 패턴)
+app.post('/api/messages', requireStewardAuth, async (req, res) => {
+  const { channelId, content } = req.body || {};
+  if (!channelId || !content) {
+    return res.status(400).json({ error: 'channelId and content required' });
+  }
+
+  const message = {
+    id: `msg_${Date.now()}`,
+    channelId,
+    userId: req.steward.passportId,
+    username: req.steward.displayName,
+    content,
+    timestamp: new Date()
+  };
+
+  if (redisClient) {
+    try {
+      await redisClient.zadd(`messages:${channelId}`, Date.now(), JSON.stringify(message));
+      await redisClient.zremrangebyrank(`messages:${channelId}`, 0, -101);
+    } catch (e) { /* silent */ }
+  }
+
+  io.to(channelId).emit('new_message', message);
+  res.status(201).json(message);
+});
+
 // 기본 채널 생성
 async function loadDefaultChannels() {
   const defaultChannels = [
