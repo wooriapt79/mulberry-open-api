@@ -15,6 +15,7 @@ const path = require('path');
 const socketIO = require('socket.io');
 const Redis = require('ioredis');
 const { createAdapter } = require('@socket.io/redis-adapter');
+const { DecisionEventsManager } = require('./socket/decision-events');
 
 // ==================== Redis 설정 ====================
 const REDIS_CONFIG = {
@@ -87,6 +88,19 @@ const io = socketIO(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] },
   transports: ['websocket', 'polling']
 });
+
+// ==================== Decision Events (Issue #98 Phase 1, Koda 2026-06-15) ====================
+const decisionEvents = new DecisionEventsManager(io);
+decisionEvents.initialize();
+
+// 데모 시드 이벤트 — AgentRouter ↔ Mission Control 실시간 브리지 구축 전까지 Decision 패널 빈 상태 방지
+[
+  { action: 'PASS', decision_name: null, status_code: 200, spirit_score: 0.92, message: null },
+  { action: 'REROUTE', decision_name: 'rate_limit_429', status_code: 429, spirit_score: null, message: 'rate limited - rerouting' },
+  { action: 'RETRY', decision_name: 'server_error_503', status_code: 503, spirit_score: null, message: null },
+  { action: 'HOLD', decision_name: 'timeout_408', status_code: 408, spirit_score: null, message: 'Request Timeout - needs human review' },
+  { action: 'BLOCK', decision_name: 'ethics_block', status_code: 200, spirit_score: 0.5, message: 'spirit_score below policy_ethics threshold' }
+].forEach(seed => decisionEvents.recordEvent(seed));
 
 // Redis Adapter 초기화
 async function setupRedis() {
@@ -364,6 +378,23 @@ app.post('/api/messages', requireStewardAuth, async (req, res) => {
 
   io.to(channelId).emit('new_message', message);
   res.status(201).json(message);
+});
+
+// ==================== Decision Events API (Issue #98 Phase 1, Koda 2026-06-15) ====================
+// GET /api/events/decisions — Decision 메뉴 최초 로드용 history
+app.get('/api/events/decisions', (req, res) => {
+  const limit = parseInt(req.query.limit, 10) || 20;
+  res.json({ events: decisionEvents.getHistory(limit) });
+});
+
+// POST /api/events/decisions — AgentRouter(agent_router_decisions.jsonl)와 동일 포맷의 이벤트 수신 → 브로드캐스트
+app.post('/api/events/decisions', (req, res) => {
+  const { action, decision_name, status_code, spirit_score, message, event_id, timestamp } = req.body || {};
+  if (!action) {
+    return res.status(400).json({ error: 'action required' });
+  }
+  const event = decisionEvents.recordEvent({ action, decision_name, status_code, spirit_score, message, event_id, timestamp });
+  res.status(201).json(event);
 });
 
 // 기본 채널 생성

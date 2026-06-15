@@ -23,7 +23,9 @@ let moduleInstances = {
   skillBank: null,
   teamChat: null,
   agentDashboard: null,
-  missionControl: null
+  missionControl: null,
+  decisionStream: null,
+  monitorDashboard: null
 };
 
 // ==================== 모듈 상태 ====================
@@ -31,7 +33,9 @@ let moduleStates = {
   skillBank: 'uninitialized',   // uninitialized | initialized | error
   teamChat: 'uninitialized',
   agentDashboard: 'uninitialized',
-  missionControl: 'uninitialized'
+  missionControl: 'uninitialized',
+  decisionStream: 'uninitialized',
+  monitorDashboard: 'uninitialized'
 };
 
 // ==================== 유틸: 전역 객체 대기 ====================
@@ -133,6 +137,12 @@ class MissionControlRouter {
         break;
       case 'settings':
         this.showSettings(section);
+        break;
+      case 'decision':
+        this.showDecisionStream(section);
+        break;
+      case 'monitor':
+        this.showMonitorDashboard(section);
         break;
       default:
         console.warn(`Unknown module: ${moduleName}, fallback to mhc/overview`);
@@ -393,6 +403,66 @@ class MissionControlRouter {
     if (section) this.showSection('settings', section);
   }
 
+  // ==================== Decision (실시간 스트림) ====================
+
+  showDecisionStream(section) {
+    const container = document.getElementById('module-decision');
+    if (!container) return;
+    container.style.display = 'block';
+    if (section) this.showSection('decision', section);
+
+    if (moduleStates.decisionStream === 'uninitialized') {
+      this.initDecisionStream();
+    } else if (moduleStates.decisionStream === 'initialized' && moduleInstances.decisionStream) {
+      moduleInstances.decisionStream.refresh();
+    }
+  }
+
+  initDecisionStream() {
+    try {
+      if (typeof DecisionStreamUI === 'undefined') {
+        console.warn('DecisionStreamUI not loaded');
+        return;
+      }
+      moduleInstances.decisionStream = new DecisionStreamUI();
+      moduleInstances.decisionStream.init();
+      moduleStates.decisionStream = 'initialized';
+    } catch (err) {
+      console.error('Decision Stream init failed:', err);
+      moduleStates.decisionStream = 'error';
+    }
+  }
+
+  // ==================== Monitor (독립 대시보드) ====================
+
+  showMonitorDashboard(section) {
+    const container = document.getElementById('module-monitor');
+    if (!container) return;
+    container.style.display = 'block';
+    if (section) this.showSection('monitor', section);
+
+    if (moduleStates.monitorDashboard === 'uninitialized') {
+      this.initMonitorDashboard();
+    } else if (moduleStates.monitorDashboard === 'initialized' && moduleInstances.monitorDashboard) {
+      moduleInstances.monitorDashboard.refresh();
+    }
+  }
+
+  initMonitorDashboard() {
+    try {
+      if (typeof MonitorDashboard === 'undefined') {
+        console.warn('MonitorDashboard not loaded');
+        return;
+      }
+      moduleInstances.monitorDashboard = new MonitorDashboard();
+      moduleInstances.monitorDashboard.init();
+      moduleStates.monitorDashboard = 'initialized';
+    } catch (err) {
+      console.error('Monitor Dashboard init failed:', err);
+      moduleStates.monitorDashboard = 'error';
+    }
+  }
+
   // ==================== 섹션 표시 ====================
 
   showSection(module, section) {
@@ -464,7 +534,7 @@ window.moduleStates = moduleStates;
 
 const MissionControlModules = {
   mhc: {
-    id: 'mhc', name: 'Mission Control', icon: '🎯',
+    id: 'mhc', name: 'Mission Control', icon: '🎯', group: 'workspace',
     description: 'MCCC 통합 모니터링 대시보드', route: '#mhc',
     sections: [
       { id: 'overview', name: 'Overview', icon: '📊' },
@@ -476,7 +546,7 @@ const MissionControlModules = {
     ]
   },
   agents: {
-    id: 'agents', name: 'AI Agents', icon: '🤖',
+    id: 'agents', name: 'AI Agents', icon: '🤖', group: 'workspace',
     description: 'Agent 생성, 관리, 모니터링', route: '#agents',
     sections: [
       { id: 'create', name: 'Agent 생성', icon: '➕' },
@@ -488,7 +558,7 @@ const MissionControlModules = {
     ]
   },
   chat: {
-    id: 'chat', name: 'Team Chat', icon: '💬',
+    id: 'chat', name: 'Team Chat', icon: '💬', group: 'chat',
     description: '팀 단체 채팅 및 회의', route: '#chat',
     sections: [
       { id: 'channels', name: '채널 목록', icon: '📁' },
@@ -498,7 +568,7 @@ const MissionControlModules = {
     ]
   },
   skills: {
-    id: 'skills', name: 'Skill Bank', icon: '💡',
+    id: 'skills', name: 'Skill Bank', icon: '💡', group: 'workspace',
     description: '스킬 관리 및 배포', route: '#skills',
     sections: [
       { id: 'catalog', name: '스킬 카탈로그', icon: '📚' },
@@ -508,7 +578,7 @@ const MissionControlModules = {
     ]
   },
   coopbuy: {
-    id: 'coopbuy', name: '공동구매', icon: '🛒',
+    id: 'coopbuy', name: '공동구매', icon: '🛒', group: 'workspace',
     description: '공동구매 관리 및 모니터링', route: '#coopbuy',
     sections: [
       { id: 'active', name: '진행 중', icon: '🔴' },
@@ -518,7 +588,7 @@ const MissionControlModules = {
     ]
   },
   field: {
-    id: 'field', name: '현장 운영', icon: '🚛',
+    id: 'field', name: '현장 운영', icon: '🚛', group: 'workspace',
     description: '현장 거점 및 배달 관리', route: '#field',
     sections: [
       { id: 'map', name: '거점 지도', icon: '🗺️' },
@@ -528,7 +598,7 @@ const MissionControlModules = {
     ]
   },
   analytics: {
-    id: 'analytics', name: '분석', icon: '📈',
+    id: 'analytics', name: '분석', icon: '📈', group: 'workspace',
     description: '데이터 분석 및 리포트', route: '#analytics',
     sections: [
       { id: 'kpi', name: 'KPI', icon: '🎯' },
@@ -538,13 +608,27 @@ const MissionControlModules = {
     ]
   },
   settings: {
-    id: 'settings', name: '설정', icon: '⚙️',
+    id: 'settings', name: '설정', icon: '⚙️', group: 'workspace',
     description: '시스템 설정 및 관리', route: '#settings',
     sections: [
       { id: 'profile', name: '프로필', icon: '👤' },
       { id: 'notifications', name: '알림', icon: '🔔' },
       { id: 'api', name: 'API Keys', icon: '🔑' },
       { id: 'billing', name: '과금', icon: '💳' }
+    ]
+  },
+  decision: {
+    id: 'decision', name: 'Decision', icon: '⚖️', group: 'workspace',
+    description: 'Steward Decision Engine 실시간 라우팅 결정 스트림', route: '#decision',
+    sections: [
+      { id: 'stream', name: 'Live Stream', icon: '📡' }
+    ]
+  },
+  monitor: {
+    id: 'monitor', name: 'Monitor', icon: '📊', group: 'workspace',
+    description: '시스템 KPI 모니터링 대시보드', route: '#monitor',
+    sections: [
+      { id: 'overview', name: 'Overview', icon: '📈' }
     ]
   }
 };
@@ -561,11 +645,13 @@ function isCurrentSection(sectionId) {
   return hash.includes('/' + sectionId);
 }
 
-function renderMainNavigation() {
-  const nav = document.getElementById('main-navigation');
-  if (!nav) return;
-  const modules = Object.values(MissionControlModules);
-  nav.innerHTML = modules.map(m => `
+const NAV_GROUP_LABELS = {
+  workspace: 'Steward Workspace',
+  chat: 'Team Chat'
+};
+
+function renderNavItem(m) {
+  return `
     <a href="${m.route}"
        class="nav-item ${isCurrentModule(m.id) ? 'active' : ''}"
        data-module="${m.id}"
@@ -573,7 +659,25 @@ function renderMainNavigation() {
       <span class="nav-icon">${m.icon}</span>
       <span class="nav-label">${m.name}</span>
     </a>
-  `).join('');
+  `;
+}
+
+function renderMainNavigation() {
+  const nav = document.getElementById('main-navigation');
+  if (!nav) return;
+  const modules = Object.values(MissionControlModules);
+
+  const groups = ['workspace', 'chat'];
+  nav.innerHTML = groups.map(groupId => {
+    const groupModules = modules.filter(m => (m.group || 'workspace') === groupId);
+    if (groupModules.length === 0) return '';
+    return `
+      <div class="nav-group" data-group="${groupId}">
+        <span class="nav-group-label">${NAV_GROUP_LABELS[groupId] || groupId}</span>
+        ${groupModules.map(renderNavItem).join('')}
+      </div>
+    `;
+  }).join('');
 }
 
 function renderSubNavigation(moduleId) {
