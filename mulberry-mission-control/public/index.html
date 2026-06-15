@@ -726,10 +726,36 @@
       <h1>⚙️ Settings</h1>
       <p>시스템 설정</p>
     </div>
-    
+
     <div id="section-settings-profile" class="section-container">
       <h2>👤 프로필</h2>
       <!-- 프로필 설정 -->
+    </div>
+  </div>
+
+  <!-- 9. Decision (Steward Workspace - 실시간 이벤트 스트림) -->
+  <div id="module-decision" class="module-container">
+    <div class="module-header">
+      <h1>⚖️ Decision</h1>
+      <p>Steward Decision Engine 실시간 라우팅 결정 스트림 (BLOCK/REROUTE/RETRY/HOLD/PASS)</p>
+    </div>
+
+    <div id="section-decision-stream" class="section-container">
+      <h2>📡 Live Decision Stream</h2>
+      <div id="decision-stream-list" style="max-height:70vh;overflow-y:auto;display:flex;flex-direction:column;"></div>
+    </div>
+  </div>
+
+  <!-- 10. Monitor (Steward Workspace - 독립 모니터링 대시보드) -->
+  <div id="module-monitor" class="module-container">
+    <div class="module-header">
+      <h1>📊 Monitor</h1>
+      <p>시스템 KPI 모니터링 대시보드 (30초 자동 갱신)</p>
+    </div>
+
+    <div id="section-monitor-overview" class="section-container">
+      <h2>📈 Overview</h2>
+      <div id="monitor-dashboard-grid"></div>
     </div>
   </div>
 
@@ -737,6 +763,8 @@
 
 <!-- ==================== 스크립트 로드 ==================== -->
 <script src="/js/mission-control-menu-router.js"></script>
+<script src="/js/decision-stream-ui.js"></script>
+<script src="/js/monitor-dashboard-ui.js"></script>
 
 <!-- ━━━ HEADER ━━━ -->
 <div class="header">
@@ -1374,6 +1402,11 @@ a.sub-nav-item,a.sub-nav-item:link,a.sub-nav-item:visited{color:rgba(255,255,255
 a.sub-nav-item:hover{color:#fff!important}
 a.sub-nav-item.active,a.sub-nav-item.active:link{color:#58a6ff!important}
 .user-dropdown a:link,.user-dropdown a:visited{color:#c9d1d9!important}
+/* ===== Nav Group Split (Steward Workspace / Team Chat) — DAY3 2026-06-15 ===== */
+#main-navigation{display:flex;align-items:center;gap:18px}
+.nav-group{display:flex;align-items:center;gap:6px;padding:0 10px;border-right:1px solid rgba(255,255,255,.12)}
+.nav-group:last-child{border-right:none}
+.nav-group-label{font-size:0.65rem;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.4)!important;margin-right:4px}
 </style>
     <script src="/js/steward-workspace-ui.js"></script>
 </body>
