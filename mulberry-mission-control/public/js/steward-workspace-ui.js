@@ -144,6 +144,78 @@ const MOCK_MANDATES = {
   }
 };
 
+// ─── Steward Workspace API Phase 2 헬퍼 (Issue #21, Koda 2026-06-15) ─────────
+// passportId + PIN → JWT (data/passports.json의 pinHash와 매칭)
+const STEWARD_PINS = {
+  'admin': '0001',
+  'trang': '0002',
+  'koda': '0003',
+  'kbin': '0004',
+  'malu': '0005'
+};
+
+// 현재 사용자용 JWT 확보 (없거나 사용자가 바뀌었으면 재로그인)
+async function ensureStewardToken(userId) {
+  const existing = localStorage.getItem('mulberry_token');
+  const existingUser = localStorage.getItem('mulberry_token_user');
+  if (existing && existingUser === userId) return existing;
+
+  const passport = MOCK_PASSPORTS[userId] || MOCK_PASSPORTS['trang'];
+  const pin = STEWARD_PINS[userId];
+  if (!passport || !pin) return null;
+
+  try {
+    const res = await fetch('/api/auth/steward-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ passportId: passport.passportId, pin })
+    });
+    if (!res.ok) throw new Error(`steward-login API ${res.status}`);
+    const data = await res.json();
+    localStorage.setItem('mulberry_token', data.token);
+    localStorage.setItem('mulberry_token_user', userId);
+    localStorage.setItem('mulberry_workspace_id', data.workspaceId);
+    return data.token;
+  } catch (e) {
+    console.error('Steward login failed:', e);
+    return null;
+  }
+}
+
+// Shared Context 조회 — GET /api/context/:workspaceId
+async function loadSharedContext() {
+  const token = localStorage.getItem('mulberry_token');
+  const workspaceId = localStorage.getItem('mulberry_workspace_id') || 'mulberry-steward-ws';
+  if (!token) return null;
+  try {
+    const res = await fetch(`/api/context/${workspaceId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error(`context API ${res.status}`);
+    const data = await res.json();
+    return data.context;
+  } catch (e) {
+    console.error('Shared context load failed:', e);
+    return null;
+  }
+}
+
+// Shared Context 갱신 — POST /api/context/:workspaceId
+async function saveSharedContext(partial) {
+  const token = localStorage.getItem('mulberry_token');
+  const workspaceId = localStorage.getItem('mulberry_workspace_id') || 'mulberry-steward-ws';
+  if (!token) return;
+  try {
+    await fetch(`/api/context/${workspaceId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(partial)
+    });
+  } catch (e) {
+    console.error('Shared context save failed:', e);
+  }
+}
+
 // ─── StewardPassportPanel 클래스 ──────────────────────────────────────────────
 class StewardPassportPanel {
   constructor(containerId) {
@@ -156,6 +228,7 @@ class StewardPassportPanel {
   // 초기화 — 접속 시 자동 호출
   async init(userId) {
     this.currentUser = userId || this._detectCurrentUser();
+    await ensureStewardToken(this.currentUser);
     await this._loadPassport();
     await this._loadMandate();
     this._render();
@@ -347,6 +420,7 @@ class StewardPassportPanel {
   async switchUser(userId) {
     this.currentUser = userId;
     localStorage.setItem('mulberry_user_id', userId);
+    await ensureStewardToken(userId);
     await this._loadPassport();
     await this._loadMandate();
     this._render();
@@ -396,7 +470,20 @@ class StewardUserSelector {
 }
 
 // ─── 팀 액티비티 피드 ────────────────────────────────────────────────────────────
-// TODO: /api/context/:workspaceId 연동 (Issue #21)
+// /api/context/:workspaceId 연동 (Issue #21 Phase 2, Koda 2026-06-15)
+// Shared Context에 저장된 마지막 작업 메모를 피드 최상단에 복원
+async function restoreSharedContext() {
+  const ctx = await loadSharedContext();
+  if (!ctx || !ctx.lastMessage) return;
+
+  MOCK_ACTIVITY_FEED.push({
+    type: 'system',
+    emoji: '🔄',
+    text: `이전 세션 컨텍스트 복원 — ${ctx.updatedBy || 'unknown'}: "${ctx.lastMessage}"`,
+    time: ctx.updatedAt ? new Date(ctx.updatedAt).toLocaleString('ko-KR', { month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : null
+  });
+}
+
 const MOCK_ACTIVITY_FEED = [
   {
     type: 'system',
@@ -555,7 +642,8 @@ function renderChatInput() {
   section.appendChild(wrapper);
 }
 
-function sendChatMessage() {
+// POST /api/messages 연동 (Issue #21 Phase 2, Koda 2026-06-15)
+async function sendChatMessage() {
   const input = document.getElementById('chat-input-field');
   if (!input) return;
 
@@ -571,13 +659,33 @@ function sendChatMessage() {
     hour: 'numeric', minute: '2-digit'
   });
 
+  const token = await ensureStewardToken(currentUser);
+  let posted = false;
+
+  if (token) {
+    try {
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ channelId: 'devteam', content: text })
+      });
+      if (res.ok) {
+        posted = true;
+        // 다음 접속 시 복원할 수 있도록 Shared Context에 마지막 메시지 기록
+        saveSharedContext({ lastMessage: text });
+      }
+    } catch (e) {
+      console.error('Message send failed:', e);
+    }
+  }
+
   // 새 메시지 피드 맨 아래에 추가 (시간순)
   MOCK_ACTIVITY_FEED.push({
     type: 'message',
     author: passport.displayName,
     emoji: passport.emoji,
     role: passport.role,
-    text: text,
+    text: text + (posted ? '' : ' (오프라인 — 로컬에만 표시)'),
     time: timeStr
   });
 
@@ -608,6 +716,7 @@ const stewardSelector = new StewardUserSelector('steward-user-selector', steward
 document.addEventListener('DOMContentLoaded', async () => {
   stewardSelector.render();
   await stewardPassportPanel.init();
+  await restoreSharedContext();
   renderChatFeed();
   renderChatInput();
   console.log('🌿 Steward Workspace initialized');
