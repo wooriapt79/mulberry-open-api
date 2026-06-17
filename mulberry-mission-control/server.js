@@ -16,6 +16,8 @@ const socketIO = require('socket.io');
 const Redis = require('ioredis');
 const { createAdapter } = require('@socket.io/redis-adapter');
 const { DecisionEventsManager } = require('./socket/decision-events');
+const { SearchEventsManager } = require('./socket/search-events');
+const searchRouter = require('./routes/search');
 
 // ==================== Redis 설정 ====================
 const REDIS_CONFIG = {
@@ -92,6 +94,11 @@ const io = socketIO(server, {
 // ==================== Decision Events (Issue #98 Phase 1, Koda 2026-06-15) ====================
 const decisionEvents = new DecisionEventsManager(io);
 decisionEvents.initialize();
+
+// ==================== Search Events (DAY5, Issue #122) ====================
+const searchEvents = new SearchEventsManager(io);
+searchEvents.initialize();
+searchRouter.setSearchEvents(searchEvents);
 
 // 데모 시드 이벤트 — AgentRouter ↔ Mission Control 실시간 브리지 구축 전까지 Decision 패널 빈 상태 방지
 [
@@ -383,6 +390,10 @@ app.post('/api/messages', requireStewardAuth, async (req, res) => {
 // ==================== Metrics API (DAY4 Part C, Issue #117) ====================
 // GET /api/v1/metrics/overview — Monitor 패널 KPI 데이터 (requireAuth 미들웨어 포함)
 app.use('/api/v1/metrics', require('./routes/metrics'));
+
+// ==================== Search API (DAY5, Issue #122) ====================
+// POST /api/v1/search — MulberrySearchOrchestrator 10개 에이전트 병렬 검색
+app.use('/api/v1/search', searchRouter);
 
 // ==================== Decision Events API (Issue #98 Phase 1, Koda 2026-06-15) ====================
 // GET /api/events/decisions — Decision 메뉴 최초 로드용 history
