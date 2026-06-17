@@ -19,6 +19,16 @@ const { DecisionEventsManager } = require('./socket/decision-events');
 const { SearchEventsManager } = require('./socket/search-events');
 const searchRouter = require('./routes/search');
 
+// ==================== MongoDB 연결 ====================
+const mongoose = require('mongoose');
+if (process.env.MONGODB_URI) {
+  mongoose.connect(process.env.MONGODB_URI)
+    .then(() => console.log('MongoDB connected'))
+    .catch((err) => console.error('MongoDB connection error (metrics API will be unavailable):', err.message));
+} else {
+  console.warn('MONGODB_URI not set — metrics API will return errors');
+}
+
 // ==================== Redis 설정 ====================
 const REDIS_CONFIG = {
   url: process.env.REDIS_URL,
