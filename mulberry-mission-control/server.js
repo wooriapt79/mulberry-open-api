@@ -380,6 +380,10 @@ app.post('/api/messages', requireStewardAuth, async (req, res) => {
   res.status(201).json(message);
 });
 
+// ==================== Metrics API (DAY4 Part C, Issue #117) ====================
+// GET /api/v1/metrics/overview — Monitor 패널 KPI 데이터 (requireAuth 미들웨어 포함)
+app.use('/api/v1/metrics', require('./routes/metrics'));
+
 // ==================== Decision Events API (Issue #98 Phase 1, Koda 2026-06-15) ====================
 // GET /api/events/decisions — Decision 메뉴 최초 로드용 history
 app.get('/api/events/decisions', (req, res) => {

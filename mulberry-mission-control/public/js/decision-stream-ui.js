@@ -70,18 +70,35 @@ class DecisionStreamUI {
       background: #1a0f3a; border-radius: 8px; padding: 12px 16px;
       margin-bottom: 8px; display: flex; flex-direction: column; gap: 4px;
     `;
-    card.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-weight:700;">${label}</span>
-        <span style="color:#64748b;font-size:0.75rem;">${time}</span>
-      </div>
-      <div style="color:#e2e8f0;font-size:0.85rem;">
-        ${evt.decision_name ? `<strong>${evt.decision_name}</strong> &mdash; ` : ''}${evt.message || ''}
-      </div>
-      <div style="color:#64748b;font-size:0.75rem;">
-        status: ${evt.status_code ?? '-'} | spirit_score: ${evt.spirit_score ?? '-'} | ${evt.event_id || ''}
-      </div>
-    `;
+    // XSS 방지: innerHTML 대신 DOM API 사용 (DAY4 Part C)
+    const rowTop = document.createElement('div');
+    rowTop.style.cssText = 'display:flex;justify-content:space-between;align-items:center;';
+    const spanLabel = document.createElement('span');
+    spanLabel.style.fontWeight = '700';
+    spanLabel.textContent = label;
+    const spanTime = document.createElement('span');
+    spanTime.style.cssText = 'color:#64748b;font-size:0.75rem;';
+    spanTime.textContent = time;
+    rowTop.appendChild(spanLabel);
+    rowTop.appendChild(spanTime);
+
+    const rowMid = document.createElement('div');
+    rowMid.style.cssText = 'color:#e2e8f0;font-size:0.85rem;';
+    if (evt.decision_name) {
+      const strong = document.createElement('strong');
+      strong.textContent = evt.decision_name;
+      rowMid.appendChild(strong);
+      rowMid.appendChild(document.createTextNode(' — '));
+    }
+    rowMid.appendChild(document.createTextNode(evt.message || ''));
+
+    const rowBot = document.createElement('div');
+    rowBot.style.cssText = 'color:#64748b;font-size:0.75rem;';
+    rowBot.textContent = `status: ${evt.status_code ?? '-'} | spirit_score: ${evt.spirit_score ?? '-'} | ${evt.event_id || ''}`;
+
+    card.appendChild(rowTop);
+    card.appendChild(rowMid);
+    card.appendChild(rowBot);
 
     if (prepend) {
       this.container.appendChild(card);
