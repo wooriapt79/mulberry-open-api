@@ -759,12 +759,49 @@
     </div>
   </div>
 
+  <!-- 11. Search (Steward Workspace - 멀티에이전트 검색, DAY5 Issue #122) -->
+  <div id="module-search" class="module-container">
+    <div class="module-header">
+      <h1>🔍 Search</h1>
+      <p>Mulberry 멀티에이전트 검색 — 10개 도메인 전문가 병렬 실행 + Spirit Gate 필터링</p>
+    </div>
+
+    <div class="section-container">
+      <!-- 검색 입력 -->
+      <div style="display:flex;gap:10px;margin-bottom:16px;">
+        <input id="search-query-input" type="text" placeholder="예: 인제군 어르신 배추 공동구매 최적 시기는?"
+          style="flex:1;padding:10px 14px;border-radius:8px;border:1px solid #334155;
+                 background:#0f172a;color:#e2e8f0;font-size:0.9rem;outline:none;" />
+        <button id="search-submit-btn"
+          style="padding:10px 20px;border-radius:8px;background:#7c3aed;color:#fff;
+                 border:none;cursor:pointer;font-weight:700;font-size:0.9rem;">
+          검색
+        </button>
+      </div>
+
+      <!-- 상태 표시 -->
+      <div id="search-summary" style="color:#94a3b8;font-size:0.85rem;margin-bottom:14px;min-height:20px;"></div>
+
+      <!-- 에이전트 결과 카드 그리드 -->
+      <div id="search-agent-grid"
+        style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:20px;">
+      </div>
+
+      <!-- 종합 답변 -->
+      <div id="search-answer"
+        style="display:none;background:#0f172a;border:1px solid #334155;border-radius:10px;
+               padding:16px;color:#e2e8f0;font-size:0.88rem;line-height:1.7;white-space:pre-wrap;">
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <!-- ==================== 스크립트 로드 ==================== -->
 <script src="/js/mission-control-menu-router.js"></script>
 <script src="/js/decision-stream-ui.js"></script>
 <script src="/js/monitor-dashboard-ui.js"></script>
+<script src="/js/search-ui.js"></script>
 
 <!-- ━━━ HEADER ━━━ -->
 <div class="header">

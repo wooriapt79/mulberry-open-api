@@ -25,7 +25,8 @@ let moduleInstances = {
   agentDashboard: null,
   missionControl: null,
   decisionStream: null,
-  monitorDashboard: null
+  monitorDashboard: null,
+  searchUI: null
 };
 
 // ==================== 모듈 상태 ====================
@@ -35,7 +36,8 @@ let moduleStates = {
   agentDashboard: 'uninitialized',
   missionControl: 'uninitialized',
   decisionStream: 'uninitialized',
-  monitorDashboard: 'uninitialized'
+  monitorDashboard: 'uninitialized',
+  searchUI: 'uninitialized'
 };
 
 // ==================== 유틸: 전역 객체 대기 ====================
@@ -140,6 +142,9 @@ class MissionControlRouter {
         break;
       case 'decision':
         this.showDecisionStream(section);
+        break;
+      case 'search':
+        this.showSearchModule(section);
         break;
       case 'monitor':
         this.showMonitorDashboard(section);
@@ -463,6 +468,33 @@ class MissionControlRouter {
     }
   }
 
+  // ==================== Search (멀티에이전트, DAY5) ====================
+
+  showSearchModule(section) {
+    const container = document.getElementById('module-search');
+    if (!container) return;
+    container.style.display = 'block';
+
+    if (moduleStates.searchUI === 'uninitialized') {
+      this.initSearchUI();
+    }
+  }
+
+  initSearchUI() {
+    try {
+      if (typeof SearchUI === 'undefined') {
+        console.warn('SearchUI not loaded');
+        return;
+      }
+      moduleInstances.searchUI = new SearchUI();
+      moduleInstances.searchUI.init();
+      moduleStates.searchUI = 'initialized';
+    } catch (err) {
+      console.error('Search UI init failed:', err);
+      moduleStates.searchUI = 'error';
+    }
+  }
+
   // ==================== 섹션 표시 ====================
 
   showSection(module, section) {
@@ -629,6 +661,13 @@ const MissionControlModules = {
     description: '시스템 KPI 모니터링 대시보드', route: '#monitor',
     sections: [
       { id: 'overview', name: 'Overview', icon: '📈' }
+    ]
+  },
+  search: {
+    id: 'search', name: 'Search', icon: '🔍', group: 'workspace',
+    description: '멀티에이전트 검색 — 10개 도메인 전문가 병렬 실행', route: '#search',
+    sections: [
+      { id: 'query', name: '검색', icon: '🔍' }
     ]
   }
 };
