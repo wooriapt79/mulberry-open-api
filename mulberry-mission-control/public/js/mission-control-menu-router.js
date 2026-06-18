@@ -309,37 +309,17 @@ class MissionControlRouter {
     console.log('💬 Initializing Team Chat...');
 
     try {
-      // ✅ Trang 핵심 개선: window.teamChat 기존 인스턴스 재활용
-      // team-chat-frontend.js가 DOMContentLoaded 시 이미 초기화함
-      const existingInstance = await waitForGlobal('teamChat', 2000).catch(() => null);
-
-      // Issue #32: 로그인 실패로 깨진 인스턴스(socket 미연결) 는 무시하고 ChatUI fallback으로 진행
-      if (existingInstance && existingInstance.socket?.connected) {
-        moduleInstances.teamChat = existingInstance;
-        moduleStates.teamChat = 'initialized';
-        console.log('✅ Team Chat: reused existing window.teamChat instance');
-        return;
-      }
-
-      // Fallback 1: 기존 TeamChat 클래스
-      if (typeof TeamChat !== 'undefined') {
-        moduleInstances.teamChat = new TeamChat();
-        await moduleInstances.teamChat.init();
-        moduleStates.teamChat = 'initialized';
-        console.log('✅ Team Chat initialized (TeamChat instance)');
-        return;
-      }
-
-      // Fallback 2: DAY6 ChatUI (chat-ui.js)
+      // team-chat-frontend.js 제거(Issue #32) 이후 window.teamChat은 존재하지 않음
+      // ChatUI (chat-ui.js) 를 직접 사용
       if (typeof ChatUI !== 'undefined') {
         moduleInstances.teamChat = new ChatUI();
         moduleInstances.teamChat.init();
         moduleStates.teamChat = 'initialized';
-        console.log('✅ Team Chat initialized (ChatUI instance)');
+        console.log('✅ Team Chat initialized (ChatUI)');
         return;
       }
 
-      console.warn('⚠️ TeamChat / ChatUI class not found');
+      console.warn('⚠️ ChatUI class not found');
       moduleStates.teamChat = 'error';
       this._showErrorState('message-list', () => this.initTeamChat());
 
