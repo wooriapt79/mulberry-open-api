@@ -17,6 +17,7 @@ const Redis = require('ioredis');
 const { createAdapter } = require('@socket.io/redis-adapter');
 const { DecisionEventsManager } = require('./socket/decision-events');
 const { SearchEventsManager } = require('./socket/search-events');
+const { ChatEventsManager } = require('./socket/chat-events');
 const searchRouter = require('./routes/search');
 
 // ==================== MongoDB 연결 ====================
@@ -109,6 +110,10 @@ decisionEvents.initialize();
 const searchEvents = new SearchEventsManager(io);
 searchEvents.initialize();
 searchRouter.setSearchEvents(searchEvents);
+
+// ==================== Chat Events (DAY6, Issue #29) ====================
+const chatEvents = new ChatEventsManager(io);
+chatEvents.initialize();
 
 // 데모 시드 이벤트 — AgentRouter ↔ Mission Control 실시간 브리지 구축 전까지 Decision 패널 빈 상태 방지
 [
