@@ -293,17 +293,27 @@ class MissionControlRouter {
         return;
       }
 
-      // Fallback: 직접 생성
+      // Fallback 1: 기존 TeamChat 클래스
       if (typeof TeamChat !== 'undefined') {
         moduleInstances.teamChat = new TeamChat();
         await moduleInstances.teamChat.init();
         moduleStates.teamChat = 'initialized';
-        console.log('✅ Team Chat initialized (new instance)');
-      } else {
-        console.warn('⚠️ TeamChat class not found');
-        moduleStates.teamChat = 'error';
-        this._showErrorState('message-list', () => this.initTeamChat());
+        console.log('✅ Team Chat initialized (TeamChat instance)');
+        return;
       }
+
+      // Fallback 2: DAY6 ChatUI (chat-ui.js)
+      if (typeof ChatUI !== 'undefined') {
+        moduleInstances.teamChat = new ChatUI();
+        moduleInstances.teamChat.init();
+        moduleStates.teamChat = 'initialized';
+        console.log('✅ Team Chat initialized (ChatUI instance)');
+        return;
+      }
+
+      console.warn('⚠️ TeamChat / ChatUI class not found');
+      moduleStates.teamChat = 'error';
+      this._showErrorState('message-list', () => this.initTeamChat());
 
     } catch (error) {
       console.error('❌ Team Chat initialization failed:', error);

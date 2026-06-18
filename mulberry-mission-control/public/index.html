@@ -638,33 +638,29 @@
   <div id="module-chat" class="module-container">
     <div class="module-header">
       <h1>💬 Team Chat</h1>
-      <p>팀 단체 채팅 및 회의</p>
+      <p>팀 실시간 채팅 — #general / #dev / #research</p>
     </div>
-    
-<div id="steward-user-selector"></div>
-            <div id="steward-passport-panel"></div>
-                <!-- 채널 목록 Section -->
-    <div id="section-chat-channels" class="section-container">
-      <h2>📁 채널 목록</h2>
-      <div id="chat-channels-container">
-        <!-- 채널 목록 -->
-      </div>
-    </div>
-    
-    <!-- 메시지 Section -->
-    <div id="section-chat-messages" class="section-container">
-      <h2>✉️ 메시지</h2>
-      <div id="chat-messages-container">
-        <!-- 채팅 메시지 -->
-      </div>
-    </div>
-    
-    <!-- 회의실 Section -->
-    <div id="section-chat-meetings" class="section-container">
-      <h2>🎥 회의실</h2>
-      <div id="meetings-container">
-        <!-- 회의실 목록 -->
-      </div>
+
+    <!-- 채널 탭 -->
+    <div id="chat-channel-tabs" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;"></div>
+
+    <!-- 메시지 영역 -->
+    <div id="chat-messages" style="
+      height:420px; overflow-y:auto; background:#0f0a24;
+      border-radius:10px; padding:12px 16px; margin-bottom:12px;
+      border:1px solid rgba(124,58,237,0.2);
+    "></div>
+
+    <!-- 입력 영역 -->
+    <div style="display:flex;gap:8px;">
+      <input id="chat-input" type="text" placeholder="메시지를 입력하세요 (Enter 전송)" style="
+        flex:1; background:#1a0f3a; border:1px solid rgba(124,58,237,0.4);
+        border-radius:8px; padding:10px 14px; color:#e2e8f0; font-size:0.9rem; outline:none;
+      " />
+      <button id="chat-send-btn" style="
+        background:#7c3aed; color:#fff; border:none; border-radius:8px;
+        padding:10px 20px; font-weight:700; cursor:pointer; font-size:0.9rem;
+      ">전송</button>
     </div>
   </div>
 
@@ -802,6 +798,7 @@
 <script src="/js/decision-stream-ui.js"></script>
 <script src="/js/monitor-dashboard-ui.js"></script>
 <script src="/js/search-ui.js"></script>
+<script src="/js/chat-ui.js"></script>
 
 <!-- ━━━ HEADER ━━━ -->
 <div class="header">
