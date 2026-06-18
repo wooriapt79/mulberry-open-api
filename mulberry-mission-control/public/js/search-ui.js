@@ -93,9 +93,10 @@ class SearchUI {
 
       // 결과 렌더 (소켓 미연결 환경에서도 동작)
       this._resetGrid();
-      (data.domain_results || []).forEach((r) => this._renderAgentCard(r));
-      this._renderAnswer(data.answer || '');
-      this._setStatus(`✅ 완료 — ${data.passed_agents}/${data.total_agents}개 에이전트 통과`);
+      (data.domain_results || []).forEach((r) => this._renderAgentCard(r, data.source));
+      this._renderAnswer(data.answer || '', data.source);
+      const sourceBadge = data.source === 'real' ? '🟢 실 에이전트' : '🔵 Mock';
+      this._setStatus(`✅ 완료 — ${data.passed_agents}/${data.total_agents}개 에이전트 통과 ${sourceBadge}`);
     } catch (err) {
       this._setStatus(`❌ 오류: ${err.message}`);
     } finally {
@@ -103,12 +104,13 @@ class SearchUI {
     }
   }
 
-  _renderAgentCard(r) {
+  _renderAgentCard(r, source) {
     if (!this._gridEl) return;
     const label = AGENT_LABELS[r.domain] || r.domain;
     const passed = !r.error;
     const score = typeof r.spirit_score === 'number' ? r.spirit_score.toFixed(2) : '-';
     const insight = r.data ? (r.data.insight || JSON.stringify(r.data).slice(0, 120)) : '';
+    const srcBadge = (source || r.source) === 'real' ? '🟢' : '🔵';
 
     const card = document.createElement('div');
     card.style.cssText = `
@@ -126,7 +128,7 @@ class SearchUI {
 
     const badgeEl = document.createElement('span');
     badgeEl.style.cssText = `font-size:0.75rem;color:${passed ? '#22c55e' : '#ef4444'};`;
-    badgeEl.textContent = `${passed ? '✅' : '❌'} spirit ${score}`;
+    badgeEl.textContent = `${passed ? '✅' : '❌'} spirit ${score} ${srcBadge}`;
 
     header.appendChild(nameEl);
     header.appendChild(badgeEl);
@@ -140,10 +142,16 @@ class SearchUI {
     this._gridEl.appendChild(card);
   }
 
-  _renderAnswer(answer) {
+  _renderAnswer(answer, source) {
     if (!this._answerEl) return;
-    this._answerEl.textContent = answer;
-    this._answerEl.style.display = answer ? 'block' : 'none';
+    if (answer) {
+      const badge = source === 'real' ? ' 🟢 실 에이전트' : ' 🔵 Mock';
+      this._answerEl.textContent = answer + '\n\n[출처: ' + badge.trim() + ']';
+      this._answerEl.style.display = 'block';
+    } else {
+      this._answerEl.textContent = '';
+      this._answerEl.style.display = 'none';
+    }
   }
 
   _resetGrid() {
