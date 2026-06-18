@@ -643,26 +643,39 @@
       <p>팀 실시간 채팅 — #general / #dev / #research</p>
     </div>
 
-    <!-- 채널 탭 -->
-    <div id="chat-channel-tabs" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;flex-shrink:0;"></div>
+    <!-- 채팅 메인 UI (channels / messages 섹션) -->
+    <div id="chat-section-main" style="display:flex; flex-direction:column; flex:1; min-height:0;">
+      <!-- 채널 탭 -->
+      <div id="chat-channel-tabs" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;flex-shrink:0;"></div>
 
-    <!-- 메시지 영역 — flex:1 로 남은 공간 모두 차지 -->
-    <div id="chat-messages" style="
-      flex:1; min-height:0; overflow-y:auto; background:#0f0a24;
-      border-radius:10px; padding:12px 16px; margin-bottom:12px;
-      border:1px solid rgba(124,58,237,0.2);
-    "></div>
+      <!-- 메시지 영역 -->
+      <div id="chat-messages" style="
+        flex:1; min-height:0; overflow-y:auto; background:#0f0a24;
+        border-radius:10px; padding:12px 16px; margin-bottom:12px;
+        border:1px solid rgba(124,58,237,0.2);
+      "></div>
 
-    <!-- 입력 영역 — flex-shrink:0 으로 항상 하단 고정 -->
-    <div style="display:flex;gap:8px;flex-shrink:0;">
-      <input id="chat-input" type="text" placeholder="메시지를 입력하세요 (Enter 전송)" style="
-        flex:1; background:#1a0f3a; border:1px solid rgba(124,58,237,0.4);
-        border-radius:8px; padding:10px 14px; color:#e2e8f0; font-size:0.9rem; outline:none;
-      " />
-      <button id="chat-send-btn" style="
-        background:#7c3aed; color:#fff; border:none; border-radius:8px;
-        padding:10px 20px; font-weight:700; cursor:pointer; font-size:0.9rem;
-      ">전송</button>
+      <!-- 입력 영역 -->
+      <div style="display:flex;gap:8px;flex-shrink:0;">
+        <input id="chat-input" type="text" placeholder="메시지를 입력하세요 (Enter 전송)" style="
+          flex:1; background:#1a0f3a; border:1px solid rgba(124,58,237,0.4);
+          border-radius:8px; padding:10px 14px; color:#e2e8f0; font-size:0.9rem; outline:none;
+        " />
+        <button id="chat-send-btn" style="
+          background:#7c3aed; color:#fff; border:none; border-radius:8px;
+          padding:10px 20px; font-weight:700; cursor:pointer; font-size:0.9rem;
+        ">전송</button>
+      </div>
+    </div>
+
+    <!-- 준비 중 패널 (rooms / settings 섹션) -->
+    <div id="chat-section-placeholder" style="
+      display:none; flex:1; align-items:center; justify-content:center;
+      flex-direction:column; gap:12px; color:#6b7280;
+    ">
+      <div style="font-size:2.5rem;">🚧</div>
+      <div id="chat-placeholder-title" style="font-size:1rem; font-weight:600;"></div>
+      <div style="font-size:0.83rem;">다음 업데이트에서 제공됩니다.</div>
     </div>
   </div>
 

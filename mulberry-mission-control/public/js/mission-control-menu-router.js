@@ -269,12 +269,39 @@ class MissionControlRouter {
     if (moduleStates.teamChat === 'uninitialized') {
       await this.initTeamChat();
     } else if (moduleStates.teamChat === 'initialized' && moduleInstances.teamChat) {
-      // 재방문 시 채널 목록 새로고침 (Trang 개선)
       try {
         if (typeof moduleInstances.teamChat.loadChannels === 'function') {
           await moduleInstances.teamChat.loadChannels();
         }
       } catch (e) { /* silent */ }
+    }
+
+    // Issue #36: 서브메뉴 섹션 전환
+    this._showChatSection(section || 'messages');
+  }
+
+  _showChatSection(section) {
+    // channels / messages → 실제 채팅 UI 표시
+    // rooms / settings   → 준비 중 패널 표시
+    const chatMain = document.getElementById('chat-section-main');
+    const chatPlaceholder = document.getElementById('chat-section-placeholder');
+    const placeholderTitle = document.getElementById('chat-placeholder-title');
+
+    const PLACEHOLDER_SECTIONS = {
+      rooms:    '🎥 회의실 — DAY7 구현 예정',
+      settings: '⚙️ 채팅 설정 — DAY7 구현 예정',
+    };
+
+    if (PLACEHOLDER_SECTIONS[section]) {
+      if (chatMain) chatMain.style.display = 'none';
+      if (chatPlaceholder) {
+        chatPlaceholder.style.display = 'flex';
+        if (placeholderTitle) placeholderTitle.textContent = PLACEHOLDER_SECTIONS[section];
+      }
+    } else {
+      // channels / messages / default → 채팅 UI
+      if (chatMain) chatMain.style.display = 'flex';
+      if (chatPlaceholder) chatPlaceholder.style.display = 'none';
     }
   }
 
