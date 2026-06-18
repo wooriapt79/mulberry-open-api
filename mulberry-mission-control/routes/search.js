@@ -2,23 +2,59 @@
  * Search API Route
  * POST /api/v1/search
  *
- * MulberrySearchOrchestrator를 호출하고 결과를 JSON으로 반환.
- * 소켓이 연결된 경우 실시간 에이전트별 결과도 push.
+ * 1차: AGENCY_AGENTS_URL 설정 시 → 실 에이전트 HTTP 호출 (3초 타임아웃)
+ * 2차: 실패 시 → Mock fallback (source: 'mock')
  *
- * @author CTO Koda · DAY5 · 2026-06-17
+ * @author CTO Koda · DAY5~DAY6 · 2026-06-17~19
  */
 
 const express = require('express');
 const router = express.Router();
 const { randomUUID } = require('crypto');
+const http = require('http');
+const https = require('https');
 
 // SearchEventsManager는 server.js에서 주입받음
 let searchEvents = null;
 
+const AGENCY_URL = process.env.AGENCY_AGENTS_URL || null;
+const AGENCY_TIMEOUT = parseInt(process.env.AGENCY_AGENTS_TIMEOUT_MS || '3000', 10);
+
+/**
+ * 실 에이전트 서버 HTTP 호출 (Promise, timeout 적용)
+ */
+function _callAgencyAgents(query) {
+  return new Promise((resolve, reject) => {
+    if (!AGENCY_URL) return reject(new Error('AGENCY_AGENTS_URL not set'));
+
+    const url = new URL('/search', AGENCY_URL);
+    const body = JSON.stringify({ query });
+    const lib = url.protocol === 'https:' ? https : http;
+
+    const req = lib.request(
+      { hostname: url.hostname, port: url.port, path: url.pathname, method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } },
+      (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          try { resolve(JSON.parse(data)); }
+          catch (e) { reject(new Error('Invalid JSON from agency-agents')); }
+        });
+      }
+    );
+
+    req.setTimeout(AGENCY_TIMEOUT, () => { req.destroy(); reject(new Error('agency-agents timeout')); });
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
+
 /**
  * POST /api/v1/search
  * body: { query: string }
- * returns: SearchResult (JSON)
+ * returns: SearchResult (JSON) with source: 'real' | 'mock'
  */
 router.post('/', async (req, res) => {
   const { query } = req.body || {};
@@ -27,26 +63,40 @@ router.post('/', async (req, res) => {
   }
 
   const sessionId = randomUUID();
+  const q = query.trim();
 
   // 소켓 실시간 알림 시작
-  if (searchEvents) searchEvents.startSession(sessionId, query.trim());
+  if (searchEvents) searchEvents.startSession(sessionId, q);
 
-  // Mock 검색 결과 — Python orchestrator와 브리지 전까지 정적 응답 반환
-  // 실제 연동 시 python3 child_process 또는 HTTP 호출로 교체
-  const mockResults = _buildMockResults(query.trim());
+  let results;
+  let source = 'mock';
 
-  // 에이전트 결과 개별 push (SSE 흉내)
+  // 1차: 실 에이전트 시도
+  if (AGENCY_URL) {
+    try {
+      const real = await _callAgencyAgents(q);
+      results = { ...real, source: 'real' };
+      source = 'real';
+    } catch (err) {
+      console.warn(`[search] agency-agents 실패 (fallback to mock): ${err.message}`);
+      results = { ..._buildMockResults(q), source: 'mock' };
+    }
+  } else {
+    results = { ..._buildMockResults(q), source: 'mock' };
+  }
+
+  // 소켓 push
   if (searchEvents) {
-    for (const r of mockResults.domain_results) {
-      searchEvents.pushAgentResult(sessionId, r);
+    for (const r of results.domain_results) {
+      searchEvents.pushAgentResult(sessionId, { ...r, source });
     }
     searchEvents.finishSession(sessionId, {
-      total_agents: mockResults.total_agents,
-      passed_agents: mockResults.passed_agents,
+      total_agents: results.total_agents,
+      passed_agents: results.passed_agents,
     });
   }
 
-  res.json({ sessionId, ...mockResults });
+  res.json({ sessionId, ...results });
 });
 
 // server.js에서 SearchEventsManager 주입
