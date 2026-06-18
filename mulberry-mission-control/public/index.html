@@ -17,7 +17,7 @@
   <script src="/socket.io/socket.io.js"></script>
   <!-- 이 태그들이 index.html에 없음 -->
 <script src="/js/skill-bank-frontend.js"></script>
-<script src="/js/team-chat-frontend.js"></script>
+<!-- team-chat-frontend.js 제거 (Issue #32): 로그인 실패 시 깨진 window.teamChat 인스턴스를 생성해 ChatUI fallback을 막음 -->
 <script src="/js/agent-dashboard.js"></script>
 <script src="/js/mission-control-api.js"></script>
 <script src="/js/mccc-empty-states.js"></script>

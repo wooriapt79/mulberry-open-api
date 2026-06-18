@@ -286,7 +286,8 @@ class MissionControlRouter {
       // team-chat-frontend.js가 DOMContentLoaded 시 이미 초기화함
       const existingInstance = await waitForGlobal('teamChat', 2000).catch(() => null);
 
-      if (existingInstance) {
+      // Issue #32: 로그인 실패로 깨진 인스턴스(socket 미연결) 는 무시하고 ChatUI fallback으로 진행
+      if (existingInstance && existingInstance.socket?.connected) {
         moduleInstances.teamChat = existingInstance;
         moduleStates.teamChat = 'initialized';
         console.log('✅ Team Chat: reused existing window.teamChat instance');
