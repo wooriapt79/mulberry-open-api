@@ -141,31 +141,60 @@ function _buildMockResults(query) {
   };
 }
 
+function _extractItem(query) {
+  const items = ['배추','감자','양파','마늘','고추','사과','배','쌀','콩','당근','시금치','파','무','호박'];
+  return items.find(i => query.includes(i)) || null;
+}
+
+function _extractRegion(query) {
+  const regions = ['인제','춘천','속초','강릉','홍천','양구','철원','화천','평창'];
+  return regions.find(r => query.includes(r)) || null;
+}
+
 function _priceInsight(query) {
-  if (query.includes('배추')) return '배추 현재 시세 2,400원/kg — 상승 중. 조기 구매가 유리합니다.';
-  if (query.includes('감자')) return '감자 현재 시세 2,400원/kg — 안정적.';
-  return '시세 정상 범위. 구매 적정 시점.';
+  const item = _extractItem(query);
+  if (item === '배추') return '배추 현재 시세 2,400원/kg — 상승 중. 조기 구매가 유리합니다.';
+  if (item === '감자') return '감자 현재 시세 1,200원/kg — 안정적. 9~10월 대량 출하 예정.';
+  if (item === '양파') return '양파 현재 시세 900원/kg — 하락세. 3주 내 추가 하락 가능.';
+  if (item === '사과') return '사과 현재 시세 3,800원/kg — 여름 품귀로 상승 중.';
+  if (item) return `${item} 현재 시세 안정적. 구매 적정 시점입니다.`;
+  const keyword = query.slice(0, 6);
+  return `"${keyword}" 관련 시세 분석 중. 전반적으로 안정적 범위.`;
 }
 
 function _regionInsight(query) {
-  if (query.includes('인제')) return '인제군: 고령 인구 38%, 접근성 낮음. 거점 배송 효과 높음.';
-  return '지역 데이터 조회 중.';
+  const region = _extractRegion(query);
+  if (region === '인제') return '인제군: 고령 인구 38%, 접근성 낮음. 거점 배송 효과 높음.';
+  if (region === '춘천') return '춘천: 도심 밀집 지역. 온라인 주문 비율 62%.';
+  if (region === '속초') return '속초: 관광 수요 높음. 제철 식재료 수요 급등.';
+  if (region) return `${region}: 지역 특성 분석 완료. 공동구매 수요 양호.`;
+  const keyword = query.slice(0, 6);
+  return `"${keyword}" 지역 특성 분석 중. 도시 외곽 접근성 개선 권장.`;
 }
 
 function _timingInsight(query) {
-  if (query.includes('배추')) return '배추 9~11월이 최성기. 현재 6월은 적정 수준.';
-  return '현재 구매 타이밍 양호.';
+  const item = _extractItem(query);
+  const month = new Date().getMonth() + 1;
+  if (item === '배추') return `배추 9~11월 최성기. 현재 ${month}월은 ${month >= 9 ? '최적' : '사전 확보'} 시점.`;
+  if (item === '감자') return `감자 7~8월 출하 최성기. 현재 ${month}월 구매 ${month >= 7 && month <= 8 ? '최적' : '양호'}.`;
+  if (item) return `${item} 구매 타이밍 양호. 현재 ${month}월 이후 가격 안정 예상.`;
+  return `현재 ${month}월 기준 공동구매 타이밍 적절.`;
 }
 
 function _logisticsInsight(query) {
-  if (query.includes('인제')) return '인제 배송: 2일 소요, kg당 850원, 냉장 가능.';
-  return '배송 조건 정상.';
+  const region = _extractRegion(query);
+  if (region === '인제') return '인제 배송: 2일 소요, kg당 850원, 냉장 가능.';
+  if (region === '춘천') return '춘천 배송: 당일~익일 소요, kg당 550원, 풀콜드체인.';
+  if (region) return `${region} 배송: 2~3일 소요, 냉장·냉동 모두 가능.`;
+  const item = _extractItem(query);
+  if (item) return `${item} 물류: 냉장 보관 필수. 산지 직배송 가능.`;
+  return '배송 조건 정상. 냉장·냉동 모두 가능.';
 }
 
 function _buildAnswer(query, results) {
-  const lines = [`"${query}"에 대한 Mulberry 멀티에이전트 검색 결과:\n`];
-  for (const r of results) {
-    lines.push(`[${r.domain}] ${r.data.insight}`);
-  }
-  return lines.join('\n');
+  const item = _extractItem(query);
+  const region = _extractRegion(query);
+  const topInsights = results.slice(0, 3).map(r => r.data.insight).join(' / ');
+  const subject = [region, item].filter(Boolean).join(' ') || `"${query.slice(0, 10)}"`;
+  return `[Mulberry 검색] ${subject} 분석 완료\n\n핵심 요약: ${topInsights}\n\n─\n검색어: "${query}"\n에이전트 ${results.length}개 분석 · Spirit Gate 통과 기준 ≥ 0.70`;
 }
