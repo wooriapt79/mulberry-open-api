@@ -9,6 +9,7 @@
 
 const mongoose = require('mongoose');
 const ChatMessage = require('../models/ChatMessage');
+const { saveMemoryEvent } = require('../utils/memory-layer');
 
 const CHANNELS = ['general', 'dev', 'research'];
 const HISTORY_LIMIT = 50;
@@ -40,6 +41,13 @@ class ChatEventsManager {
           text: `${socket.data.name} 님이 입장했습니다.`,
           ts: new Date().toISOString(),
         });
+
+        // Memory: 회의실(채널) 입장 — Trang Manager 확정 (2026-06-30)
+        saveMemoryEvent(socket.data.passportId, {
+          projectType: 'team-chat',
+          role: 'participant',
+          skill: 'meeting',
+        });
       });
 
       // 메시지 전송
@@ -57,6 +65,13 @@ class ChatEventsManager {
 
         await this._record(channel, msg);
         this._broadcast(channel, msg);
+
+        // Memory: 채널 메시지 전송 — Trang Manager 확정 (2026-06-30)
+        saveMemoryEvent(msg.passportId, {
+          projectType: 'team-chat',
+          role: 'messenger',
+          skill: 'messaging',
+        });
       });
 
       // 퇴장
@@ -69,6 +84,13 @@ class ChatEventsManager {
               channel: ch,
               text: `${socket.data.name} 님이 퇴장했습니다.`,
               ts: new Date().toISOString(),
+            });
+
+            // Memory: 회의실(채널) 퇴장 — Trang Manager 확정 (2026-06-30)
+            saveMemoryEvent(socket.data.passportId, {
+              projectType: 'team-chat',
+              role: 'participant',
+              skill: 'meeting',
             });
           }
         }
