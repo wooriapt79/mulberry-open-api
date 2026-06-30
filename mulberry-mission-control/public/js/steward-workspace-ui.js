@@ -14,6 +14,12 @@
  * 현재: mock 데이터로 UI 구현 → Koda API 완성 시 교체
  */
 
+// Codex Bot 리뷰 Issue 1 (2026-06-30): Memory 패널 XSS 방지 —
+// POST /api/memory/:id에 인증이 없어 DB 값을 escape 없이 innerHTML에 넣으면 스크립트 주입 가능
+function escapeHtml(str) {
+  return String(str || '—').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 // ─── MOCK DATA (Koda API 완성 전 임시) ───────────────────────────────────────
 // TODO: /api/passport/:id 로 교체 (Issue #21)
 const MOCK_PASSPORTS = {
@@ -412,7 +418,7 @@ class StewardPassportPanel {
           <div style="display:flex; flex-direction:column; gap:4px;">
             ${this.memories.slice(0, 5).map(mem => `
               <div style="color:#c9d1d9; font-size:11px;">
-                ${mem.projectType || '—'} · ${mem.role || '—'}${mem.skillApplied ? ' · ' + mem.skillApplied : ''}
+                ${escapeHtml(mem.projectType)} · ${escapeHtml(mem.role)}${mem.skillApplied ? ' · ' + escapeHtml(mem.skillApplied) : ''}
               </div>
             `).join('')}
           </div>
@@ -459,6 +465,9 @@ class StewardPassportPanel {
     await ensureStewardToken(userId);
     await this._loadPassport();
     await this._loadMandate();
+    // Codex Bot 리뷰 Issue 2 (2026-06-30): switchUser에서 Memory 미갱신 —
+    // 이전 사용자의 Memory가 새 사용자 패널에 그대로 표시되던 문제 수정
+    await this._loadMemoryLayer();
     this._render();
   }
 }
