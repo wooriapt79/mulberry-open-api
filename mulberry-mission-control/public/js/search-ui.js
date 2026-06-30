@@ -88,6 +88,15 @@ class SearchUI {
       const data = await res.json();
       this.sessionId = data.sessionId;
 
+      // Codex Bot 리뷰 Issue 1 (2026-06-30): Safety CRITICAL/RED 거절 응답 처리
+      // routes/search.js가 blocked/refused 시 domain_results 없이 status/zone/message만 반환함
+      if (data.status === 'blocked' || data.status === 'refused') {
+        this._resetGrid();
+        const icon = data.status === 'blocked' ? '🔴' : '⚠️';
+        this._setStatus(`${icon} ${data.message || '요청을 처리할 수 없습니다.'} (${data.zone})`);
+        return;
+      }
+
       // 소켓 subscribe
       if (this.socket) this.socket.emit('search_subscribe', { sessionId: data.sessionId });
 
@@ -95,6 +104,10 @@ class SearchUI {
       this._resetGrid();
       (data.domain_results || []).forEach((r) => this._renderAgentCard(r, data.source));
       this._renderAnswer(data.answer || '', data.source);
+
+      // Codex Bot 리뷰 Issue 2 (2026-06-30): Safety YELLOW 경고 배너 표시
+      if (data.warning) this._renderWarning(data.warning);
+
       const sourceBadge = data.source === 'real' ? '🟢 실 에이전트' : '🔵 Mock';
       this._setStatus(`✅ 완료 — ${data.passed_agents}/${data.total_agents}개 에이전트 통과 ${sourceBadge}`);
     } catch (err) {
@@ -154,8 +167,28 @@ class SearchUI {
     }
   }
 
+  // Codex Bot 리뷰 Issue 2 (2026-06-30): YELLOW 경고 배너
+  _renderWarning(message) {
+    if (!this._gridEl || !this._gridEl.parentNode) return;
+    const banner = document.createElement('div');
+    banner.style.cssText = `
+      background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.4);
+      color:#f59e0b; border-radius:8px; padding:10px 14px;
+      margin-bottom:12px; font-size:0.85rem; font-weight:600;
+    `;
+    banner.textContent = `⚠️ ${message}`;
+    this._gridEl.parentNode.insertBefore(banner, this._gridEl);
+  }
+
   _resetGrid() {
-    if (this._gridEl) this._gridEl.innerHTML = '';
+    if (this._gridEl) {
+      this._gridEl.innerHTML = '';
+      // 이전 경고 배너 제거
+      const prevBanner = this._gridEl.previousElementSibling;
+      if (prevBanner && prevBanner.textContent.startsWith('⚠️')) {
+        prevBanner.remove();
+      }
+    }
     if (this._answerEl) { this._answerEl.textContent = ''; this._answerEl.style.display = 'none'; }
   }
 
