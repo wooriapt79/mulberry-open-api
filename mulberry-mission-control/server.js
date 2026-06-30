@@ -326,7 +326,9 @@ app.post('/api/memory/:id', async (req, res) => {
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'mulberry-steward-secret-2026';
+// Issue #49 (보안, 2026-07-01): 하드코딩 폴백 제거 — utils/jwt.js의
+// 중앙화된 JWT_SECRET 재사용 (해당 모듈이 미설정 시 fail-fast 처리함)
+const { JWT_SECRET } = require('./utils/jwt');
 const STEWARD_WORKSPACE_ID = 'mulberry-steward-ws';
 
 function sha256(value) {

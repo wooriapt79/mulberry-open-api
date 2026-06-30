@@ -10,6 +10,8 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+// Issue #49 (보안, 2026-07-01): 하드코딩 폴백 제거 — 중앙화된 JWT_SECRET 재사용
+const { JWT_SECRET } = require('../utils/jwt');
 
 /**
  * GET /api/test/token
@@ -25,7 +27,7 @@ router.get('/token', (req, res) => {
 
   const token = jwt.sign(
     testUser,
-    process.env.JWT_SECRET || 'mulberry-jwt-secret-2026',
+    JWT_SECRET,
     { expiresIn: '24h' }
   );
 
