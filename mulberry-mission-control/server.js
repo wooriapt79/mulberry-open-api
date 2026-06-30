@@ -286,12 +286,9 @@ app.get('/api/passport/:id', (req, res) => {
     return res.status(404).json({ error: `passport not found: ${req.params.id}` });
   }
 
-  // Memory: Passport 조회 — Trang Manager 확정 (2026-06-30)
-  saveMemoryEvent(req.params.id, {
-    projectType: 'passport',
-    role: 'agent',
-    skill: 'identity-check',
-  });
+  // Memory 트리거 제거 (Codex Bot 리뷰 Issue 4, 2026-06-30):
+  // 페이지 로드·사용자 전환마다 호출되어 최근 20건 Memory가 passport/identity-check로 밀려남.
+  // 실제 채팅·검색 Memory를 보존하기 위해 Passport 조회는 트리거에서 제외.
 
   res.json(passport);
 });
@@ -314,8 +311,10 @@ app.get('/api/memory/:id', async (req, res) => {
 });
 
 app.post('/api/memory/:id', async (req, res) => {
-  const { projectType, role, skill } = req.body || {};
-  const saved = await saveMemoryEvent(req.params.id, { projectType, role, skill });
+  // Codex Bot 리뷰 Issue 3 (2026-06-30): 클라이언트가 skillApplied로 보내도
+  // skill로만 destructure해 undefined 저장되던 문제 — 두 필드 모두 허용
+  const { projectType, role, skill, skillApplied } = req.body || {};
+  const saved = await saveMemoryEvent(req.params.id, { projectType, role, skill: skill || skillApplied });
   if (!saved) {
     return res.status(503).json({ error: 'memory store unavailable (DB not connected)' });
   }
