@@ -296,6 +296,25 @@ app.get('/api/mandate/:id', (req, res) => {
   res.json(mandate);
 });
 
+// ==================== Memory Layer (Issue #40, Koda 2026-06-25) ====================
+// GET /api/memory/:id — Steward Workspace Memory Panel (Passport/Mandate 다음 단계)
+// POST /api/memory/:id — Team Chat 이벤트 발생 시 저장 (who/where 저장 안 함 — 정보보호 원칙)
+const { loadMemoryLayer, saveMemoryEvent } = require('./utils/memory-layer');
+
+app.get('/api/memory/:id', async (req, res) => {
+  const memories = await loadMemoryLayer(req.params.id);
+  res.json({ agentId: req.params.id, memories });
+});
+
+app.post('/api/memory/:id', async (req, res) => {
+  const { projectType, role, skill } = req.body || {};
+  const saved = await saveMemoryEvent(req.params.id, { projectType, role, skill });
+  if (!saved) {
+    return res.status(503).json({ error: 'memory store unavailable (DB not connected)' });
+  }
+  res.status(201).json(saved);
+});
+
 // ==================== Steward Workspace API Phase 2 (Issue #21, Koda 2026-06-15) ====================
 // POST /api/auth/steward-login + GET/POST /api/context/:workspaceId + POST /api/messages
 const jwt = require('jsonwebtoken');
