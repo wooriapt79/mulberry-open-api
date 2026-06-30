@@ -86,12 +86,12 @@ const server = http.createServer(app);
 
 app.use(express.json());
 
-// ==================== UTF-8 인코딩 설정 ====================
-// v3.2.1 - 이모지 깨짐 수정 (Koda patch, 2026-04-30)
-app.use((req, res, next) => {
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    next();
-});
+// Track B (2026-06-30): 2026-04-30 패치가 모든 응답에 Content-Type을
+// text/html; charset=utf-8로 강제 설정해 JSON API 응답까지 text/html로
+// 오표기되는 버그를 일으켰음(res.json()은 Content-Type이 이미 설정돼 있으면
+// application/json으로 덮어쓰지 않음 — curl로 /api/health 확인 결과 실제 증상 확인).
+// express.static()은 .html 파일에 text/html; charset=UTF-8을, res.json()은
+// application/json; charset=utf-8을 각자 올바르게 설정하므로 이 미들웨어는 제거.
 
 // ✅ 정적 파일 서빙
 app.use(express.static(path.join(__dirname, 'public')));
