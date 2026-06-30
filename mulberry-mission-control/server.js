@@ -277,6 +277,7 @@ app.get('/api/services', (req, res) => {
 // Phase 1: Passport / Mandate 조회 — steward-workspace-ui.js의 MOCK_PASSPORTS / MOCK_MANDATES 대체
 const PASSPORTS = require('./data/passports.json');
 const MANDATES = require('./data/mandates.json');
+const { loadMemoryLayer, saveMemoryEvent } = require('./utils/memory-layer');
 
 // GET /api/passport/:id — Steward Workspace Passport Panel
 app.get('/api/passport/:id', (req, res) => {
@@ -284,6 +285,14 @@ app.get('/api/passport/:id', (req, res) => {
   if (!passport) {
     return res.status(404).json({ error: `passport not found: ${req.params.id}` });
   }
+
+  // Memory: Passport 조회 — Trang Manager 확정 (2026-06-30)
+  saveMemoryEvent(req.params.id, {
+    projectType: 'passport',
+    role: 'agent',
+    skill: 'identity-check',
+  });
+
   res.json(passport);
 });
 
@@ -294,6 +303,23 @@ app.get('/api/mandate/:id', (req, res) => {
     return res.status(404).json({ error: `mandate not found: ${req.params.id}` });
   }
   res.json(mandate);
+});
+
+// ==================== Memory Layer (Issue #40, Koda 2026-06-25) ====================
+// GET /api/memory/:id — Steward Workspace Memory Panel (Passport/Mandate 다음 단계)
+// POST /api/memory/:id — Team Chat 이벤트 발생 시 저장 (who/where 저장 안 함 — 정보보호 원칙)
+app.get('/api/memory/:id', async (req, res) => {
+  const memories = await loadMemoryLayer(req.params.id);
+  res.json({ agentId: req.params.id, memories });
+});
+
+app.post('/api/memory/:id', async (req, res) => {
+  const { projectType, role, skill } = req.body || {};
+  const saved = await saveMemoryEvent(req.params.id, { projectType, role, skill });
+  if (!saved) {
+    return res.status(503).json({ error: 'memory store unavailable (DB not connected)' });
+  }
+  res.status(201).json(saved);
 });
 
 // ==================== Steward Workspace API Phase 2 (Issue #21, Koda 2026-06-15) ====================

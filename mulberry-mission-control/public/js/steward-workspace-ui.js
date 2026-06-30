@@ -223,16 +223,32 @@ class StewardPassportPanel {
     this.currentUser = null;
     this.passport = null;
     this.mandate = null;
+    this.memories = [];
   }
 
   // 초기화 — 접속 시 자동 호출
+  // Passport → Mandate → Memory 순서 (Issue #40)
   async init(userId) {
     this.currentUser = userId || this._detectCurrentUser();
     await ensureStewardToken(this.currentUser);
     await this._loadPassport();
     await this._loadMandate();
+    await this._loadMemoryLayer();
     this._render();
     console.log(`✅ Steward Passport Panel loaded for: ${this.currentUser}`);
+  }
+
+  // Memory 로드 — /api/memory/:id (Issue #40, Koda 2026-06-25)
+  async _loadMemoryLayer() {
+    try {
+      const res = await fetch(`/api/memory/${this.currentUser}`);
+      if (!res.ok) { this.memories = []; return; }
+      const data = await res.json();
+      this.memories = data.memories || [];
+    } catch (e) {
+      console.warn('Memory layer load failed:', e);
+      this.memories = [];
+    }
   }
 
   // 현재 사용자 자동 감지 (토큰 또는 localStorage)
@@ -378,6 +394,26 @@ class StewardPassportPanel {
                 color:#c4b5fd; border-radius:3px;
                 padding:2px 7px; font-size:10px;
               ">✓ ${t}</span>
+            `).join('')}
+          </div>
+        </div>` : ''}
+
+        <!-- Memory Layer (Issue #40) -->
+        ${this.memories.length > 0 ? `
+        <div style="
+          background:rgba(16,185,129,0.08);
+          border:1px solid rgba(16,185,129,0.25);
+          border-radius:8px; padding:10px;
+          margin-bottom:12px;
+        ">
+          <div style="color:#34d399; font-size:11px; font-weight:600; margin-bottom:6px;">
+            🧠 MEMORY — 최근 ${this.memories.length}건
+          </div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            ${this.memories.slice(0, 5).map(mem => `
+              <div style="color:#c9d1d9; font-size:11px;">
+                ${mem.projectType || '—'} · ${mem.role || '—'}${mem.skillApplied ? ' · ' + mem.skillApplied : ''}
+              </div>
             `).join('')}
           </div>
         </div>` : ''}

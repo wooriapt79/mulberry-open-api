@@ -13,6 +13,7 @@ const router = express.Router();
 const { randomUUID } = require('crypto');
 const http = require('http');
 const https = require('https');
+const { saveMemoryEvent } = require('../utils/memory-layer');
 
 // SearchEventsManager는 server.js에서 주입받음
 let searchEvents = null;
@@ -57,7 +58,7 @@ function _callAgencyAgents(query) {
  * returns: SearchResult (JSON) with source: 'real' | 'mock'
  */
 router.post('/', async (req, res) => {
-  const { query } = req.body || {};
+  const { query, passportId } = req.body || {};
   if (!query || typeof query !== 'string' || query.trim().length === 0) {
     return res.status(400).json({ error: 'query는 필수입니다.' });
   }
@@ -95,6 +96,13 @@ router.post('/', async (req, res) => {
       passed_agents: results.passed_agents,
     });
   }
+
+  // Memory: Search 에이전트 호출 결과 수신 — Trang Manager 확정 (2026-06-30)
+  saveMemoryEvent(passportId || 'anonymous', {
+    projectType: 'search',
+    role: 'searcher',
+    skill: 'agent-search',
+  });
 
   res.json({ sessionId, ...results });
 });
