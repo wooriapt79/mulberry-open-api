@@ -177,6 +177,8 @@ class SearchUI {
       margin-bottom:12px; font-size:0.85rem; font-weight:600;
     `;
     banner.textContent = `⚠️ ${message}`;
+    // Codex Bot P2 (2026-06-30): textContent 접두어 매칭 대신 data 속성으로 명확히 식별
+    banner.dataset.warningBanner = 'true';
     this._gridEl.parentNode.insertBefore(banner, this._gridEl);
   }
 
@@ -185,7 +187,7 @@ class SearchUI {
       this._gridEl.innerHTML = '';
       // 이전 경고 배너 제거
       const prevBanner = this._gridEl.previousElementSibling;
-      if (prevBanner && prevBanner.textContent.startsWith('⚠️')) {
+      if (prevBanner && prevBanner.dataset.warningBanner === 'true') {
         prevBanner.remove();
       }
     }
