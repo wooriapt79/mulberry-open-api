@@ -14,6 +14,7 @@ const { randomUUID } = require('crypto');
 const http = require('http');
 const https = require('https');
 const { saveMemoryEvent } = require('../utils/memory-layer');
+const { classifyRequest, logSafetyEvent } = require('../utils/safety-classify');
 
 // SearchEventsManager는 server.js에서 주입받음
 let searchEvents = null;
@@ -66,6 +67,21 @@ router.post('/', async (req, res) => {
   const sessionId = randomUUID();
   const q = query.trim();
 
+  // Safety 분류 (DAY9 Track C) — CRITICAL/RED는 검색 자체를 진행하지 않음
+  const safety = classifyRequest(q);
+  if (safety.action === 'block' || safety.action === 'refuse') {
+    await logSafetyEvent(q, safety.zone, safety.action);
+    return res.status(200).json({
+      sessionId,
+      status: safety.action === 'block' ? 'blocked' : 'refused',
+      zone: safety.zone,
+      message: safety.message,
+    });
+  }
+  if (safety.action === 'warn') {
+    await logSafetyEvent(q, safety.zone, safety.action);
+  }
+
   // 소켓 실시간 알림 시작
   if (searchEvents) searchEvents.startSession(sessionId, q);
 
@@ -103,6 +119,11 @@ router.post('/', async (req, res) => {
     role: 'searcher',
     skill: 'agent-search',
   });
+
+  // YELLOW: 검색은 진행하되 경고 메시지 동봉
+  if (safety.action === 'warn') {
+    results.warning = safety.message;
+  }
 
   res.json({ sessionId, ...results });
 });
