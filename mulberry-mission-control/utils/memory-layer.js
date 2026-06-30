@@ -42,14 +42,8 @@ async function saveMemoryEvent(agentId, event) {
   }
 }
 
-// Steward Workspace Session Init 연결 — passport/mandate와 동일 패턴
-async function initAgentSession(agentId, loadPassport, loadMandate) {
-  const [passport, mandate, memories] = await Promise.all([
-    loadPassport(agentId),
-    loadMandate(agentId),
-    loadMemoryLayer(agentId),
-  ]);
-  return { passport, mandate, memories };
-}
+// Session Init 연결은 public/js/steward-workspace-ui.js의 StewardPassportPanel.init()이 담당
+// (Passport → Mandate → Memory 순차 로딩). loadPassport/loadMandate가 프론트엔드 fetch 기반이라
+// 이 백엔드 모듈에서 직접 조합할 수 없어 initAgentSession 헬퍼는 제거함 (Trang Manager 코드리뷰 지적, 2026-06-30).
 
-module.exports = { loadMemoryLayer, saveMemoryEvent, initAgentSession };
+module.exports = { loadMemoryLayer, saveMemoryEvent };
