@@ -36,4 +36,7 @@ const AgentMemorySchema = new mongoose.Schema({
 // Koda 판단: agentId + timestamp 복합 인덱스 — loadMemoryLayer()의 최신순 조회 패턴에 맞춤
 AgentMemorySchema.index({ agentId: 1, timestamp: -1 });
 
+// 대표님 결정 (2026-06-25): 보존 기간 90일 — TTL 인덱스로 자동 만료
+AgentMemorySchema.index({ timestamp: 1 }, { expireAfterSeconds: 90 * 24 * 60 * 60 });
+
 module.exports = mongoose.model('AgentMemory', AgentMemorySchema);
