@@ -9,6 +9,21 @@
  * @author CTO Koda · DAY5 · 2026-06-17
  */
 
+// Issue #55 (2026-07-01): 도메인 키워드 — CEO re.eul 결정 사항
+const DOMAIN_KEYWORDS = [
+  '식품','공동구매','농산물','어르신','배추','쌀','양파','감자','배달',
+  '수급','시세','지역','거점','마을','공급','계절','영양','품질','구매',
+  '가격','인제','고령','노인','산지','농촌','도매','유통','신선','채소',
+  '과일','생협','직농','수확','작황','재배','농부','식단','건강식','저장',
+];
+
+const DOMAIN_EXAMPLE_QUERIES = [
+  '인제군 어르신 배추 공동구매 최적 시기는?',
+  '이번 주 양파 도매 시세 변동 전망',
+  '산지 직배송 감자 영양 품질 비교',
+  '농촌 고령 어르신 식품사막화 지역 공급 현황',
+];
+
 const AGENT_LABELS = {
   agricultural_price:       '🌾 농산물 시세',
   local_supply:             '📦 국내 수급',
@@ -70,11 +85,24 @@ class SearchUI {
     }
   }
 
+  // Issue #55: 도메인 외 검색어 감지
+  _isOutOfDomain(query) {
+    const q = query.toLowerCase();
+    return !DOMAIN_KEYWORDS.some(kw => q.includes(kw));
+  }
+
   async _runSearch() {
     const query = this._inputEl ? this._inputEl.value.trim() : '';
     if (!query) return;
 
     this._resetGrid();
+
+    // Issue #55: 도메인 외 검색어 → 안내 메시지 (에이전트 미실행)
+    if (this._isOutOfDomain(query)) {
+      this._renderOutOfDomainCard(query);
+      return;
+    }
+
     this._setStatus('🔍 검색 중...');
     if (this._btnEl) this._btnEl.disabled = true;
 
@@ -122,7 +150,8 @@ class SearchUI {
     const label = AGENT_LABELS[r.domain] || r.domain;
     const passed = !r.error;
     const score = typeof r.spirit_score === 'number' ? r.spirit_score.toFixed(2) : '-';
-    const insight = r.data ? (r.data.insight || JSON.stringify(r.data).slice(0, 120)) : '';
+    // Issue #55: 슬라이싱 버그 수정 — JSON.stringify 원시 절단 제거, insight만 표시
+    const insight = r.data ? (r.data.insight || r.data.summary || '') : '';
     const srcBadge = (source || r.source) === 'real' ? '🟢' : '🔵';
 
     const card = document.createElement('div');
@@ -167,6 +196,38 @@ class SearchUI {
     }
   }
 
+  // Issue #55 (2026-07-01): 도메인 외 검색어 안내 카드 — CEO re.eul 결정
+  _renderOutOfDomainCard(query) {
+    if (!this._gridEl) return;
+    const examples = DOMAIN_EXAMPLE_QUERIES.map(q =>
+      `<li style="margin:6px 0;cursor:pointer;color:#a78bfa;text-decoration:underline;"
+           onclick="document.getElementById('search-query-input').value='${q.replace(/'/g, "\\'")}'"
+       >${q}</li>`
+    ).join('');
+
+    const card = document.createElement('div');
+    card.style.cssText = `
+      background:#1a0f3a; border:1px solid #7c3aed; border-radius:12px;
+      padding:20px 24px; color:#e2e8f0; line-height:1.7; grid-column:1/-1;
+    `;
+    card.innerHTML = `
+      <div style="font-size:1.1rem;font-weight:700;margin-bottom:10px;">
+        🌿 Mulberry Search 안내
+      </div>
+      <p style="color:#94a3b8;margin-bottom:14px;">
+        <strong style="color:#c4b5fd;">"${escapeHtml(query)}"</strong>은(는) 현재 Mulberry가 전문으로 다루는 도메인 범위 밖의 검색어입니다.
+      </p>
+      <p style="margin-bottom:14px;">
+        Mulberry Search는 현재 <strong>식품·농산물·공동구매·어르신 케어·지역 유통</strong> 도메인에 특화되어 있으며,
+        앞으로 도메인을 지속 확장해 나갈 예정입니다. — <em style="color:#a78bfa;">CEO re.eul</em>
+      </p>
+      <div style="color:#94a3b8;font-size:0.88rem;margin-bottom:10px;">아래 예시 검색어로 시작해보세요 👇</div>
+      <ul style="list-style:none;padding:0;">${examples}</ul>
+    `;
+    this._gridEl.appendChild(card);
+    this._setStatus('ℹ️ 도메인 범위 외 검색어 — 아래 안내를 참고하세요');
+  }
+
   // Codex Bot 리뷰 Issue 2 (2026-06-30): YELLOW 경고 배너
   _renderWarning(message) {
     if (!this._gridEl || !this._gridEl.parentNode) return;
@@ -200,3 +261,10 @@ class SearchUI {
 }
 
 window.SearchUI = SearchUI;
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
