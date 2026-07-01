@@ -492,6 +492,7 @@ class MissionControlRouter {
     const container = document.getElementById('module-search');
     if (!container) return;
     container.style.display = 'block';
+    this.showSection('search', section || 'query');
 
     if (moduleStates.searchUI === 'uninitialized') {
       this.initSearchUI();

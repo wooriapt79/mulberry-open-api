@@ -760,8 +760,10 @@ const stewardSelector = new StewardUserSelector('steward-user-selector', steward
 
 document.addEventListener('DOMContentLoaded', async () => {
   stewardSelector.render();
-  await stewardPassportPanel.init();
-  await restoreSharedContext();
+  // Issue #53 (2026-07-01): 각 초기화 단계를 개별 try-catch로 감싸
+  // 인증 실패(401) 또는 네트워크 오류로 한 단계가 실패해도 이후 패널 렌더링 보장.
+  try { await stewardPassportPanel.init(); } catch (e) { console.error('Passport init failed:', e); }
+  try { await restoreSharedContext(); } catch (e) { console.error('restoreSharedContext failed:', e); }
   renderChatFeed();
   renderChatInput();
   console.log('🌿 Steward Workspace initialized');
