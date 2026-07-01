@@ -487,21 +487,21 @@
          onmouseout="this.style.background='none'">
         <span>#</span><span>general</span>
       </a>
-      <a onclick="openChat('devteam')" style="
+      <a onclick="openChat('dev')" style="
         display:flex; align-items:center; gap:8px;
         padding:8px 16px; color:#e2e8f0; font-size:0.85rem;
         cursor:pointer; text-decoration:none; transition:background 0.15s;
       " onmouseover="this.style.background='rgba(124,58,237,0.15)'"
          onmouseout="this.style.background='none'">
-        <span>#</span><span>dev-team</span>
+        <span>#</span><span>dev</span>
       </a>
-      <a onclick="openChat('random')" style="
+      <a onclick="openChat('research')" style="
         display:flex; align-items:center; gap:8px;
         padding:8px 16px; color:#e2e8f0; font-size:0.85rem;
         cursor:pointer; text-decoration:none; transition:background 0.15s;
       " onmouseover="this.style.background='rgba(124,58,237,0.15)'"
          onmouseout="this.style.background='none'">
-        <span>#</span><span>random</span>
+        <span>#</span><span>research</span>
       </a>
     </div>
   </div>
@@ -532,8 +532,8 @@ function toggleChatMenu() {
 function openChat(channel) {
   document.getElementById('chat-submenu').style.display = 'none';
   document.getElementById('chat-caret').style.transform = '';
-  if (window.MissionControl) {
-    window.MissionControl.showModule('chat', channel);
+  if (window.MissionControl && window.MissionControl.navigateTo) {
+    window.MissionControl.navigateTo('chat', channel);
   } else {
     window.location.hash = '#chat';
   }
