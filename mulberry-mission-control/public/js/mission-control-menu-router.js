@@ -278,6 +278,16 @@ class MissionControlRouter {
 
     // Issue #36: 서브메뉴 섹션 전환
     this._showChatSection(section || 'messages');
+
+    // Issue #59: 채널명이 전달된 경우 ChatUI 채널 전환
+    const CHAT_CHANNEL_NAMES = ['general', 'dev', 'research'];
+    if (section && CHAT_CHANNEL_NAMES.includes(section) && moduleInstances.teamChat) {
+      try {
+        if (typeof moduleInstances.teamChat._switchChannel === 'function') {
+          moduleInstances.teamChat._switchChannel(section);
+        }
+      } catch (e) { /* silent */ }
+    }
   }
 
   _showChatSection(section) {
