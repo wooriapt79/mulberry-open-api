@@ -725,7 +725,9 @@ function renderMainNavigation() {
   if (!nav) return;
   const modules = Object.values(MissionControlModules);
 
-  const groups = ['workspace', 'chat'];
+  // Issue #57 (2026-07-01): chat 그룹을 메인 nav에서 제거 — nav overflow 방지
+  // Team Chat은 우측 nav-chat-btn 플로팅 버튼으로 접근
+  const groups = ['workspace'];
   nav.innerHTML = groups.map(groupId => {
     const groupModules = modules.filter(m => (m.group || 'workspace') === groupId);
     if (groupModules.length === 0) return '';
