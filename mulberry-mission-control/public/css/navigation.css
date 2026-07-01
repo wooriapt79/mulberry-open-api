@@ -77,10 +77,18 @@
   font-size: 18px;
 }
 
+/* Issue #57: Team Chat 분리 버튼 — nav overflow 방지 */
+.nav-chat-btn {
+  position: relative;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
 /* 사용자 메뉴 */
 .user-menu {
   position: relative;
-  margin-left: auto;
+  margin-left: 4px;
 }
 
 .user-info {

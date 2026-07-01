@@ -459,6 +459,53 @@
     <!-- JavaScript로 자동 생성 -->
   </div>
 
+  <!-- Issue #57 (2026-07-01): Team Chat — nav overflow 방지를 위해 우측 고정 버튼으로 분리 -->
+  <div class="nav-chat-btn" id="nav-chat-btn" title="Team Chat">
+    <button onclick="toggleChatMenu()" style="
+      background:none; border:none; cursor:pointer; padding:6px 10px;
+      display:flex; align-items:center; gap:6px;
+      color:#e2e8f0; font-size:0.88rem; font-weight:600;
+      border-radius:8px; transition:background 0.15s;
+    " onmouseover="this.style.background='rgba(124,58,237,0.2)'"
+       onmouseout="this.style.background='none'">
+      <span style="font-size:1.1rem;">💬</span>
+      <span>Team Chat</span>
+      <span id="chat-caret" style="font-size:0.7rem;transition:transform 0.2s;">▼</span>
+    </button>
+    <!-- 서브메뉴 드롭다운 -->
+    <div id="chat-submenu" style="
+      display:none; position:absolute; top:100%; right:0;
+      background:#1e1040; border:1px solid rgba(124,58,237,0.4);
+      border-radius:10px; min-width:160px; padding:6px 0;
+      box-shadow:0 8px 24px rgba(0,0,0,0.4); z-index:1000;
+    ">
+      <a onclick="openChat('general')" style="
+        display:flex; align-items:center; gap:8px;
+        padding:8px 16px; color:#e2e8f0; font-size:0.85rem;
+        cursor:pointer; text-decoration:none; transition:background 0.15s;
+      " onmouseover="this.style.background='rgba(124,58,237,0.15)'"
+         onmouseout="this.style.background='none'">
+        <span>#</span><span>general</span>
+      </a>
+      <a onclick="openChat('devteam')" style="
+        display:flex; align-items:center; gap:8px;
+        padding:8px 16px; color:#e2e8f0; font-size:0.85rem;
+        cursor:pointer; text-decoration:none; transition:background 0.15s;
+      " onmouseover="this.style.background='rgba(124,58,237,0.15)'"
+         onmouseout="this.style.background='none'">
+        <span>#</span><span>dev-team</span>
+      </a>
+      <a onclick="openChat('random')" style="
+        display:flex; align-items:center; gap:8px;
+        padding:8px 16px; color:#e2e8f0; font-size:0.85rem;
+        cursor:pointer; text-decoration:none; transition:background 0.15s;
+      " onmouseover="this.style.background='rgba(124,58,237,0.15)'"
+         onmouseout="this.style.background='none'">
+        <span>#</span><span>random</span>
+      </a>
+    </div>
+  </div>
+
   <!-- 사용자 메뉴 -->
   <div class="user-menu">
     <div class="user-info">
@@ -472,6 +519,34 @@
     </div>
   </div>
 </nav>
+
+<script>
+// Issue #57: Team Chat 드롭다운 토글
+function toggleChatMenu() {
+  const menu = document.getElementById('chat-submenu');
+  const caret = document.getElementById('chat-caret');
+  const isOpen = menu.style.display !== 'none';
+  menu.style.display = isOpen ? 'none' : 'block';
+  caret.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+function openChat(channel) {
+  document.getElementById('chat-submenu').style.display = 'none';
+  document.getElementById('chat-caret').style.transform = '';
+  if (window.MissionControl) {
+    window.MissionControl.showModule('chat', channel);
+  } else {
+    window.location.hash = '#chat';
+  }
+}
+// 드롭다운 외부 클릭 시 닫기
+document.addEventListener('click', (e) => {
+  const btn = document.getElementById('nav-chat-btn');
+  if (btn && !btn.contains(e.target)) {
+    document.getElementById('chat-submenu').style.display = 'none';
+    document.getElementById('chat-caret').style.transform = '';
+  }
+});
+</script>
 
 <!-- ==================== 서브 네비게이션 (섹션별) ==================== -->
 <nav class="sub-navigation-bar">
