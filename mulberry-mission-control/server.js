@@ -437,6 +437,14 @@ app.use('/api/v1/metrics', require('./routes/metrics'));
 // POST /api/v1/search — MulberrySearchOrchestrator 10개 에이전트 병렬 검색
 app.use('/api/v1/search', searchRouter);
 
+// ==================== Co-op Buy API (DAY10, 류원+Koda 2026-07-01) ====================
+// POST /api/coop-buy/recommend-elder-combo   — Type 1 시니어 추천
+// POST /api/coop-buy/generate-box-composition — Type 2 도시민 박스
+// POST /api/coop-buy/submit-feedback          — 피드백 + 모델 업데이트
+// GET|POST /api/coop-buy/elders/:communityId  — 어르신 프로필
+// GET|POST /api/coop-buy/farmers              — 농부 프로필
+app.use('/api/coop-buy', require('./routes/coop-buy'));
+
 // ==================== Decision Events API (Issue #98 Phase 1, Koda 2026-06-15) ====================
 // GET /api/events/decisions — Decision 메뉴 최초 로드용 history
 app.get('/api/events/decisions', (req, res) => {
