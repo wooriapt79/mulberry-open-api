@@ -25,6 +25,28 @@ const { classifyRequest, logSafetyEvent } = require('../utils/safety-classify');
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || null;
 const LUNA_MODEL = 'claude-haiku-4-5-20251001';
 
+// ── Optional JWT 미들웨어 (차단 없음 — req.steward 세팅만) ────────────────
+// server.js의 requireStewardAuth와 동일한 로직이나 미인증도 통과시킴
+// [/해제] 접근 제어 등 sessionOwner 판단에 사용
+const { JWT_SECRET } = (() => {
+  try { return require('../utils/jwt'); }
+  catch (_) { return { JWT_SECRET: null }; }
+})();
+const jwt = JWT_SECRET ? require('jsonwebtoken') : null;
+
+function optionalStewardAuth(req, _res, next) {
+  if (!jwt || !JWT_SECRET) return next();
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      req.steward = jwt.verify(authHeader.slice(7), JWT_SECRET);
+    } catch (_) { /* 토큰 만료·불일치 → req.steward 미설정 */ }
+  }
+  next();
+}
+
+router.use(optionalStewardAuth);
+
 // ── Context Mode 감지 ──────────────────────────────────────────────────────
 const CONTEXT_MODES = {
   STANDARD:   'standard',
@@ -198,6 +220,51 @@ async function callLunaAPI(query, systemPrompt) {
   });
 }
 
+// ── Domain AI 3개 병렬 처리 ───────────────────────────────────────────────
+// search.js의 mock 패턴 동일 적용 — ANTHROPIC_API_KEY 미설정 시 mock
+const DOMAIN_AGENTS = [
+  {
+    id: 'senior_care',
+    label: '어르신 케어',
+    systemPrompt: '당신은 어르신 케어 전문 AI입니다. 노인 복지, 건강 관리, 일상 지원에 대해 쉽고 따뜻하게 답하세요. 의료 판단은 제외.',
+    mockInsight: '어르신 케어: 정기 건강 체크와 사회적 교류가 가장 중요합니다.',
+  },
+  {
+    id: 'economics',
+    label: '경제·공동구매',
+    systemPrompt: '당신은 공동구매 경제 분석 AI입니다. 비용 절감, 공동구매 타이밍, 지역 가격 비교 정보를 제공하세요.',
+    mockInsight: '경제: 공동구매로 평균 25~32% 비용 절감 가능합니다.',
+  },
+  {
+    id: 'psychology',
+    label: '심리·커뮤니티',
+    systemPrompt: '당신은 커뮤니티 심리 전문 AI입니다. 매슬로우 욕구 이론 기반으로 소속감, 외로움 해소, 신뢰 형성에 대해 답하세요.',
+    mockInsight: '심리: 소속감(매슬로우 3단계)이 어르신 커뮤니티 참여의 핵심입니다.',
+  },
+];
+
+async function callDomainAgents(query) {
+  if (!ANTHROPIC_API_KEY) {
+    return DOMAIN_AGENTS.map((a) => ({
+      domain: a.id,
+      label: a.label,
+      insight: a.mockInsight,
+      source: 'mock',
+    }));
+  }
+
+  const tasks = DOMAIN_AGENTS.map((agent) =>
+    callLunaAPI(query, agent.systemPrompt)
+      .then((text) => ({ domain: agent.id, label: agent.label, insight: text, source: 'haiku' }))
+      .catch(() => ({ domain: agent.id, label: agent.label, insight: agent.mockInsight, source: 'fallback' }))
+  );
+
+  const results = await Promise.allSettled(tasks);
+  return results.map((r) =>
+    r.status === 'fulfilled' ? r.value : { domain: '?', label: '?', insight: '도메인 응답 실패', source: 'error' }
+  );
+}
+
 // ── MongoDB 로그 ──────────────────────────────────────────────────────────
 async function saveLunaLog(sessionId, mode, context, responseLength) {
   try {
@@ -235,21 +302,34 @@ router.post('/jr-trang', async (req, res) => {
   }
 
   // [2] Context Mode 선 트리거
-  const sessionOwner = Boolean(req.user?.id || authenticated);
+  // Phase 2: JWT 미들웨어(optionalStewardAuth)가 req.steward 자동 세팅
+  // Phase 1 호환: body의 authenticated 파라미터도 허용
+  const sessionOwner = Boolean(req.steward?.passportId || authenticated);
   const mode = detectContextMode(query, context, sessionOwner);
 
   // [3] 시스템 프롬프트 조합
   const systemPrompt = buildSystemPrompt(mode, context);
 
-  // [4] Luna API 호출
+  // [4] Luna API + Domain AI 3개 병렬 호출
   let responseText;
   let source = 'haiku';
-  try {
-    responseText = await callLunaAPI(query.trim(), systemPrompt);
+  let domainResults = [];
+
+  const [lunaResult, domainResult] = await Promise.allSettled([
+    callLunaAPI(query.trim(), systemPrompt),
+    callDomainAgents(query.trim()),
+  ]);
+
+  if (lunaResult.status === 'fulfilled') {
+    responseText = lunaResult.value;
     if (!ANTHROPIC_API_KEY) source = 'mock';
-  } catch (err) {
+  } else {
     responseText = '현재 Luna 응답을 처리할 수 없습니다. 잠시 후 다시 시도해주세요.';
     source = 'error';
+  }
+
+  if (domainResult.status === 'fulfilled') {
+    domainResults = domainResult.value;
   }
 
   // [5] 로그
@@ -263,7 +343,9 @@ router.post('/jr-trang', async (req, res) => {
     mode,
     context,
     agent: header,
+    session_owner: sessionOwner,
     response: responseText,
+    domain_results: domainResults,
     source,
     elapsed_ms: elapsed,
   });
