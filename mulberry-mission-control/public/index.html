@@ -752,7 +752,7 @@ document.addEventListener('click', (e) => {
       </div>
     </div>
 
-    <!-- 준비 중 패널 (rooms / settings 섹션) -->
+    <!-- 준비 중 패널 (rooms 섹션) -->
     <div id="chat-section-placeholder" style="
       display:none; flex:1; align-items:center; justify-content:center;
       flex-direction:column; gap:12px; color:#6b7280;
@@ -760,6 +760,96 @@ document.addEventListener('click', (e) => {
       <div style="font-size:2.5rem;">🚧</div>
       <div id="chat-placeholder-title" style="font-size:1rem; font-weight:600;"></div>
       <div style="font-size:0.83rem;">다음 업데이트에서 제공됩니다.</div>
+    </div>
+
+    <!-- ⚙️ 설정 패널 (Issue #61) -->
+    <div id="chat-section-settings" style="display:none; flex:1; overflow-y:auto; padding:4px 0;">
+      <div style="max-width:520px;">
+        <h2 style="font-size:1rem; font-weight:700; color:#a78bfa; margin-bottom:18px;">⚙️ 채팅 설정</h2>
+
+        <!-- 알림 -->
+        <div style="
+          background:#0f0a24; border:1px solid rgba(124,58,237,0.2);
+          border-radius:10px; padding:16px 20px; margin-bottom:12px;
+        ">
+          <div style="font-size:0.83rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:14px;">알림</div>
+          <label style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span style="font-size:0.9rem; color:#cbd5e1;">메시지 알림</span>
+            <input type="checkbox" id="cs-notifications" class="chat-toggle" checked>
+          </label>
+          <label style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:0.9rem; color:#cbd5e1;">멘션(@) 알림음</span>
+            <input type="checkbox" id="cs-sounds" class="chat-toggle" checked>
+          </label>
+        </div>
+
+        <!-- 표시 -->
+        <div style="
+          background:#0f0a24; border:1px solid rgba(124,58,237,0.2);
+          border-radius:10px; padding:16px 20px; margin-bottom:12px;
+        ">
+          <div style="font-size:0.83rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:14px;">표시</div>
+          <label style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span style="font-size:0.9rem; color:#cbd5e1;">컴팩트 모드</span>
+            <input type="checkbox" id="cs-compact" class="chat-toggle">
+          </label>
+          <label style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span style="font-size:0.9rem; color:#cbd5e1;">타임스탬프 표시</span>
+            <input type="checkbox" id="cs-timestamps" class="chat-toggle" checked>
+          </label>
+          <label style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:0.9rem; color:#cbd5e1;">시스템 메시지 표시</span>
+            <input type="checkbox" id="cs-sysmsg" class="chat-toggle" checked>
+          </label>
+        </div>
+
+        <!-- 입력 -->
+        <div style="
+          background:#0f0a24; border:1px solid rgba(124,58,237,0.2);
+          border-radius:10px; padding:16px 20px; margin-bottom:12px;
+        ">
+          <div style="font-size:0.83rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:14px;">입력</div>
+          <label style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span style="font-size:0.9rem; color:#cbd5e1;">Enter키로 전송</span>
+            <input type="checkbox" id="cs-enter-send" class="chat-toggle" checked>
+          </label>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:0.9rem; color:#cbd5e1;">메시지 최대 길이</span>
+            <select id="cs-maxlen" style="
+              background:#1a0f3a; border:1px solid rgba(124,58,237,0.3);
+              border-radius:6px; color:#e2e8f0; padding:4px 10px; font-size:0.85rem;
+            ">
+              <option value="500">500자</option>
+              <option value="1000" selected>1000자</option>
+              <option value="2000">2000자</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- DB 연결 상태 -->
+        <div style="
+          background:#0f0a24; border:1px solid rgba(124,58,237,0.2);
+          border-radius:10px; padding:16px 20px; margin-bottom:18px;
+        ">
+          <div style="font-size:0.83rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:14px;">메시지 영구저장 (Issue #62)</div>
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+            <span id="cs-db-dot" style="
+              width:8px; height:8px; border-radius:50%; background:#f59e0b; display:inline-block;
+            "></span>
+            <span id="cs-db-label" style="font-size:0.88rem; color:#cbd5e1;">확인 중…</span>
+          </div>
+          <div style="font-size:0.78rem; color:#475569; line-height:1.5;">
+            MongoDB 연결 시 메시지가 영구저장됩니다.<br>
+            미연결 시 인메모리 캐시(50건)로 자동 fallback.
+          </div>
+        </div>
+
+        <button id="cs-save-btn" style="
+          background:linear-gradient(135deg,#7c3aed,#a855f7); border:none;
+          border-radius:8px; padding:10px 24px; color:#fff;
+          font-size:0.9rem; font-weight:700; cursor:pointer; width:100%;
+        ">설정 저장</button>
+      </div>
     </div>
   </div>
 
