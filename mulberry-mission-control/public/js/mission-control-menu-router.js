@@ -292,26 +292,105 @@ class MissionControlRouter {
 
   _showChatSection(section) {
     // channels / messages → 실제 채팅 UI 표시
-    // rooms / settings   → 준비 중 패널 표시
-    const chatMain = document.getElementById('chat-section-main');
+    // settings           → 설정 패널 표시 (Issue #61)
+    // rooms              → 준비 중 패널 표시
+    const chatMain        = document.getElementById('chat-section-main');
     const chatPlaceholder = document.getElementById('chat-section-placeholder');
+    const chatSettings    = document.getElementById('chat-section-settings');
     const placeholderTitle = document.getElementById('chat-placeholder-title');
 
-    const PLACEHOLDER_SECTIONS = {
-      rooms:    '🎥 회의실 — DAY7 구현 예정',
-      settings: '⚙️ 채팅 설정 — DAY7 구현 예정',
-    };
+    // 모두 숨기고 필요한 것만 표시
+    if (chatMain)        chatMain.style.display        = 'none';
+    if (chatPlaceholder) chatPlaceholder.style.display  = 'none';
+    if (chatSettings)    chatSettings.style.display     = 'none';
 
-    if (PLACEHOLDER_SECTIONS[section]) {
-      if (chatMain) chatMain.style.display = 'none';
+    if (section === 'settings') {
+      if (chatSettings) {
+        chatSettings.style.display = 'flex';
+        this._initChatSettings();
+      }
+    } else if (section === 'rooms') {
       if (chatPlaceholder) {
         chatPlaceholder.style.display = 'flex';
-        if (placeholderTitle) placeholderTitle.textContent = PLACEHOLDER_SECTIONS[section];
+        if (placeholderTitle) placeholderTitle.textContent = '🎥 회의실 — 준비 중';
       }
     } else {
-      // channels / messages / default → 채팅 UI
+      // channels / messages / general / dev / research / default → 채팅 UI
       if (chatMain) chatMain.style.display = 'flex';
-      if (chatPlaceholder) chatPlaceholder.style.display = 'none';
+    }
+  }
+
+  _initChatSettings() {
+    // 저장된 설정 로드
+    const load = (key, def) => {
+      const v = localStorage.getItem('chat_' + key);
+      return v === null ? def : v === 'true';
+    };
+    const el = (id) => document.getElementById(id);
+
+    if (el('cs-notifications')) el('cs-notifications').checked = load('notifications', true);
+    if (el('cs-sounds'))        el('cs-sounds').checked        = load('sounds', true);
+    if (el('cs-compact'))       el('cs-compact').checked       = load('compact', false);
+    if (el('cs-timestamps'))    el('cs-timestamps').checked    = load('timestamps', true);
+    if (el('cs-sysmsg'))        el('cs-sysmsg').checked        = load('sysmsg', true);
+    if (el('cs-enter-send'))    el('cs-enter-send').checked    = load('enterSend', true);
+
+    const maxlen = localStorage.getItem('chat_maxlen') || '1000';
+    if (el('cs-maxlen')) el('cs-maxlen').value = maxlen;
+
+    // DB 상태 표시
+    this._checkChatDbStatus();
+
+    // 저장 버튼
+    const saveBtn = el('cs-save-btn');
+    if (saveBtn && !saveBtn._bound) {
+      saveBtn._bound = true;
+      saveBtn.addEventListener('click', () => this._saveChatSettings());
+    }
+  }
+
+  _saveChatSettings() {
+    const el = (id) => document.getElementById(id);
+    const save = (key, val) => localStorage.setItem('chat_' + key, val);
+
+    save('notifications', el('cs-notifications')?.checked ?? true);
+    save('sounds',        el('cs-sounds')?.checked ?? true);
+    save('compact',       el('cs-compact')?.checked ?? false);
+    save('timestamps',    el('cs-timestamps')?.checked ?? true);
+    save('sysmsg',        el('cs-sysmsg')?.checked ?? true);
+    save('enterSend',     el('cs-enter-send')?.checked ?? true);
+    save('maxlen',        el('cs-maxlen')?.value ?? '1000');
+
+    // 컴팩트 모드 즉시 적용
+    const msgs = document.getElementById('chat-messages');
+    if (msgs) {
+      if (el('cs-compact')?.checked) msgs.classList.add('chat-compact');
+      else msgs.classList.remove('chat-compact');
+    }
+
+    const btn = el('cs-save-btn');
+    if (btn) {
+      btn.textContent = '✅ 저장됨';
+      setTimeout(() => { btn.textContent = '설정 저장'; }, 1500);
+    }
+  }
+
+  async _checkChatDbStatus() {
+    const dot   = document.getElementById('cs-db-dot');
+    const label = document.getElementById('cs-db-label');
+    if (!dot || !label) return;
+    try {
+      const r = await fetch('/api/health');
+      const d = await r.json();
+      const dbOk = d.db === 'connected' || d.mongodb === 'connected' || d.status === 'ok';
+      dot.style.background   = dbOk ? '#10b981' : '#f59e0b';
+      dot.style.boxShadow    = dbOk ? '0 0 6px #10b981' : 'none';
+      label.textContent = dbOk
+        ? 'MongoDB 연결됨 — 메시지 영구저장 활성'
+        : '인메모리 모드 — MONGODB_URI 설정 필요';
+    } catch {
+      dot.style.background = '#64748b';
+      label.textContent = 'DB 상태 확인 불가';
     }
   }
 
