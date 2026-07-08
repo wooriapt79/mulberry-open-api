@@ -49,17 +49,40 @@ class SearchUI {
   }
 
   init() {
-    this._inputEl  = document.getElementById('search-query-input');
-    this._btnEl    = document.getElementById('search-submit-btn');
+    this._inputEl   = document.getElementById('search-query-input');
+    this._btnEl     = document.getElementById('search-submit-btn');
     this._summaryEl = document.getElementById('search-summary');
-    this._gridEl   = document.getElementById('search-agent-grid');
-    this._answerEl = document.getElementById('search-answer');
+    this._gridEl    = document.getElementById('search-agent-grid');
+    this._answerEl  = document.getElementById('search-answer');
+    this._helpBtn   = document.getElementById('search-help-btn');
+    this._helpOverlay = document.getElementById('search-help-overlay');
+    this._helpClose = document.getElementById('search-help-close');
 
     if (!this._inputEl || !this._btnEl) return;
 
     this._btnEl.addEventListener('click', () => this._runSearch());
     this._inputEl.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') this._runSearch();
+    });
+
+    // Help Desk 팝업
+    if (this._helpBtn && this._helpOverlay) {
+      this._helpBtn.addEventListener('click', () => {
+        this._helpOverlay.style.display = 'flex';
+      });
+      this._helpOverlay.addEventListener('click', (e) => {
+        if (e.target === this._helpOverlay) this._helpOverlay.style.display = 'none';
+      });
+    }
+    if (this._helpClose) {
+      this._helpClose.addEventListener('click', () => {
+        this._helpOverlay.style.display = 'none';
+      });
+    }
+
+    // 모드 라디오 버튼 — 선택 시 라벨 스타일 전환
+    document.querySelectorAll('input[name="search-mode"]').forEach((radio) => {
+      radio.addEventListener('change', () => this._updateModeStyles());
     });
 
     // 데모 쿼리 자동 입력
@@ -85,6 +108,23 @@ class SearchUI {
     }
   }
 
+  _getSelectedMode() {
+    const radio = document.querySelector('input[name="search-mode"]:checked');
+    return radio ? radio.value : 'general';
+  }
+
+  _updateModeStyles() {
+    const selected = this._getSelectedMode();
+    ['general', 'luna_deep', 'vulnerable'].forEach((m) => {
+      const label = document.getElementById(`search-mode-label-${m}`);
+      if (!label) return;
+      const active = m === selected;
+      label.style.border    = active ? '1px solid #7c3aed' : '1px solid #334155';
+      label.style.background = active ? '#12082e' : '#0f172a';
+      label.style.color     = active ? '#a78bfa' : '#94a3b8';
+    });
+  }
+
   // Issue #55: 도메인 외 검색어 감지
   _isOutOfDomain(query) {
     const q = query.toLowerCase();
@@ -103,14 +143,18 @@ class SearchUI {
       return;
     }
 
-    this._setStatus('🔍 검색 중...');
+    const searchMode = this._getSelectedMode();
+    const modeLabels = { general: '일반', luna_deep: 'Luna 심층', vulnerable: '취약계층' };
+    const modeLabel  = modeLabels[searchMode] || searchMode;
+
+    this._setStatus(`🔍 검색 중… [${modeLabel} 모드]`);
     if (this._btnEl) this._btnEl.disabled = true;
 
     try {
       const res = await fetch('/api/agents/jr-trang', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, context: 'mulberry_service' }),
+        body: JSON.stringify({ query, context: 'mulberry_service', search_mode: searchMode }),
       });
       const data = await res.json();
 
@@ -128,10 +172,10 @@ class SearchUI {
       (data.domain_results || []).forEach((r) => this._renderAgentCard(r));
       this._renderAnswer(data.response || '', data.source);
 
-      const totalAgents = (data.domain_results || []).length;
+      const totalAgents  = (data.domain_results || []).length;
       const passedAgents = (data.domain_results || []).filter(r => r.source !== 'circuit_open' && r.source !== 'error').length;
-      const sourceBadge = data.source === 'haiku' ? '🟢 Luna Haiku' : '🔵 Mock';
-      this._setStatus(`✅ 완료 — ${passedAgents}/${totalAgents}개 에이전트 · ${data.mode} 모드 ${sourceBadge}`);
+      const sourceBadge  = data.source === 'haiku' ? '🟢 Luna Haiku' : '🔵 Mock';
+      this._setStatus(`✅ 완료 — ${passedAgents}/${totalAgents}개 에이전트 · [${modeLabel} 모드] ${sourceBadge}`);
     } catch (err) {
       this._setStatus(`❌ 오류: ${err.message}`);
     } finally {
