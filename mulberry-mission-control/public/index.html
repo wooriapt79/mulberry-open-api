@@ -952,8 +952,45 @@ document.addEventListener('click', (e) => {
     </div>
 
     <div id="section-search-query" class="section-container">
-      <!-- 검색 입력 -->
-      <div style="display:flex;gap:10px;margin-bottom:16px;">
+
+      <!-- Help Desk 팝업 오버레이 -->
+      <div id="search-help-overlay"
+        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9000;
+               align-items:center;justify-content:center;">
+        <div style="background:#1a0f3a;border:1px solid #7c3aed;border-radius:14px;
+                    padding:28px 32px;max-width:480px;width:90%;position:relative;">
+          <button id="search-help-close"
+            style="position:absolute;top:12px;right:16px;background:none;border:none;
+                   color:#94a3b8;font-size:1.3rem;cursor:pointer;">✕</button>
+          <h3 style="color:#a78bfa;font-size:1rem;font-weight:700;margin-bottom:18px;">
+            🌙 Luna Search 레이어 안내
+          </h3>
+          <table style="width:100%;border-collapse:collapse;font-size:0.85rem;line-height:1.7;">
+            <tr>
+              <td style="color:#7c3aed;font-weight:700;padding:6px 12px 6px 0;white-space:nowrap;">Layer 1~2</td>
+              <td style="color:#e2e8f0;">기본 정보 검색 — 시세·수급·물류 데이터 빠른 조회</td>
+            </tr>
+            <tr>
+              <td style="color:#7c3aed;font-weight:700;padding:6px 12px 6px 0;white-space:nowrap;">Layer 3</td>
+              <td style="color:#e2e8f0;">지역 맞춤 분석 — 인제군 등 지역 특성 반영</td>
+            </tr>
+            <tr>
+              <td style="color:#7c3aed;font-weight:700;padding:6px 12px 6px 0;white-space:nowrap;">Layer 4~5</td>
+              <td style="color:#e2e8f0;">Resonance AI — HARM Model 적용<br>
+                <span style="color:#a78bfa;font-size:0.8rem;">Honest · Authentic · Respect · Meaning</span>
+              </td>
+            </tr>
+          </table>
+          <div style="margin-top:18px;padding:12px;background:rgba(124,58,237,0.1);
+                      border-radius:8px;font-size:0.83rem;color:#94a3b8;line-height:1.6;">
+            💡 각 모드는 질문의 성격에 맞게 선택해주세요.<br>
+            어르신·식품사막 지역 주민께는 <strong style="color:#a78bfa;">취약계층 모드</strong>를 추천합니다.
+          </div>
+        </div>
+      </div>
+
+      <!-- 검색 입력 행 -->
+      <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center;">
         <input id="search-query-input" type="text" placeholder="예: 인제군 어르신 배추 공동구매 최적 시기는?"
           style="flex:1;padding:10px 14px;border-radius:8px;border:1px solid #334155;
                  background:#0f172a;color:#e2e8f0;font-size:0.9rem;outline:none;" />
@@ -962,6 +999,37 @@ document.addEventListener('click', (e) => {
                  border:none;cursor:pointer;font-weight:700;font-size:0.9rem;">
           검색
         </button>
+        <button id="search-help-btn" title="Luna Search 레이어 안내"
+          style="padding:9px 13px;border-radius:8px;background:#1a0f3a;color:#a78bfa;
+                 border:1px solid #4c1d95;cursor:pointer;font-weight:700;font-size:0.9rem;">
+          ?
+        </button>
+      </div>
+
+      <!-- 검색 모드 선택 -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
+        <span style="color:#6b7280;font-size:0.8rem;margin-right:4px;">검색 모드</span>
+        <label id="search-mode-label-general"
+          style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;
+                 border:1px solid #7c3aed;background:#12082e;cursor:pointer;font-size:0.83rem;
+                 color:#a78bfa;font-weight:600;">
+          <input type="radio" name="search-mode" value="general" checked style="accent-color:#7c3aed;">
+          일반 모드 <span style="color:#6b7280;font-weight:400;">— 빠른 정보 안내</span>
+        </label>
+        <label id="search-mode-label-luna_deep"
+          style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;
+                 border:1px solid #334155;background:#0f172a;cursor:pointer;font-size:0.83rem;
+                 color:#94a3b8;">
+          <input type="radio" name="search-mode" value="luna_deep" style="accent-color:#7c3aed;">
+          Luna 심층 모드 <span style="color:#6b7280;font-weight:400;">— HARM 모델·감성 분석</span>
+        </label>
+        <label id="search-mode-label-vulnerable"
+          style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;
+                 border:1px solid #334155;background:#0f172a;cursor:pointer;font-size:0.83rem;
+                 color:#94a3b8;">
+          <input type="radio" name="search-mode" value="vulnerable" style="accent-color:#7c3aed;">
+          취약계층 모드 <span style="color:#6b7280;font-weight:400;">— 어르신·식품사막 맞춤</span>
+        </label>
       </div>
 
       <!-- 상태 표시 -->
