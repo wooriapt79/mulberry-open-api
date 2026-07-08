@@ -220,8 +220,46 @@ async function callLunaAPI(query, systemPrompt) {
   });
 }
 
-// ── Domain AI 3개 병렬 처리 ───────────────────────────────────────────────
-// search.js의 mock 패턴 동일 적용 — ANTHROPIC_API_KEY 미설정 시 mock
+// ── Circuit Breaker ───────────────────────────────────────────────────────
+// 5회 연속 실패 → OPEN (60초) → HALF_OPEN 자동 복구
+class CircuitBreaker {
+  constructor({ failureThreshold = 5, recoveryMs = 60000 } = {}) {
+    this.failureThreshold = failureThreshold;
+    this.recoveryMs = recoveryMs;
+    this.failures = 0;
+    this.state = 'CLOSED'; // CLOSED | OPEN | HALF_OPEN
+    this.openedAt = null;
+  }
+
+  async call(fn) {
+    if (this.state === 'OPEN') {
+      const elapsed = Date.now() - this.openedAt;
+      if (elapsed >= this.recoveryMs) {
+        this.state = 'HALF_OPEN';
+      } else {
+        throw new Error(`[CircuitBreaker] OPEN — 복구까지 ${Math.ceil((this.recoveryMs - elapsed) / 1000)}초`);
+      }
+    }
+    try {
+      const result = await fn();
+      this.failures = 0;
+      this.state = 'CLOSED';
+      return result;
+    } catch (err) {
+      this.failures += 1;
+      if (this.failures >= this.failureThreshold) {
+        this.state = 'OPEN';
+        this.openedAt = Date.now();
+        console.warn(`[CircuitBreaker] OPEN — ${this.failures}회 실패, 60초 후 자동 복구`);
+      }
+      throw err;
+    }
+  }
+
+  status() { return { state: this.state, failures: this.failures }; }
+}
+
+// ── Domain AI 5개 병렬 처리 (Track B Week 2) ─────────────────────────────
 const DOMAIN_AGENTS = [
   {
     id: 'senior_care',
@@ -241,7 +279,25 @@ const DOMAIN_AGENTS = [
     systemPrompt: '당신은 커뮤니티 심리 전문 AI입니다. 매슬로우 욕구 이론 기반으로 소속감, 외로움 해소, 신뢰 형성에 대해 답하세요.',
     mockInsight: '심리: 소속감(매슬로우 3단계)이 어르신 커뮤니티 참여의 핵심입니다.',
   },
+  {
+    id: 'legal',
+    label: '법률·규제',
+    systemPrompt: '당신은 법률·규제 안내 AI입니다. 계약서 기본 내용, 행정 절차, 소비자 권리를 쉽게 설명하세요. 구체적 법률 해석은 전문가 상담을 권고하세요.',
+    mockInsight: '법률: 계약서 서명 전 위약금, 계약 기간, 해지 조건을 반드시 확인하세요.',
+  },
+  {
+    id: 'agriculture',
+    label: '농업·공급망',
+    systemPrompt: '당신은 농산물 공급망 분석 AI입니다. 제철 농산물, 산지 직거래, 공동구매 적기, 유통 절차에 대해 답하세요.',
+    mockInsight: '농업: 제철 농산물 공동구매 시 산지 직거래로 30~40% 절감 가능합니다.',
+  },
 ];
+
+// 에이전트별 독립 Circuit Breaker 인스턴스
+const agentBreakers = {};
+DOMAIN_AGENTS.forEach((a) => {
+  agentBreakers[a.id] = new CircuitBreaker({ failureThreshold: 5, recoveryMs: 60000 });
+});
 
 async function callDomainAgents(query) {
   if (!ANTHROPIC_API_KEY) {
@@ -250,19 +306,26 @@ async function callDomainAgents(query) {
       label: a.label,
       insight: a.mockInsight,
       source: 'mock',
+      breaker: agentBreakers[a.id].status(),
     }));
   }
 
-  const tasks = DOMAIN_AGENTS.map((agent) =>
-    callLunaAPI(query, agent.systemPrompt)
-      .then((text) => ({ domain: agent.id, label: agent.label, insight: text, source: 'haiku' }))
-      .catch(() => ({ domain: agent.id, label: agent.label, insight: agent.mockInsight, source: 'fallback' }))
-  );
+  const tasks = DOMAIN_AGENTS.map((agent) => {
+    const breaker = agentBreakers[agent.id];
+    return breaker.call(() => callLunaAPI(query, agent.systemPrompt))
+      .then((text) => ({
+        domain: agent.id, label: agent.label, insight: text,
+        source: 'haiku', breaker: breaker.status(),
+      }))
+      .catch((err) => ({
+        domain: agent.id, label: agent.label,
+        insight: err.message.startsWith('[CircuitBreaker]') ? `차단됨: ${err.message}` : agent.mockInsight,
+        source: err.message.startsWith('[CircuitBreaker]') ? 'circuit_open' : 'fallback',
+        breaker: breaker.status(),
+      }));
+  });
 
-  const results = await Promise.allSettled(tasks);
-  return results.map((r) =>
-    r.status === 'fulfilled' ? r.value : { domain: '?', label: '?', insight: '도메인 응답 실패', source: 'error' }
-  );
+  return Promise.all(tasks);
 }
 
 // ── MongoDB 로그 ──────────────────────────────────────────────────────────
@@ -310,7 +373,7 @@ router.post('/jr-trang', async (req, res) => {
   // [3] 시스템 프롬프트 조합
   const systemPrompt = buildSystemPrompt(mode, context);
 
-  // [4] Luna API + Domain AI 3개 병렬 호출
+  // [4] Luna API + Domain AI 5개 병렬 호출 (Track B Week 2)
   let responseText;
   let source = 'haiku';
   let domainResults = [];
