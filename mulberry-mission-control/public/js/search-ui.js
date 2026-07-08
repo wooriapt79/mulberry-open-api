@@ -107,37 +107,31 @@ class SearchUI {
     if (this._btnEl) this._btnEl.disabled = true;
 
     try {
-      const res = await fetch('/api/v1/search', {
+      const res = await fetch('/api/agents/jr-trang', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query, context: 'mulberry_service' }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      this.sessionId = data.sessionId;
 
-      // Codex Bot 리뷰 Issue 1 (2026-06-30): Safety CRITICAL/RED 거절 응답 처리
-      // routes/search.js가 blocked/refused 시 domain_results 없이 status/zone/message만 반환함
-      if (data.status === 'blocked' || data.status === 'refused') {
+      // Safety CRITICAL/RED — jr-trang returns 400 with {error, zone}
+      if (!res.ok) {
         this._resetGrid();
-        const icon = data.status === 'blocked' ? '🔴' : '⚠️';
-        this._setStatus(`${icon} ${data.message || '요청을 처리할 수 없습니다.'} (${data.zone})`);
+        this._setStatus(`🔴 ${data.error || '요청을 처리할 수 없습니다.'} (${data.zone || 'blocked'})`);
         return;
       }
 
-      // 소켓 subscribe
-      if (this.socket) this.socket.emit('search_subscribe', { sessionId: data.sessionId });
+      this.sessionId = data.session_id;
 
-      // 결과 렌더 (소켓 미연결 환경에서도 동작)
+      // 결과 렌더
       this._resetGrid();
-      (data.domain_results || []).forEach((r) => this._renderAgentCard(r, data.source));
-      this._renderAnswer(data.answer || '', data.source);
+      (data.domain_results || []).forEach((r) => this._renderAgentCard(r));
+      this._renderAnswer(data.response || '', data.source);
 
-      // Codex Bot 리뷰 Issue 2 (2026-06-30): Safety YELLOW 경고 배너 표시
-      if (data.warning) this._renderWarning(data.warning);
-
-      const sourceBadge = data.source === 'real' ? '🟢 실 에이전트' : '🔵 Mock';
-      this._setStatus(`✅ 완료 — ${data.passed_agents}/${data.total_agents}개 에이전트 통과 ${sourceBadge}`);
+      const totalAgents = (data.domain_results || []).length;
+      const passedAgents = (data.domain_results || []).filter(r => r.source !== 'circuit_open' && r.source !== 'error').length;
+      const sourceBadge = data.source === 'haiku' ? '🟢 Luna Haiku' : '🔵 Mock';
+      this._setStatus(`✅ 완료 — ${passedAgents}/${totalAgents}개 에이전트 · ${data.mode} 모드 ${sourceBadge}`);
     } catch (err) {
       this._setStatus(`❌ 오류: ${err.message}`);
     } finally {
@@ -145,14 +139,14 @@ class SearchUI {
     }
   }
 
-  _renderAgentCard(r, source) {
+  _renderAgentCard(r) {
     if (!this._gridEl) return;
-    const label = AGENT_LABELS[r.domain] || r.domain;
-    const passed = !r.error;
-    const score = typeof r.spirit_score === 'number' ? r.spirit_score.toFixed(2) : '-';
-    // Issue #55: 슬라이싱 버그 수정 — JSON.stringify 원시 절단 제거, insight만 표시
-    const insight = r.data ? (r.data.insight || r.data.summary || '') : '';
-    const srcBadge = (source || r.source) === 'real' ? '🟢' : '🔵';
+    // jr-trang format: {domain, label, insight, source, breaker}
+    const label = r.label || AGENT_LABELS[r.domain] || r.domain;
+    const insight = r.insight || (r.data ? (r.data.insight || r.data.summary || '') : '');
+    const passed = r.source !== 'circuit_open' && r.source !== 'error';
+    const srcBadge = r.source === 'haiku' ? '🟢' : r.source === 'circuit_open' ? '🔴 CB' : '🔵';
+    const cbState = r.breaker ? ` · CB:${r.breaker.state}` : '';
 
     const card = document.createElement('div');
     card.style.cssText = `
@@ -170,14 +164,14 @@ class SearchUI {
 
     const badgeEl = document.createElement('span');
     badgeEl.style.cssText = `font-size:0.75rem;color:${passed ? '#22c55e' : '#ef4444'};`;
-    badgeEl.textContent = `${passed ? '✅' : '❌'} spirit ${score} ${srcBadge}`;
+    badgeEl.textContent = `${passed ? '✅' : '❌'} ${srcBadge}${cbState}`;
 
     header.appendChild(nameEl);
     header.appendChild(badgeEl);
 
     const bodyEl = document.createElement('div');
     bodyEl.style.cssText = 'color:#e2e8f0;font-size:0.83rem;line-height:1.5;';
-    bodyEl.textContent = r.error || insight;
+    bodyEl.textContent = insight;
 
     card.appendChild(header);
     card.appendChild(bodyEl);
