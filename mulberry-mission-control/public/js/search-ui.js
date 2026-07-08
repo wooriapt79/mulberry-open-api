@@ -216,9 +216,9 @@ class SearchUI {
     const bodyEl = document.createElement('div');
     bodyEl.style.cssText = 'color:#e2e8f0;font-size:0.83rem;line-height:1.6;';
     if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
-      bodyEl.innerHTML = DOMPurify.sanitize(marked.parse(insight));
+      bodyEl.innerHTML = DOMPurify.sanitize(marked.parse(stripEmoji(insight)));
     } else {
-      bodyEl.textContent = insight;
+      bodyEl.textContent = stripEmoji(insight);
     }
 
     card.appendChild(header);
@@ -232,10 +232,10 @@ class SearchUI {
       const badge = source === 'haiku' ? '🟢 Luna Haiku' : '🔵 Mock';
       this._answerEl.style.display = 'block';
       if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
-        this._answerEl.innerHTML = DOMPurify.sanitize(marked.parse(answer))
+        this._answerEl.innerHTML = DOMPurify.sanitize(marked.parse(stripEmoji(answer)))
           + `<div style="margin-top:10px;font-size:0.78rem;color:#6b7280;">[출처: ${badge}]</div>`;
       } else {
-        this._answerEl.textContent = answer + '\n\n[출처: ' + badge + ']';
+        this._answerEl.textContent = stripEmoji(answer) + '\n\n[출처: ' + badge + ']';
       }
     } else {
       this._answerEl.innerHTML = '';
@@ -308,6 +308,14 @@ class SearchUI {
 }
 
 window.SearchUI = SearchUI;
+
+// Issue #77: Haiku가 프롬프트 무시하고 이모지 출력할 경우 깨진 문자(U+FFFD) 방지
+function stripEmoji(str) {
+  return String(str)
+    .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}]/gu, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
 
 function escapeHtml(str) {
   return String(str)
