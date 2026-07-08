@@ -15,6 +15,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mulberry Mission Control</title>
   <script src="/socket.io/socket.io.js"></script>
+  <!-- Issue #73: 마크다운 렌더링 + XSS 방지 -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
   <!-- 이 태그들이 index.html에 없음 -->
 <script src="/js/skill-bank-frontend.js"></script>
 <!-- team-chat-frontend.js 제거 (Issue #32): 로그인 실패 시 깨진 window.teamChat 인스턴스를 생성해 ChatUI fallback을 막음 -->
