@@ -214,8 +214,12 @@ class SearchUI {
     header.appendChild(badgeEl);
 
     const bodyEl = document.createElement('div');
-    bodyEl.style.cssText = 'color:#e2e8f0;font-size:0.83rem;line-height:1.5;';
-    bodyEl.textContent = insight;
+    bodyEl.style.cssText = 'color:#e2e8f0;font-size:0.83rem;line-height:1.6;';
+    if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
+      bodyEl.innerHTML = DOMPurify.sanitize(marked.parse(insight));
+    } else {
+      bodyEl.textContent = insight;
+    }
 
     card.appendChild(header);
     card.appendChild(bodyEl);
@@ -225,11 +229,16 @@ class SearchUI {
   _renderAnswer(answer, source) {
     if (!this._answerEl) return;
     if (answer) {
-      const badge = source === 'real' ? ' 🟢 실 에이전트' : ' 🔵 Mock';
-      this._answerEl.textContent = answer + '\n\n[출처: ' + badge.trim() + ']';
+      const badge = source === 'haiku' ? '🟢 Luna Haiku' : '🔵 Mock';
       this._answerEl.style.display = 'block';
+      if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
+        this._answerEl.innerHTML = DOMPurify.sanitize(marked.parse(answer))
+          + `<div style="margin-top:10px;font-size:0.78rem;color:#6b7280;">[출처: ${badge}]</div>`;
+      } else {
+        this._answerEl.textContent = answer + '\n\n[출처: ' + badge + ']';
+      }
     } else {
-      this._answerEl.textContent = '';
+      this._answerEl.innerHTML = '';
       this._answerEl.style.display = 'none';
     }
   }
