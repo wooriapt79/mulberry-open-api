@@ -60,6 +60,11 @@ class SearchUI {
 
     if (!this._inputEl || !this._btnEl) return;
 
+    // Issue #79: 단락 복원 + 취소선(~~) 제거
+    if (typeof marked !== 'undefined') {
+      marked.setOptions({ breaks: true, gfm: false });
+    }
+
     this._btnEl.addEventListener('click', () => this._runSearch());
     this._inputEl.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') this._runSearch();
@@ -309,10 +314,11 @@ class SearchUI {
 
 window.SearchUI = SearchUI;
 
-// Issue #77: Haiku가 프롬프트 무시하고 이모지 출력할 경우 깨진 문자(U+FFFD) 방지
+// Issue #77/#79: 이모지 + U+FFFD 깨진 문자 제거
 function stripEmoji(str) {
   return String(str)
     .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}]/gu, '')
+    .replace(/�/g, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
 }
