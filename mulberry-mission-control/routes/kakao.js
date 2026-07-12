@@ -16,7 +16,7 @@ const express = require('express');
 const router = express.Router();
 
 const LUNA_TIMEOUT_MS = 4500; // 카카오 5초 제한 내 여유 500ms
-const LUNA_URL = process.env.LUNA_INTERNAL_URL || 'http://localhost:3000';
+const LUNA_URL = process.env.LUNA_INTERNAL_URL || `http://localhost:${process.env.PORT || 3000}`;
 
 const FALLBACK = {
   version: '2.0',
