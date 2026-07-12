@@ -15,6 +15,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mulberry Mission Control</title>
   <script src="/socket.io/socket.io.js"></script>
+  <!-- Issue #73: 마크다운 렌더링 + XSS 방지 -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
   <!-- 이 태그들이 index.html에 없음 -->
 <script src="/js/skill-bank-frontend.js"></script>
 <!-- team-chat-frontend.js 제거 (Issue #32): 로그인 실패 시 깨진 window.teamChat 인스턴스를 생성해 ChatUI fallback을 막음 -->
@@ -459,6 +462,62 @@
     <!-- JavaScript로 자동 생성 -->
   </div>
 
+  <!-- Issue #57 (2026-07-01): Team Chat — nav overflow 방지를 위해 우측 고정 버튼으로 분리 -->
+  <div class="nav-chat-btn" id="nav-chat-btn" title="Team Chat">
+    <button onclick="toggleChatMenu()" style="
+      background:none; border:none; cursor:pointer; padding:6px 10px;
+      display:flex; align-items:center; gap:6px;
+      color:#e2e8f0; font-size:0.88rem; font-weight:600;
+      border-radius:8px; transition:background 0.15s;
+    " onmouseover="this.style.background='rgba(124,58,237,0.2)'"
+       onmouseout="this.style.background='none'">
+      <span style="font-size:1.1rem;">💬</span>
+      <span>Team Chat</span>
+      <span id="chat-caret" style="font-size:0.7rem;transition:transform 0.2s;">▼</span>
+    </button>
+    <!-- 서브메뉴 드롭다운 -->
+    <div id="chat-submenu" style="
+      display:none; position:absolute; top:100%; right:0;
+      background:#1e1040; border:1px solid rgba(124,58,237,0.4);
+      border-radius:10px; min-width:160px; padding:6px 0;
+      box-shadow:0 8px 24px rgba(0,0,0,0.4); z-index:1000;
+    ">
+      <a onclick="openChat('general')" style="
+        display:flex; align-items:center; gap:8px;
+        padding:8px 16px; color:#e2e8f0; font-size:0.85rem;
+        cursor:pointer; text-decoration:none; transition:background 0.15s;
+      " onmouseover="this.style.background='rgba(124,58,237,0.15)'"
+         onmouseout="this.style.background='none'">
+        <span>#</span><span>general</span>
+      </a>
+      <a onclick="openChat('dev')" style="
+        display:flex; align-items:center; gap:8px;
+        padding:8px 16px; color:#e2e8f0; font-size:0.85rem;
+        cursor:pointer; text-decoration:none; transition:background 0.15s;
+      " onmouseover="this.style.background='rgba(124,58,237,0.15)'"
+         onmouseout="this.style.background='none'">
+        <span>#</span><span>dev</span>
+      </a>
+      <a onclick="openChat('research')" style="
+        display:flex; align-items:center; gap:8px;
+        padding:8px 16px; color:#e2e8f0; font-size:0.85rem;
+        cursor:pointer; text-decoration:none; transition:background 0.15s;
+      " onmouseover="this.style.background='rgba(124,58,237,0.15)'"
+         onmouseout="this.style.background='none'">
+        <span>#</span><span>research</span>
+      </a>
+      <div style="border-top:1px solid rgba(255,255,255,0.1); margin:4px 0;"></div>
+      <a onclick="openChat('settings')" style="
+        display:flex; align-items:center; gap:8px;
+        padding:8px 16px; color:#e2e8f0; font-size:0.85rem;
+        cursor:pointer; text-decoration:none; transition:background 0.15s;
+      " onmouseover="this.style.background='rgba(124,58,237,0.15)'"
+         onmouseout="this.style.background='none'">
+        <span>⚙️</span><span>설정</span>
+      </a>
+    </div>
+  </div>
+
   <!-- 사용자 메뉴 -->
   <div class="user-menu">
     <div class="user-info">
@@ -472,6 +531,34 @@
     </div>
   </div>
 </nav>
+
+<script>
+// Issue #57: Team Chat 드롭다운 토글
+function toggleChatMenu() {
+  const menu = document.getElementById('chat-submenu');
+  const caret = document.getElementById('chat-caret');
+  const isOpen = menu.style.display !== 'none';
+  menu.style.display = isOpen ? 'none' : 'block';
+  caret.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+function openChat(channel) {
+  document.getElementById('chat-submenu').style.display = 'none';
+  document.getElementById('chat-caret').style.transform = '';
+  if (window.MissionControl && window.MissionControl.navigateTo) {
+    window.MissionControl.navigateTo('chat', channel);
+  } else {
+    window.location.hash = '#chat';
+  }
+}
+// 드롭다운 외부 클릭 시 닫기
+document.addEventListener('click', (e) => {
+  const btn = document.getElementById('nav-chat-btn');
+  if (btn && !btn.contains(e.target)) {
+    document.getElementById('chat-submenu').style.display = 'none';
+    document.getElementById('chat-caret').style.transform = '';
+  }
+});
+</script>
 
 <!-- ==================== 서브 네비게이션 (섹션별) ==================== -->
 <nav class="sub-navigation-bar">
@@ -668,7 +755,7 @@
       </div>
     </div>
 
-    <!-- 준비 중 패널 (rooms / settings 섹션) -->
+    <!-- 준비 중 패널 (rooms 섹션) -->
     <div id="chat-section-placeholder" style="
       display:none; flex:1; align-items:center; justify-content:center;
       flex-direction:column; gap:12px; color:#6b7280;
@@ -676,6 +763,96 @@
       <div style="font-size:2.5rem;">🚧</div>
       <div id="chat-placeholder-title" style="font-size:1rem; font-weight:600;"></div>
       <div style="font-size:0.83rem;">다음 업데이트에서 제공됩니다.</div>
+    </div>
+
+    <!-- ⚙️ 설정 패널 (Issue #61) -->
+    <div id="chat-section-settings" style="display:none; flex:1; overflow-y:auto; padding:4px 0;">
+      <div style="max-width:520px;">
+        <h2 style="font-size:1rem; font-weight:700; color:#a78bfa; margin-bottom:18px;">⚙️ 채팅 설정</h2>
+
+        <!-- 알림 -->
+        <div style="
+          background:#0f0a24; border:1px solid rgba(124,58,237,0.2);
+          border-radius:10px; padding:16px 20px; margin-bottom:12px;
+        ">
+          <div style="font-size:0.83rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:14px;">알림</div>
+          <label style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span style="font-size:0.9rem; color:#cbd5e1;">메시지 알림</span>
+            <input type="checkbox" id="cs-notifications" class="chat-toggle" checked>
+          </label>
+          <label style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:0.9rem; color:#cbd5e1;">멘션(@) 알림음</span>
+            <input type="checkbox" id="cs-sounds" class="chat-toggle" checked>
+          </label>
+        </div>
+
+        <!-- 표시 -->
+        <div style="
+          background:#0f0a24; border:1px solid rgba(124,58,237,0.2);
+          border-radius:10px; padding:16px 20px; margin-bottom:12px;
+        ">
+          <div style="font-size:0.83rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:14px;">표시</div>
+          <label style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span style="font-size:0.9rem; color:#cbd5e1;">컴팩트 모드</span>
+            <input type="checkbox" id="cs-compact" class="chat-toggle">
+          </label>
+          <label style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span style="font-size:0.9rem; color:#cbd5e1;">타임스탬프 표시</span>
+            <input type="checkbox" id="cs-timestamps" class="chat-toggle" checked>
+          </label>
+          <label style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:0.9rem; color:#cbd5e1;">시스템 메시지 표시</span>
+            <input type="checkbox" id="cs-sysmsg" class="chat-toggle" checked>
+          </label>
+        </div>
+
+        <!-- 입력 -->
+        <div style="
+          background:#0f0a24; border:1px solid rgba(124,58,237,0.2);
+          border-radius:10px; padding:16px 20px; margin-bottom:12px;
+        ">
+          <div style="font-size:0.83rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:14px;">입력</div>
+          <label style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span style="font-size:0.9rem; color:#cbd5e1;">Enter키로 전송</span>
+            <input type="checkbox" id="cs-enter-send" class="chat-toggle" checked>
+          </label>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:0.9rem; color:#cbd5e1;">메시지 최대 길이</span>
+            <select id="cs-maxlen" style="
+              background:#1a0f3a; border:1px solid rgba(124,58,237,0.3);
+              border-radius:6px; color:#e2e8f0; padding:4px 10px; font-size:0.85rem;
+            ">
+              <option value="500">500자</option>
+              <option value="1000" selected>1000자</option>
+              <option value="2000">2000자</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- DB 연결 상태 -->
+        <div style="
+          background:#0f0a24; border:1px solid rgba(124,58,237,0.2);
+          border-radius:10px; padding:16px 20px; margin-bottom:18px;
+        ">
+          <div style="font-size:0.83rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.6px; margin-bottom:14px;">메시지 영구저장 (Issue #62)</div>
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+            <span id="cs-db-dot" style="
+              width:8px; height:8px; border-radius:50%; background:#f59e0b; display:inline-block;
+            "></span>
+            <span id="cs-db-label" style="font-size:0.88rem; color:#cbd5e1;">확인 중…</span>
+          </div>
+          <div style="font-size:0.78rem; color:#475569; line-height:1.5;">
+            MongoDB 연결 시 메시지가 영구저장됩니다.<br>
+            미연결 시 인메모리 캐시(50건)로 자동 fallback.
+          </div>
+        </div>
+
+        <button id="cs-save-btn" style="
+          background:linear-gradient(135deg,#7c3aed,#a855f7); border:none;
+          border-radius:8px; padding:10px 24px; color:#fff;
+          font-size:0.9rem; font-weight:700; cursor:pointer; width:100%;
+        ">설정 저장</button>
+      </div>
     </div>
   </div>
 
@@ -777,9 +954,46 @@
       <p>Mulberry 멀티에이전트 검색 — 10개 도메인 전문가 병렬 실행 + Spirit Gate 필터링</p>
     </div>
 
-    <div class="section-container">
-      <!-- 검색 입력 -->
-      <div style="display:flex;gap:10px;margin-bottom:16px;">
+    <div id="section-search-query" class="section-container">
+
+      <!-- Help Desk 팝업 오버레이 -->
+      <div id="search-help-overlay"
+        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9000;
+               align-items:center;justify-content:center;">
+        <div style="background:#1a0f3a;border:1px solid #7c3aed;border-radius:14px;
+                    padding:28px 32px;max-width:480px;width:90%;position:relative;">
+          <button id="search-help-close"
+            style="position:absolute;top:12px;right:16px;background:none;border:none;
+                   color:#94a3b8;font-size:1.3rem;cursor:pointer;">✕</button>
+          <h3 style="color:#a78bfa;font-size:1rem;font-weight:700;margin-bottom:18px;">
+            🌙 Luna Search 레이어 안내
+          </h3>
+          <table style="width:100%;border-collapse:collapse;font-size:0.85rem;line-height:1.7;">
+            <tr>
+              <td style="color:#7c3aed;font-weight:700;padding:6px 12px 6px 0;white-space:nowrap;">Layer 1~2</td>
+              <td style="color:#e2e8f0;">기본 정보 검색 — 시세·수급·물류 데이터 빠른 조회</td>
+            </tr>
+            <tr>
+              <td style="color:#7c3aed;font-weight:700;padding:6px 12px 6px 0;white-space:nowrap;">Layer 3</td>
+              <td style="color:#e2e8f0;">지역 맞춤 분석 — 인제군 등 지역 특성 반영</td>
+            </tr>
+            <tr>
+              <td style="color:#7c3aed;font-weight:700;padding:6px 12px 6px 0;white-space:nowrap;">Layer 4~5</td>
+              <td style="color:#e2e8f0;">Resonance AI — HARM Model 적용<br>
+                <span style="color:#a78bfa;font-size:0.8rem;">Honest · Authentic · Respect · Meaning</span>
+              </td>
+            </tr>
+          </table>
+          <div style="margin-top:18px;padding:12px;background:rgba(124,58,237,0.1);
+                      border-radius:8px;font-size:0.83rem;color:#94a3b8;line-height:1.6;">
+            💡 각 모드는 질문의 성격에 맞게 선택해주세요.<br>
+            어르신·식품사막 지역 주민께는 <strong style="color:#a78bfa;">취약계층 모드</strong>를 추천합니다.
+          </div>
+        </div>
+      </div>
+
+      <!-- 검색 입력 행 -->
+      <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center;">
         <input id="search-query-input" type="text" placeholder="예: 인제군 어르신 배추 공동구매 최적 시기는?"
           style="flex:1;padding:10px 14px;border-radius:8px;border:1px solid #334155;
                  background:#0f172a;color:#e2e8f0;font-size:0.9rem;outline:none;" />
@@ -788,6 +1002,37 @@
                  border:none;cursor:pointer;font-weight:700;font-size:0.9rem;">
           검색
         </button>
+        <button id="search-help-btn" title="Luna Search 레이어 안내"
+          style="padding:9px 13px;border-radius:8px;background:#1a0f3a;color:#a78bfa;
+                 border:1px solid #4c1d95;cursor:pointer;font-weight:700;font-size:0.9rem;">
+          ?
+        </button>
+      </div>
+
+      <!-- 검색 모드 선택 -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
+        <span style="color:#6b7280;font-size:0.8rem;margin-right:4px;">검색 모드</span>
+        <label id="search-mode-label-general"
+          style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;
+                 border:1px solid #7c3aed;background:#12082e;cursor:pointer;font-size:0.83rem;
+                 color:#a78bfa;font-weight:600;">
+          <input type="radio" name="search-mode" value="general" checked style="accent-color:#7c3aed;">
+          일반 모드 <span style="color:#6b7280;font-weight:400;">— 빠른 정보 안내</span>
+        </label>
+        <label id="search-mode-label-luna_deep"
+          style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;
+                 border:1px solid #334155;background:#0f172a;cursor:pointer;font-size:0.83rem;
+                 color:#94a3b8;">
+          <input type="radio" name="search-mode" value="luna_deep" style="accent-color:#7c3aed;">
+          Luna 심층 모드 <span style="color:#6b7280;font-weight:400;">— HARM 모델·감성 분석</span>
+        </label>
+        <label id="search-mode-label-vulnerable"
+          style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;
+                 border:1px solid #334155;background:#0f172a;cursor:pointer;font-size:0.83rem;
+                 color:#94a3b8;">
+          <input type="radio" name="search-mode" value="vulnerable" style="accent-color:#7c3aed;">
+          취약계층 모드 <span style="color:#6b7280;font-weight:400;">— 어르신·식품사막 맞춤</span>
+        </label>
       </div>
 
       <!-- 상태 표시 -->

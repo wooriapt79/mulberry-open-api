@@ -5,7 +5,12 @@
 
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'mulberry-jwt-secret-2026';
+// Issue #49 (보안, 2026-07-01): 하드코딩 폴백 제거 — 미설정 시 추측 가능한
+// 고정 문자열로 인증이 동작하던 취약점. 서버 기동 시점에 fail-fast.
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET 환경변수가 설정되지 않았습니다. 서버를 시작할 수 없습니다.');
+}
 const JWT_EXPIRE = '24h';
 
 /**

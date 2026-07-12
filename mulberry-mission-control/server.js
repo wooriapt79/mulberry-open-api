@@ -326,7 +326,9 @@ app.post('/api/memory/:id', async (req, res) => {
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'mulberry-steward-secret-2026';
+// Issue #49 (보안, 2026-07-01): 하드코딩 폴백 제거 — utils/jwt.js의
+// 중앙화된 JWT_SECRET 재사용 (해당 모듈이 미설정 시 fail-fast 처리함)
+const { JWT_SECRET } = require('./utils/jwt');
 const STEWARD_WORKSPACE_ID = 'mulberry-steward-ws';
 
 function sha256(value) {
@@ -434,6 +436,19 @@ app.use('/api/v1/metrics', require('./routes/metrics'));
 // ==================== Search API (DAY5, Issue #122) ====================
 // POST /api/v1/search — MulberrySearchOrchestrator 10개 에이전트 병렬 검색
 app.use('/api/v1/search', searchRouter);
+
+// ==================== Jr. TRANG (Luna) Search STEWARD API (DAY13, Issue #63) ====================
+// POST /api/agents/jr-trang  — Context Mode 선 트리거 + Haiku 4.5 응답
+// GET  /api/agents/jr-trang/health — 상태 확인
+app.use('/api/agents', require('./routes/jr-trang'));
+
+// ==================== Co-op Buy API (DAY10, 류원+Koda 2026-07-01) ====================
+// POST /api/coop-buy/recommend-elder-combo   — Type 1 시니어 추천
+// POST /api/coop-buy/generate-box-composition — Type 2 도시민 박스
+// POST /api/coop-buy/submit-feedback          — 피드백 + 모델 업데이트
+// GET|POST /api/coop-buy/elders/:communityId  — 어르신 프로필
+// GET|POST /api/coop-buy/farmers              — 농부 프로필
+app.use('/api/coop-buy', require('./routes/coop-buy'));
 
 // ==================== Decision Events API (Issue #98 Phase 1, Koda 2026-06-15) ====================
 // GET /api/events/decisions — Decision 메뉴 최초 로드용 history

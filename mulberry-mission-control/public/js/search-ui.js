@@ -9,6 +9,21 @@
  * @author CTO Koda · DAY5 · 2026-06-17
  */
 
+// Issue #55 (2026-07-01): 도메인 키워드 — CEO re.eul 결정 사항
+const DOMAIN_KEYWORDS = [
+  '식품','공동구매','농산물','어르신','배추','쌀','양파','감자','배달',
+  '수급','시세','지역','거점','마을','공급','계절','영양','품질','구매',
+  '가격','인제','고령','노인','산지','농촌','도매','유통','신선','채소',
+  '과일','생협','직농','수확','작황','재배','농부','식단','건강식','저장',
+];
+
+const DOMAIN_EXAMPLE_QUERIES = [
+  '인제군 어르신 배추 공동구매 최적 시기는?',
+  '이번 주 양파 도매 시세 변동 전망',
+  '산지 직배송 감자 영양 품질 비교',
+  '농촌 고령 어르신 식품사막화 지역 공급 현황',
+];
+
 const AGENT_LABELS = {
   agricultural_price:       '🌾 농산물 시세',
   local_supply:             '📦 국내 수급',
@@ -34,17 +49,45 @@ class SearchUI {
   }
 
   init() {
-    this._inputEl  = document.getElementById('search-query-input');
-    this._btnEl    = document.getElementById('search-submit-btn');
+    this._inputEl   = document.getElementById('search-query-input');
+    this._btnEl     = document.getElementById('search-submit-btn');
     this._summaryEl = document.getElementById('search-summary');
-    this._gridEl   = document.getElementById('search-agent-grid');
-    this._answerEl = document.getElementById('search-answer');
+    this._gridEl    = document.getElementById('search-agent-grid');
+    this._answerEl  = document.getElementById('search-answer');
+    this._helpBtn   = document.getElementById('search-help-btn');
+    this._helpOverlay = document.getElementById('search-help-overlay');
+    this._helpClose = document.getElementById('search-help-close');
 
     if (!this._inputEl || !this._btnEl) return;
+
+    // Issue #79: 단락 복원 + 취소선(~~) 제거
+    if (typeof marked !== 'undefined') {
+      marked.setOptions({ breaks: true, gfm: false });
+    }
 
     this._btnEl.addEventListener('click', () => this._runSearch());
     this._inputEl.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') this._runSearch();
+    });
+
+    // Help Desk 팝업
+    if (this._helpBtn && this._helpOverlay) {
+      this._helpBtn.addEventListener('click', () => {
+        this._helpOverlay.style.display = 'flex';
+      });
+      this._helpOverlay.addEventListener('click', (e) => {
+        if (e.target === this._helpOverlay) this._helpOverlay.style.display = 'none';
+      });
+    }
+    if (this._helpClose) {
+      this._helpClose.addEventListener('click', () => {
+        this._helpOverlay.style.display = 'none';
+      });
+    }
+
+    // 모드 라디오 버튼 — 선택 시 라벨 스타일 전환
+    document.querySelectorAll('input[name="search-mode"]').forEach((radio) => {
+      radio.addEventListener('change', () => this._updateModeStyles());
     });
 
     // 데모 쿼리 자동 입력
@@ -70,46 +113,74 @@ class SearchUI {
     }
   }
 
+  _getSelectedMode() {
+    const radio = document.querySelector('input[name="search-mode"]:checked');
+    return radio ? radio.value : 'general';
+  }
+
+  _updateModeStyles() {
+    const selected = this._getSelectedMode();
+    ['general', 'luna_deep', 'vulnerable'].forEach((m) => {
+      const label = document.getElementById(`search-mode-label-${m}`);
+      if (!label) return;
+      const active = m === selected;
+      label.style.border    = active ? '1px solid #7c3aed' : '1px solid #334155';
+      label.style.background = active ? '#12082e' : '#0f172a';
+      label.style.color     = active ? '#a78bfa' : '#94a3b8';
+    });
+  }
+
+  // Issue #55: 도메인 외 검색어 감지
+  _isOutOfDomain(query) {
+    const q = query.toLowerCase();
+    return !DOMAIN_KEYWORDS.some(kw => q.includes(kw));
+  }
+
   async _runSearch() {
     const query = this._inputEl ? this._inputEl.value.trim() : '';
     if (!query) return;
 
     this._resetGrid();
-    this._setStatus('🔍 검색 중...');
+
+    // Issue #55: 도메인 외 검색어 → 안내 메시지 (에이전트 미실행)
+    if (this._isOutOfDomain(query)) {
+      this._renderOutOfDomainCard(query);
+      return;
+    }
+
+    const searchMode = this._getSelectedMode();
+    const modeLabels = { general: '일반', luna_deep: 'Luna 심층', vulnerable: '취약계층' };
+    const modeLabel  = modeLabels[searchMode] || searchMode;
+
+    this._setStatus(`🔍 검색 중… [${modeLabel} 모드]`);
     if (this._btnEl) this._btnEl.disabled = true;
 
     try {
-      const res = await fetch('/api/v1/search', {
+      const res = await fetch('/api/agents/jr-trang', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query, context: 'mulberry_service', search_mode: searchMode }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      this.sessionId = data.sessionId;
 
-      // Codex Bot 리뷰 Issue 1 (2026-06-30): Safety CRITICAL/RED 거절 응답 처리
-      // routes/search.js가 blocked/refused 시 domain_results 없이 status/zone/message만 반환함
-      if (data.status === 'blocked' || data.status === 'refused') {
+      // Safety CRITICAL/RED — jr-trang returns 400 with {error, zone}
+      if (!res.ok) {
         this._resetGrid();
-        const icon = data.status === 'blocked' ? '🔴' : '⚠️';
-        this._setStatus(`${icon} ${data.message || '요청을 처리할 수 없습니다.'} (${data.zone})`);
+        this._setStatus(`🔴 ${data.error || '요청을 처리할 수 없습니다.'} (${data.zone || 'blocked'})`);
         return;
       }
 
-      // 소켓 subscribe
-      if (this.socket) this.socket.emit('search_subscribe', { sessionId: data.sessionId });
+      this.sessionId = data.session_id;
 
-      // 결과 렌더 (소켓 미연결 환경에서도 동작)
+      // 결과 렌더
       this._resetGrid();
-      (data.domain_results || []).forEach((r) => this._renderAgentCard(r, data.source));
-      this._renderAnswer(data.answer || '', data.source);
+      (data.domain_results || []).forEach((r) => this._renderAgentCard(r));
+      this._renderAnswer(data.response || '', data.source);
 
-      // Codex Bot 리뷰 Issue 2 (2026-06-30): Safety YELLOW 경고 배너 표시
-      if (data.warning) this._renderWarning(data.warning);
-
-      const sourceBadge = data.source === 'real' ? '🟢 실 에이전트' : '🔵 Mock';
-      this._setStatus(`✅ 완료 — ${data.passed_agents}/${data.total_agents}개 에이전트 통과 ${sourceBadge}`);
+      const totalAgents  = (data.domain_results || []).length;
+      const passedAgents = (data.domain_results || []).filter(r => r.source !== 'circuit_open' && r.source !== 'error').length;
+      const sourceBadge  = data.source === 'haiku' ? '🟢 Luna Haiku' : '🔵 Mock';
+      this._setStatus(`✅ 완료 — ${passedAgents}/${totalAgents}개 에이전트 · [${modeLabel} 모드] ${sourceBadge}`);
     } catch (err) {
       this._setStatus(`❌ 오류: ${err.message}`);
     } finally {
@@ -117,13 +188,14 @@ class SearchUI {
     }
   }
 
-  _renderAgentCard(r, source) {
+  _renderAgentCard(r) {
     if (!this._gridEl) return;
-    const label = AGENT_LABELS[r.domain] || r.domain;
-    const passed = !r.error;
-    const score = typeof r.spirit_score === 'number' ? r.spirit_score.toFixed(2) : '-';
-    const insight = r.data ? (r.data.insight || JSON.stringify(r.data).slice(0, 120)) : '';
-    const srcBadge = (source || r.source) === 'real' ? '🟢' : '🔵';
+    // jr-trang format: {domain, label, insight, source, breaker}
+    const label = r.label || AGENT_LABELS[r.domain] || r.domain;
+    const insight = r.insight || (r.data ? (r.data.insight || r.data.summary || '') : '');
+    const passed = r.source !== 'circuit_open' && r.source !== 'error';
+    const srcBadge = r.source === 'haiku' ? '🟢' : r.source === 'circuit_open' ? '🔴 CB' : '🔵';
+    const cbState = r.breaker ? ` · CB:${r.breaker.state}` : '';
 
     const card = document.createElement('div');
     card.style.cssText = `
@@ -141,14 +213,18 @@ class SearchUI {
 
     const badgeEl = document.createElement('span');
     badgeEl.style.cssText = `font-size:0.75rem;color:${passed ? '#22c55e' : '#ef4444'};`;
-    badgeEl.textContent = `${passed ? '✅' : '❌'} spirit ${score} ${srcBadge}`;
+    badgeEl.textContent = `${passed ? '✅' : '❌'} ${srcBadge}${cbState}`;
 
     header.appendChild(nameEl);
     header.appendChild(badgeEl);
 
     const bodyEl = document.createElement('div');
-    bodyEl.style.cssText = 'color:#e2e8f0;font-size:0.83rem;line-height:1.5;';
-    bodyEl.textContent = r.error || insight;
+    bodyEl.style.cssText = 'color:#e2e8f0;font-size:0.83rem;line-height:1.6;';
+    if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
+      bodyEl.innerHTML = DOMPurify.sanitize(marked.parse(stripEmoji(insight)));
+    } else {
+      bodyEl.textContent = stripEmoji(insight);
+    }
 
     card.appendChild(header);
     card.appendChild(bodyEl);
@@ -158,13 +234,50 @@ class SearchUI {
   _renderAnswer(answer, source) {
     if (!this._answerEl) return;
     if (answer) {
-      const badge = source === 'real' ? ' 🟢 실 에이전트' : ' 🔵 Mock';
-      this._answerEl.textContent = answer + '\n\n[출처: ' + badge.trim() + ']';
+      const badge = source === 'haiku' ? '🟢 Luna Haiku' : '🔵 Mock';
       this._answerEl.style.display = 'block';
+      if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
+        this._answerEl.innerHTML = DOMPurify.sanitize(marked.parse(stripEmoji(answer)))
+          + `<div style="margin-top:10px;font-size:0.78rem;color:#6b7280;">[출처: ${badge}]</div>`;
+      } else {
+        this._answerEl.textContent = stripEmoji(answer) + '\n\n[출처: ' + badge + ']';
+      }
     } else {
-      this._answerEl.textContent = '';
+      this._answerEl.innerHTML = '';
       this._answerEl.style.display = 'none';
     }
+  }
+
+  // Issue #55 (2026-07-01): 도메인 외 검색어 안내 카드 — CEO re.eul 결정
+  _renderOutOfDomainCard(query) {
+    if (!this._gridEl) return;
+    const examples = DOMAIN_EXAMPLE_QUERIES.map(q =>
+      `<li style="margin:6px 0;cursor:pointer;color:#a78bfa;text-decoration:underline;"
+           onclick="document.getElementById('search-query-input').value='${q.replace(/'/g, "\\'")}'"
+       >${q}</li>`
+    ).join('');
+
+    const card = document.createElement('div');
+    card.style.cssText = `
+      background:#1a0f3a; border:1px solid #7c3aed; border-radius:12px;
+      padding:20px 24px; color:#e2e8f0; line-height:1.7; grid-column:1/-1;
+    `;
+    card.innerHTML = `
+      <div style="font-size:1.1rem;font-weight:700;margin-bottom:10px;">
+        🌿 Mulberry Search 안내
+      </div>
+      <p style="color:#94a3b8;margin-bottom:14px;">
+        <strong style="color:#c4b5fd;">"${escapeHtml(query)}"</strong>은(는) 현재 Mulberry가 전문으로 다루는 도메인 범위 밖의 검색어입니다.
+      </p>
+      <p style="margin-bottom:14px;">
+        Mulberry Search는 현재 <strong>식품·농산물·공동구매·어르신 케어·지역 유통</strong> 도메인에 특화되어 있으며,
+        앞으로 도메인을 지속 확장해 나갈 예정입니다. — <em style="color:#a78bfa;">CEO re.eul</em>
+      </p>
+      <div style="color:#94a3b8;font-size:0.88rem;margin-bottom:10px;">아래 예시 검색어로 시작해보세요 👇</div>
+      <ul style="list-style:none;padding:0;">${examples}</ul>
+    `;
+    this._gridEl.appendChild(card);
+    this._setStatus('ℹ️ 도메인 범위 외 검색어 — 아래 안내를 참고하세요');
   }
 
   // Codex Bot 리뷰 Issue 2 (2026-06-30): YELLOW 경고 배너
@@ -200,3 +313,19 @@ class SearchUI {
 }
 
 window.SearchUI = SearchUI;
+
+// Issue #77/#79: 이모지 + U+FFFD 깨진 문자 제거
+function stripEmoji(str) {
+  return String(str)
+    .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}]/gu, '')
+    .replace(/�/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
