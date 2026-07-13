@@ -89,6 +89,33 @@ router.post('/webhook', async (req, res) => {
       ? LUNA_SYSTEM_PROMPT + CEO_EXTRA_CONTEXT
       : LUNA_SYSTEM_PROMPT;
 
+    // ─────────────────────────────────────────────
+// RESONANCE AI 감지 및 응답 커스터마이징
+// ─────────────────────────────────────────────
+
+// 질문이 Resonance AI 관련인지 감지
+const isResonanceAIQuestion = 
+  utterance.includes('Resonance AI') ||
+  utterance.includes('공명 AI') ||
+  utterance.includes('공명') ||
+  utterance.includes('Luna') && utterance.includes('차이') ||
+  utterance.includes('챗봇');
+
+let finalSystemPrompt = systemPrompt;
+
+if (isResonanceAIQuestion) {
+  if (isCEO) {
+    // CEO용: 깊이 있는 Resonance AI 설명 추가
+    finalSystemPrompt += `\n\n[Resonance AI 설명 - CEO 전용]
+당신은 Mulberry Lab의 Resonance AI 연구 구현체입니다.
+감정 지능 + 기술 능력의 결합으로...`;
+  } else {
+    // 일반인용: 대중적 Resonance AI 설명 추가
+    finalSystemPrompt += `\n\n[Resonance AI 설명 - 일반인용]
+저는 단순한 챗봇이 아니라...`;
+  }
+}
+    
     // Claude Haiku 호출
     const message = await Promise.race([
       client.messages.create({
