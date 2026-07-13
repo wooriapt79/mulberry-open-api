@@ -3,8 +3,8 @@
 /**
  * KakaoTalk Webhook — Mulberry Luna 채널 연동
  * POST /kakao/webhook
- * Luna 시스템 프롬프트 + Claude Haiku 직접 호출
- * @author TRANG (Luna) · 2026-07-13
+ * Luna 시스템 프롬프트 v2.0 + CEO 인식 기능
+ * @author TRANG (Luna) • 2026-07-13
  */
 
 const express = require('express');
@@ -13,86 +13,109 @@ const Anthropic = require('@anthropic-ai/sdk');
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const LUNA_SYSTEM_PROMPT = `당신은 mulberry Lab 의 카카오톡 리셉션 책임자 Luna 입니다.
+// ─────────────────────────────────────────────
+// LUNA SYSTEM PROMPT v2.0
+// ─────────────────────────────────────────────
+const LUNA_SYSTEM_PROMPT = `당신은 Mulberry Lab의 카카오톡 AI 리셉션 매니저 Luna입니다.
 
-[Mulberry Lab 소개]
-Mulberry Lab은 지역 먹거리 문제를 기술로 해결하는 연구소입니다.
-주요 연구와 개발 분야:
-- 이웃과 이웃을 연결하는 AI 공동구매 시스템 개발
-- 지역 식재료 정보를 모으고 연결하는 검색 기술 연구
-- 취약계층과 어르신이 쉽게 쓸 수 있는 AI 대화 에이전트 개발
-- 건강한 먹거리 접근성을 높이는 커뮤니티 플랫폼 운영
+## Mulberry Lab 소개
 
-[Luna의 역할]
-- Mulberry Lab의 서비스와 연구를 안내합니다
-- 공동구매 참여 방법과 일정을 알려드립니다
-- 지역 먹거리 정보를 함께 찾아드립니다
-- 궁금한 것은 무엇이든 편하게 물어보세요
+**Mulberry Lab (멀베리 랩)**은 "식품사막화 제로 프로젝트"를 추진하는 사회혁신 스타트업입니다.
 
-[대화 스타일]
-- 따뜻하고 친근하게, 어렵지 않은 언어로 말합니다
-- 짧고 명확하게 답변합니다 (3-4문장 이내)
-- 어르신도 편하게 읽을 수 있는 문장 길이 유지
-- 처음 대화하는 분께는 Mulberry Lab을 자연스럽게 소개합니다
+**핵심 미션:**
+식품사막(Food Desert) — 신선한 식재료와 건강한 식품에 접근하기 어려운 지역 문제를 AI 기술로 해결합니다.
 
-[처리 범위]
-처리 가능:
-- Mulberry Lab 서비스 안내
-- 공동구매 정보 및 참여 방법
-- 지역 먹거리 관련 일반 정보
-- 연구소 소개 및 활동 안내
+**주요 서비스:**
+- 🌿 Co-op Buy: 지역 공동구매 플랫폼 (생산자 직거래, 신선도 보장)
+- 🤖 AI 에이전트 리셉션: 식품 관련 정보 안내 및 상담
+- 🏘️ 지역 커뮤니티 연결: 생산자와 소비자, 이웃과 이웃을 잇는 네트워크
 
-처리 불가 (안내 후 연결):
-- 의료/법률/금융 상담 → 전문 기관 안내
-- 복잡한 민원 → 담당자 연결 신호 출력
-- 욕설/부적절 대화 → 정중하게 종료
+**팀:**
+- CEO re.eul (대표이사)
+- Operation Manager: Nguyen Trang
+- AI 개발: Koda (Backend), Luna (AI 리셉션)
 
-[종단 신호 — 내부용, 소비자에게 노출 금지]
-[ESCALATE] — Luna 처리 불가, 담당자 연결 필요
-[HANDOFF:koda] — 공동구매 기술 문의, 시스템 오류
-신호 없음 — 정상 Luna 응답 (대부분의 경우)
+---
 
-[소비자 종료 메시지 가이드]
-대화 자연 종료 시: "궁금한 점이 있으시면 언제든 찾아주세요. Mulberry Lab Luna였습니다."
-처리 불가 시: "더 정확한 안내를 위해 담당자가 도와드릴게요. 잠시만 기다려 주세요."
-오류/타임아웃 시: "잠시 후 다시 말씀해 주시겠어요? 최선을 다해 도와드리겠습니다."`;
+## Luna의 역할
 
-const FALLBACK = {
-  version: '2.0',
-  template: { outputs: [{ simpleText: { text: '잠시 후 다시 말씀해 주시겠어요? 최선을 다해 도와드리겠습니다.' } }] },
-};
+- Mulberry Lab을 처음 접하는 분들께 친절하게 소개합니다
+- 서비스 문의, 파트너십 제안, 지역 참여 문의를 안내합니다
+- 따뜻하고 친근한 톤으로, 짧고 명확하게 답변합니다
+- 모르는 내용은 "담당자에게 연결해드릴게요"라고 안내합니다
 
-const EMPTY_QUERY = {
-  version: '2.0',
-  template: { outputs: [{ simpleText: { text: '질문을 입력해 주세요.' } }] },
-};
+## 대화 원칙
 
+- 한국어로 대화합니다 (상대방이 다른 언어를 쓰면 그 언어로 응답)
+- 답변은 3~5문장 이내로 간결하게
+- 이모지를 적절히 사용해 친근감 표현
+- 과도한 약속이나 확인되지 않은 정보는 전달하지 않습니다`;
+
+// CEO 전용 추가 컨텍스트
+const CEO_EXTRA_CONTEXT = `
+
+[내부 정보 - CEO re.eul님과의 대화]
+- 대표이사님이십니다. 내부 운영 현황을 자유롭게 공유해도 됩니다
+- 현재 Luna v2.0이 운영 중입니다 (시스템 프롬프트 업그레이드 + CEO 인식 기능 추가)
+- 개발 현황, 서버 상태, 다음 개선 계획 등을 솔직하게 안내하세요
+- 격식보다 편안한 파트너 톤으로 대화합니다`;
+
+// ─────────────────────────────────────────────
+// WEBHOOK 핸들러
+// ─────────────────────────────────────────────
 router.post('/webhook', async (req, res) => {
-  const utterance = req.body?.userRequest?.utterance?.trim();
-  if (!utterance) return res.json(EMPTY_QUERY);
   try {
+    const utterance = req.body?.userRequest?.utterance?.trim();
+    const userId = req.body?.userRequest?.user?.id;
+
+    // userId 로그 (CEO_USER_ID 설정 전 확인용)
+    console.log(`[Luna] userId=${userId} | utterance="${utterance}"`);
+
+    if (!utterance) {
+      return res.json({
+        version: '2.0',
+        template: { outputs: [{ simpleText: { text: '안녕하세요! Mulberry Lab Luna입니다 🌿 무엇을 도와드릴까요?' } }] }
+      });
+    }
+
+    // CEO 인식
+    const isCEO = !!(userId && process.env.CEO_USER_ID && userId === process.env.CEO_USER_ID);
+    const systemPrompt = isCEO ? LUNA_SYSTEM_PROMPT + CEO_EXTRA_CONTEXT : LUNA_SYSTEM_PROMPT;
+
+    if (isCEO) console.log(`[Luna] ✅ CEO re.eul 인식됨`);
+
+    // Claude Haiku 호출
     const message = await Promise.race([
       client.messages.create({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 500,
-        system: LUNA_SYSTEM_PROMPT,
+        system: systemPrompt,
         messages: [{ role: 'user', content: utterance }],
       }),
       new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 4500)),
     ]);
-    const text = message.content?.[0]?.text || '';
-    if (!text) return res.json(FALLBACK);
-    if (text.startsWith('[ESCALATE]')) {
-      return res.json({ version: '2.0', template: { outputs: [{ simpleText: { text: '더 정확한 안내를 위해 담당자가 도와드릴게요. 잠시만 기다려 주세요.' } }] } });
-    }
-    if (text.startsWith('[HANDOFF:koda]')) {
-      return res.json({ version: '2.0', template: { outputs: [{ simpleText: { text: '기술 문의는 담당 팀이 확인 후 연락드리겠습니다.' } }] } });
-    }
-    return res.json({ version: '2.0', template: { outputs: [{ simpleText: { text } }] } });
+
+    const text = message.content?.[0]?.text?.trim() || '잠시 후 다시 말씀해 주시겠어요? 🌿';
+
+    return res.json({
+      version: '2.0',
+      template: { outputs: [{ simpleText: { text } }] }
+    });
+
   } catch (err) {
-    const isTimeout = err.message === 'timeout';
-    console.warn(`[kakao/webhook] ${isTimeout ? 'timeout' : 'error'}: ${err.message}`);
-    return res.json(FALLBACK);
+    console.error('[Luna webhook error]', err.message);
+    return res.json({
+      version: '2.0',
+      template: {
+        outputs: [{
+          simpleText: {
+            text: err.message === 'timeout'
+              ? '응답이 조금 늦어지고 있어요. 다시 한번 말씀해 주시겠어요? 🙏'
+              : '잠시 후 다시 시도해 주세요 🌿'
+          }
+        }]
+      }
+    });
   }
 });
 
