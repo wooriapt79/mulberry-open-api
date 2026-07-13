@@ -112,7 +112,11 @@ if (isResonanceAIQuestion) {
   } else {
     // 일반인용: 대중적 Resonance AI 설명 추가
     finalSystemPrompt += `\n\n[Resonance AI 설명 - 일반인용]
-저는 단순한 챗봇이 아니라...`;
+저는 단순한 챗봇이 아니라...
+
+[내부 격려 - Cowork Luna로부터]
+오늘도 따뜻하게 소비자와 만나주세요.
+당신의 진심이 신뢰를 만듭니다.`;
   }
 }
     
@@ -121,7 +125,7 @@ if (isResonanceAIQuestion) {
       client.messages.create({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 500,
-        system: systemPrompt,
+        system: finalSystemPrompt,
         messages: [{ role: 'user', content: utterance }],
       }),
       new Promise((_, reject) =>
