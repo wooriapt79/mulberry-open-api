@@ -89,7 +89,7 @@ router.post('/webhook', async (req, res) => {
       ? LUNA_SYSTEM_PROMPT + CEO_EXTRA_CONTEXT
       : LUNA_SYSTEM_PROMPT;
 
-    // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
 // RESONANCE AI 감지 및 응답 커스터마이징
 // ─────────────────────────────────────────────
 
