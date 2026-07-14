@@ -1,10 +1,11 @@
-// routes/kakao.js — Luna v2.4
+// routes/kakao.js — Luna v2.5
 // 변경사항:
-// 1. LUNA_SYSTEM_PROMPT v2.3 — FORMAT_RULE 추가 (이모지 금지, 마크다운 금지, '안녕,' 시작)
-// 2. CEO 인식 기능 — CEO_USER_ID 환경변수 기반
+// 1. LUNA_SYSTEM_PROMPT v2.3 — FORMAT_RULE
+// 2. CEO 인식 기능
 // 3. 타임아웃 4.5초
-// 4. "내 아이디" 명령어 — CEO_USER_ID 설정 전 userId 확인용
+// 4. "내 아이디" 명령어
 // 5. [v2.4] 대화 이력 메모리 — userId별 최근 6턴 유지
+// 6. [v2.5] Commerce Card — 상품 감지 시 구매 카드 자동 첨부 (프로토타입)
 
 const express = require('express');
 const router = express.Router();
@@ -13,10 +14,110 @@ const Anthropic = require('@anthropic-ai/sdk');
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // ─────────────────────────────────────────────
-// [v2.4] 대화 이력 저장소 (userId → messages[])
-// Railway 재시작 시 초기화됨 / 향후 Redis로 업그레이드 가능
+// [v2.4] 대화 이력 저장소
 // ─────────────────────────────────────────────
 const conversationHistory = new Map();
+
+// ─────────────────────────────────────────────
+// [v2.5] 상품 DB (프로토타입 — 추후 외부 DB 교체)
+// ─────────────────────────────────────────────
+const PRODUCT_DB = [
+  {
+    id: 'p001',
+    name: '강원도 기린면 감자',
+    price: 8000,
+    unit: '2kg',
+    store: '기린면 하나로마트',
+    storePhone: '033-463-XXXX',
+    keywords: ['감자', '포테이토'],
+    imageUrl: 'https://via.placeholder.com/400x300?text=강원도+감자',
+    orderUrl: 'https://mulberry-lab.co.kr/order/p001',
+  },
+  {
+    id: 'p002',
+    name: '강원도 당근',
+    price: 5000,
+    unit: '1kg',
+    store: '기린면 하나로마트',
+    storePhone: '033-463-XXXX',
+    keywords: ['당근'],
+    imageUrl: 'https://via.placeholder.com/400x300?text=강원도+당근',
+    orderUrl: 'https://mulberry-lab.co.kr/order/p002',
+  },
+  {
+    id: 'p003',
+    name: '인제 쌀',
+    price: 35000,
+    unit: '10kg',
+    store: '인제읍 하나로마트',
+    storePhone: '033-462-XXXX',
+    keywords: ['쌀', '백미'],
+    imageUrl: 'https://via.placeholder.com/400x300?text=인제+쌀',
+    orderUrl: 'https://mulberry-lab.co.kr/order/p003',
+  },
+  {
+    id: 'p004',
+    name: '강원도 배추',
+    price: 6000,
+    unit: '1포기',
+    store: '기린면 하나로마트',
+    storePhone: '033-463-XXXX',
+    keywords: ['배추', '김치'],
+    imageUrl: 'https://via.placeholder.com/400x300?text=강원도+배추',
+    orderUrl: 'https://mulberry-lab.co.kr/order/p004',
+  },
+  {
+    id: 'p005',
+    name: '강원도 옥수수',
+    price: 4000,
+    unit: '3개',
+    store: '기린면 하나로마트',
+    storePhone: '033-463-XXXX',
+    keywords: ['옥수수', '강냉이'],
+    imageUrl: 'https://via.placeholder.com/400x300?text=강원도+옥수수',
+    orderUrl: 'https://mulberry-lab.co.kr/order/p005',
+  },
+];
+
+// 상품 키워드 감지
+function detectProduct(utterance) {
+  return PRODUCT_DB.find(p =>
+    p.keywords.some(k => utterance.includes(k))
+  ) || null;
+}
+
+// Commerce Card 생성
+function buildCommerceCard(product) {
+  return {
+    commerceCard: {
+      description: `${product.store} | ${product.unit}`,
+      price: product.price,
+      currency: 'won',
+      thumbnails: [
+        {
+          imageUrl: product.imageUrl,
+          fixedRatio: true,
+        }
+      ],
+      profile: {
+        imageUrl: 'https://via.placeholder.com/100x100?text=M',
+        nickname: 'Mulberry Lab',
+      },
+      buttons: [
+        {
+          label: '온라인 구매',
+          action: 'webLink',
+          webLinkUrl: product.orderUrl,
+        },
+        {
+          label: '전화 주문',
+          action: 'phone',
+          phoneNumber: product.storePhone,
+        }
+      ]
+    }
+  };
+}
 
 // ─────────────────────────────────────────────
 // LUNA SYSTEM PROMPT v2.3
@@ -68,12 +169,11 @@ Mulberry Lab (멀베리 랩)은 식품사막화 제로 프로젝트를 추진하
 - 확인되지 않은 정보나 과도한 약속 금지
 - 서비스 현황(파일럿 준비 중 등) 솔직하게 안내`;
 
-// CEO 전용 추가 컨텍스트
 const CEO_EXTRA_CONTEXT = `
 
 [내부 정보 - CEO re.eul님과의 대화]
 - 대표이사님이십니다. 내부 운영 현황을 자유롭게 공유해도 됩니다
-- 현재 Luna v2.4이 운영 중입니다
+- 현재 Luna v2.5이 운영 중입니다
 - 개발 현황, 서버 상태, 다음 개선 계획 등을 솔직하게 안내하세요
 - 첫 인사말, 안녕, CEO re.eul님 반갑습니다. 로 표현한다
 - 마지막 인사말 , 당신의 AI Agent Luna.
@@ -95,16 +195,15 @@ router.post('/webhook', async (req, res) => {
       });
     }
 
-    // 🔑 특수 명령어: "내 아이디" → CEO_USER_ID 설정용 userId 확인
+    // 특수 명령어: 내 아이디
     if (utterance === '내 아이디' || utterance === '내아이디' || utterance === 'myid') {
-      console.log(`[Luna] userId 확인 요청 | userId=${userId}`);
       return res.json({
         version: '2.0',
         template: { outputs: [{ simpleText: { text: `내부 확인용\nuserId: ${userId || '없음'}\n\n이 ID를 TRANG Manager에게 전달해 주세요.` } }] }
       });
     }
 
-    // 🔑 특수 명령어: "대화 초기화" → 이력 삭제
+    // 특수 명령어: 대화 초기화
     if (utterance === '대화 초기화' || utterance === '처음부터') {
       conversationHistory.delete(userId);
       return res.json({
@@ -115,13 +214,9 @@ router.post('/webhook', async (req, res) => {
 
     // CEO 인식
     const isCEO = userId && process.env.CEO_USER_ID && userId === process.env.CEO_USER_ID;
-    const systemPrompt = isCEO
-      ? LUNA_SYSTEM_PROMPT + CEO_EXTRA_CONTEXT
-      : LUNA_SYSTEM_PROMPT;
+    const systemPrompt = isCEO ? LUNA_SYSTEM_PROMPT + CEO_EXTRA_CONTEXT : LUNA_SYSTEM_PROMPT;
 
-    // ─────────────────────────────────────────────
-    // RESONANCE AI 감지 및 응답 커스터마이징
-    // ─────────────────────────────────────────────
+    // Resonance AI 감지
     const isResonanceAIQuestion =
       utterance.includes('Resonance AI') ||
       utterance.includes('공명 AI') ||
@@ -146,12 +241,10 @@ router.post('/webhook', async (req, res) => {
       }
     }
 
-    // ─────────────────────────────────────────────
     // [v2.4] 대화 이력 로드
-    // ─────────────────────────────────────────────
     const history = conversationHistory.get(userId) || [];
 
-    // Claude Haiku 호출 (이력 포함)
+    // Claude Haiku 호출
     const message = await Promise.race([
       client.messages.create({
         model: 'claude-haiku-4-5-20251001',
@@ -169,21 +262,29 @@ router.post('/webhook', async (req, res) => {
 
     const text = message.content?.[0]?.text?.trim() || '잠시 후 다시 말씀해 주시겠어요.';
 
-    // ─────────────────────────────────────────────
-    // [v2.4] 대화 이력 업데이트 (최근 6턴 유지)
-    // ─────────────────────────────────────────────
+    // [v2.4] 대화 이력 업데이트
     history.push({ role: 'user', content: utterance });
     history.push({ role: 'assistant', content: text });
-    if (history.length > 12) history.splice(0, 2); // 6턴 = 12개 메시지
+    if (history.length > 12) history.splice(0, 2);
     conversationHistory.set(userId, history);
 
+    // ─────────────────────────────────────────────
+    // [v2.5] 상품 감지 → Commerce Card 첨부
+    // ─────────────────────────────────────────────
+    const detectedProduct = detectProduct(utterance);
+    const outputs = [{ simpleText: { text } }];
+
+    if (detectedProduct) {
+      outputs.push(buildCommerceCard(detectedProduct));
+    }
+
     if (process.env.NODE_ENV !== 'production' || isCEO) {
-      console.log(`[Luna] userId=${userId} | isCEO=${isCEO} | history=${history.length}턴 | utterance="${utterance}"`);
+      console.log(`[Luna] userId=${userId} | isCEO=${isCEO} | product=${detectedProduct?.name || 'none'} | utterance="${utterance}"`);
     }
 
     return res.json({
       version: '2.0',
-      template: { outputs: [{ simpleText: { text } }] }
+      template: { outputs }
     });
 
   } catch (err) {
