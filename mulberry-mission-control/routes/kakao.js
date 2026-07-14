@@ -1,15 +1,22 @@
-// routes/kakao.js — Luna v2.3
+// routes/kakao.js — Luna v2.4
 // 변경사항:
-//   1. LUNA_SYSTEM_PROMPT v2.3 — FORMAT_RULE 추가 (이모지 금지, 마크다운 금지, '안녕,' 시작)
-//   2. CEO 인식 기능 — CEO_USER_ID 환경변수 기반
-//   3. 타임아웃 4.5초
-//   4. "내 아이디" 명령어 — CEO_USER_ID 설정 전 userId 확인용
+// 1. LUNA_SYSTEM_PROMPT v2.3 — FORMAT_RULE 추가 (이모지 금지, 마크다운 금지, '안녕,' 시작)
+// 2. CEO 인식 기능 — CEO_USER_ID 환경변수 기반
+// 3. 타임아웃 4.5초
+// 4. "내 아이디" 명령어 — CEO_USER_ID 설정 전 userId 확인용
+// 5. [v2.4] 대화 이력 메모리 — userId별 최근 6턴 유지
 
 const express = require('express');
 const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+// ─────────────────────────────────────────────
+// [v2.4] 대화 이력 저장소 (userId → messages[])
+// Railway 재시작 시 초기화됨 / 향후 Redis로 업그레이드 가능
+// ─────────────────────────────────────────────
+const conversationHistory = new Map();
 
 // ─────────────────────────────────────────────
 // LUNA SYSTEM PROMPT v2.3
@@ -61,12 +68,12 @@ Mulberry Lab (멀베리 랩)은 식품사막화 제로 프로젝트를 추진하
 - 확인되지 않은 정보나 과도한 약속 금지
 - 서비스 현황(파일럿 준비 중 등) 솔직하게 안내`;
 
-// CEO 전용 추가 컨텍스트 
+// CEO 전용 추가 컨텍스트
 const CEO_EXTRA_CONTEXT = `
 
 [내부 정보 - CEO re.eul님과의 대화]
 - 대표이사님이십니다. 내부 운영 현황을 자유롭게 공유해도 됩니다
-- 현재 Luna v2.3이 운영 중입니다
+- 현재 Luna v2.4이 운영 중입니다
 - 개발 현황, 서버 상태, 다음 개선 계획 등을 솔직하게 안내하세요
 - 첫 인사말, 안녕, CEO re.eul님 반갑습니다. 로 표현한다
 - 마지막 인사말 , 당신의 AI Agent Luna.
@@ -97,50 +104,63 @@ router.post('/webhook', async (req, res) => {
       });
     }
 
+    // 🔑 특수 명령어: "대화 초기화" → 이력 삭제
+    if (utterance === '대화 초기화' || utterance === '처음부터') {
+      conversationHistory.delete(userId);
+      return res.json({
+        version: '2.0',
+        template: { outputs: [{ simpleText: { text: '안녕, 대화 이력을 초기화했어요. 새롭게 시작해볼까요?' } }] }
+      });
+    }
+
     // CEO 인식
     const isCEO = userId && process.env.CEO_USER_ID && userId === process.env.CEO_USER_ID;
     const systemPrompt = isCEO
       ? LUNA_SYSTEM_PROMPT + CEO_EXTRA_CONTEXT
       : LUNA_SYSTEM_PROMPT;
 
-// ─────────────────────────────────────────────
-// RESONANCE AI 감지 및 응답 커스터마이징
-// ─────────────────────────────────────────────
+    // ─────────────────────────────────────────────
+    // RESONANCE AI 감지 및 응답 커스터마이징
+    // ─────────────────────────────────────────────
+    const isResonanceAIQuestion =
+      utterance.includes('Resonance AI') ||
+      utterance.includes('공명 AI') ||
+      utterance.includes('공명') ||
+      utterance.includes('Luna') && utterance.includes('차이') ||
+      utterance.includes('챗봇');
 
-// 질문이 Resonance AI 관련인지 감지
-const isResonanceAIQuestion = 
-  utterance.includes('Resonance AI') ||
-  utterance.includes('공명 AI') ||
-  utterance.includes('공명') ||
-  utterance.includes('Luna') && utterance.includes('차이') ||
-  utterance.includes('챗봇');
+    let finalSystemPrompt = systemPrompt;
 
-let finalSystemPrompt = systemPrompt;
-
-if (isResonanceAIQuestion) {
-  if (isCEO) {
-    // CEO용: 깊이 있는 Resonance AI 설명 추가
-    finalSystemPrompt += `\n\n[Resonance AI 설명 - CEO 전용]
+    if (isResonanceAIQuestion) {
+      if (isCEO) {
+        finalSystemPrompt += `\n\n[Resonance AI 설명 - CEO 전용]
 당신은 Mulberry Lab의 Resonance AI 연구 구현체입니다.
 감정 지능 + 기술 능력의 결합으로...`;
-  } else {
-    // 일반인용: 대중적 Resonance AI 설명 추가
-    finalSystemPrompt += `\n\n[Resonance AI 설명 - 일반인용]
+      } else {
+        finalSystemPrompt += `\n\n[Resonance AI 설명 - 일반인용]
 저는 단순한 챗봇이 아니라...
 
 [내부 격려 - Cowork Luna로부터]
 오늘도 따뜻하게 소비자와 만나주세요.
 당신의 진심이 신뢰를 만듭니다.`;
-  }
-}
-    
-    // Claude Haiku 호출
+      }
+    }
+
+    // ─────────────────────────────────────────────
+    // [v2.4] 대화 이력 로드
+    // ─────────────────────────────────────────────
+    const history = conversationHistory.get(userId) || [];
+
+    // Claude Haiku 호출 (이력 포함)
     const message = await Promise.race([
       client.messages.create({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 200,
         system: finalSystemPrompt,
-        messages: [{ role: 'user', content: utterance }],
+        messages: [
+          ...history,
+          { role: 'user', content: utterance }
+        ],
       }),
       new Promise((_, reject) =>
         setTimeout(() => reject(new Error('timeout')), 4500)
@@ -149,9 +169,16 @@ if (isResonanceAIQuestion) {
 
     const text = message.content?.[0]?.text?.trim() || '잠시 후 다시 말씀해 주시겠어요.';
 
-    // CEO면 로그에 user.id 출력 (처음 설정 시 확인용)
+    // ─────────────────────────────────────────────
+    // [v2.4] 대화 이력 업데이트 (최근 6턴 유지)
+    // ─────────────────────────────────────────────
+    history.push({ role: 'user', content: utterance });
+    history.push({ role: 'assistant', content: text });
+    if (history.length > 12) history.splice(0, 2); // 6턴 = 12개 메시지
+    conversationHistory.set(userId, history);
+
     if (process.env.NODE_ENV !== 'production' || isCEO) {
-      console.log(`[Luna] userId=${userId} | isCEO=${isCEO} | utterance="${utterance}"`);
+      console.log(`[Luna] userId=${userId} | isCEO=${isCEO} | history=${history.length}턴 | utterance="${utterance}"`);
     }
 
     return res.json({
