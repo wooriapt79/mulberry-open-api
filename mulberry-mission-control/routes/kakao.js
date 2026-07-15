@@ -6,6 +6,7 @@
 // 4. "내 아이디" 명령어
 // 5. [v2.4] 대화 이력 메모리 — userId별 최근 6턴 유지
 // 6. [v2.5] Commerce Card — 상품 감지 시 구매 카드 자동 첨부 (프로토타입)
+// 7. [v2.6] 시간대별 인사 — 모든 방문자 공통 적용
 
 const express = require('express');
 const router = express.Router();
