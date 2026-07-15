@@ -100,7 +100,7 @@ function buildCommerceCard(product) {
         }
       ],
       profile: {
-        imageUrl: 'https://via.placeholder.com/100x100?text=M',
+        imageUrl: 'https://raw.githubusercontent.com/wooriapt79/mulberry-/main/docs/mulberry_logo.png',
         nickname: 'Mulberry Lab',
       },
       buttons: [
