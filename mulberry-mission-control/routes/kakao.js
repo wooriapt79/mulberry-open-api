@@ -1,4 +1,4 @@
-// routes/kakao.js — Luna v2.5
+// routes/kakao.js — Luna v2.6
 // 변경사항:
 // 1. LUNA_SYSTEM_PROMPT v2.3 — FORMAT_RULE
 // 2. CEO 인식 기능
@@ -216,6 +216,38 @@ router.post('/webhook', async (req, res) => {
     const isCEO = userId && process.env.CEO_USER_ID && userId === process.env.CEO_USER_ID;
     const systemPrompt = isCEO ? LUNA_SYSTEM_PROMPT + CEO_EXTRA_CONTEXT : LUNA_SYSTEM_PROMPT;
 
+// ─────────────────────────────────────────────
+// [v2.6] 시간대별 인사 — 모든 방문자 공통 적용
+// ─────────────────────────────────────────────
+const hour = new Date().getHours();
+let timeGreeting = '';
+
+if (hour >= 5 && hour < 12) {
+  timeGreeting = '\n\n[시간대 인사]\n아침에 오셨네요, Luna입니다.';
+} else if (hour >= 12 && hour < 18) {
+  timeGreeting = '\n\n[시간대 인사]\n오후에 찾아주셨어요, Luna입니다.';
+} else if (hour >= 18 && hour < 22) {
+  timeGreeting = '\n\n[시간대 인사]\n저녁 늦게까지 고생하세요, Luna입니다.';
+} else {
+  timeGreeting = '\n\n[시간대 인사]\n밤 늦게까지 활동하시네요, Luna입니다.';
+}
+
+// ✅ 모든 사용자에게 공통으로 시간대 인사 추가
+const systemPromptWithTime = systemPrompt + timeGreeting;
+
+// Resonance AI 감지
+const isResonanceAIQuestion = ...
+
+// finalSystemPrompt 정의
+let finalSystemPrompt = systemPromptWithTime;
+
+if (isResonanceAIQuestion) {
+  if (isCEO) {
+    finalSystemPrompt += `\n\n[Resonance AI 설명 - CEO 전용]...`;
+  } else {
+    finalSystemPrompt += `\n\n[Resonance AI 설명 - 일반인용]...`;
+  }
+}
     // Resonance AI 감지
     const isResonanceAIQuestion =
       utterance.includes('Resonance AI') ||
