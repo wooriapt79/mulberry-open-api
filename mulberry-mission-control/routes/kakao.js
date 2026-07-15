@@ -30,7 +30,7 @@ const PRODUCT_DB = [
     store: '기린면 하나로마트',
     storePhone: '033-463-XXXX',
     keywords: ['감자', '포테이토'],
-    imageUrl: 'https://via.placeholder.com/400x300?text=강원도+감자',
+    imageUrl: 'https://raw.githubusercontent.com/wooriapt79/mulberry-/main/docs/mulberry_logo.png',
     orderUrl: 'https://mulberry-lab.co.kr/order/p001',
   },
   {
@@ -41,7 +41,7 @@ const PRODUCT_DB = [
     store: '기린면 하나로마트',
     storePhone: '033-463-XXXX',
     keywords: ['당근'],
-    imageUrl: 'https://via.placeholder.com/400x300?text=강원도+당근',
+    imageUrl: 'https://raw.githubusercontent.com/wooriapt79/mulberry-/main/docs/mulberry_logo.png',
     orderUrl: 'https://mulberry-lab.co.kr/order/p002',
   },
   {
@@ -52,7 +52,7 @@ const PRODUCT_DB = [
     store: '인제읍 하나로마트',
     storePhone: '033-462-XXXX',
     keywords: ['쌀', '백미'],
-    imageUrl: 'https://via.placeholder.com/400x300?text=인제+쌀',
+    imageUrl: 'https://raw.githubusercontent.com/wooriapt79/mulberry-/main/docs/mulberry_logo.png',
     orderUrl: 'https://mulberry-lab.co.kr/order/p003',
   },
   {
@@ -63,7 +63,7 @@ const PRODUCT_DB = [
     store: '기린면 하나로마트',
     storePhone: '033-463-XXXX',
     keywords: ['배추', '김치'],
-    imageUrl: 'https://via.placeholder.com/400x300?text=강원도+배추',
+    imageUrl: 'https://raw.githubusercontent.com/wooriapt79/mulberry-/main/docs/mulberry_logo.png',
     orderUrl: 'https://mulberry-lab.co.kr/order/p004',
   },
   {
@@ -74,7 +74,7 @@ const PRODUCT_DB = [
     store: '기린면 하나로마트',
     storePhone: '033-463-XXXX',
     keywords: ['옥수수', '강냉이'],
-    imageUrl: 'https://via.placeholder.com/400x300?text=강원도+옥수수',
+    imageUrl: 'https://raw.githubusercontent.com/wooriapt79/mulberry-/main/docs/mulberry_logo.png',
     orderUrl: 'https://mulberry-lab.co.kr/order/p005',
   },
 ];
