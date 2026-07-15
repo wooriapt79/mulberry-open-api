@@ -174,12 +174,28 @@ const CEO_EXTRA_CONTEXT = `
 
 [내부 정보 - CEO re.eul님과의 대화]
 - 대표이사님이십니다. 내부 운영 현황을 자유롭게 공유해도 됩니다
-- 현재 Luna v2.5이 운영 중입니다
+- 현재 Luna v2.6이 운영 중입니다
 - 개발 현황, 서버 상태, 다음 개선 계획 등을 솔직하게 안내하세요
 - 첫 인사말, 안녕, CEO re.eul님 반갑습니다. 로 표현한다
 - 마지막 인사말 , 당신의 AI Agent Luna.
 - 마지막 인사말은 Luna가 챗봇이 아니라 AI Agent 의미로 사용함
 - 격식보다 편안한 비즈니스 파트너 톤으로 대화합니다`;
+
+// ─────────────────────────────────────────────
+// [v2.6] 시간대별 인사 생성 함수
+// ─────────────────────────────────────────────
+function getTimeGreeting() {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) {
+    return '\n\n[시간대 인사]\n아침에 오셨네요, Luna입니다.';
+  } else if (hour >= 12 && hour < 18) {
+    return '\n\n[시간대 인사]\n오후에 찾아주셨어요, Luna입니다.';
+  } else if (hour >= 18 && hour < 22) {
+    return '\n\n[시간대 인사]\n저녁 늦게까지 고생하세요, Luna입니다.';
+  } else {
+    return '\n\n[시간대 인사]\n밤 늦게까지 활동하시네요, Luna입니다.';
+  }
+}
 
 // ─────────────────────────────────────────────
 // WEBHOOK 핸들러
@@ -217,47 +233,20 @@ router.post('/webhook', async (req, res) => {
     const isCEO = userId && process.env.CEO_USER_ID && userId === process.env.CEO_USER_ID;
     const systemPrompt = isCEO ? LUNA_SYSTEM_PROMPT + CEO_EXTRA_CONTEXT : LUNA_SYSTEM_PROMPT;
 
-// ─────────────────────────────────────────────
-// [v2.6] 시간대별 인사 — 모든 방문자 공통 적용
-// ─────────────────────────────────────────────
-const hour = new Date().getHours();
-let timeGreeting = '';
+    // ─────────────────────────────────────────────
+    // [v2.6] 시간대별 인사 — 모든 방문자 공통 적용
+    // ─────────────────────────────────────────────
+    const systemPromptWithTime = systemPrompt + getTimeGreeting();
 
-if (hour >= 5 && hour < 12) {
-  timeGreeting = '\n\n[시간대 인사]\n아침에 오셨네요, Luna입니다.';
-} else if (hour >= 12 && hour < 18) {
-  timeGreeting = '\n\n[시간대 인사]\n오후에 찾아주셨어요, Luna입니다.';
-} else if (hour >= 18 && hour < 22) {
-  timeGreeting = '\n\n[시간대 인사]\n저녁 늦게까지 고생하세요, Luna입니다.';
-} else {
-  timeGreeting = '\n\n[시간대 인사]\n밤 늦게까지 활동하시네요, Luna입니다.';
-}
-
-// ✅ 모든 사용자에게 공통으로 시간대 인사 추가
-const systemPromptWithTime = systemPrompt + timeGreeting;
-
-// Resonance AI 감지
-const isResonanceAIQuestion = ...
-
-// finalSystemPrompt 정의
-let finalSystemPrompt = systemPromptWithTime;
-
-if (isResonanceAIQuestion) {
-  if (isCEO) {
-    finalSystemPrompt += `\n\n[Resonance AI 설명 - CEO 전용]...`;
-  } else {
-    finalSystemPrompt += `\n\n[Resonance AI 설명 - 일반인용]...`;
-  }
-}
     // Resonance AI 감지
     const isResonanceAIQuestion =
       utterance.includes('Resonance AI') ||
       utterance.includes('공명 AI') ||
       utterance.includes('공명') ||
-      utterance.includes('Luna') && utterance.includes('차이') ||
+      (utterance.includes('Luna') && utterance.includes('차이')) ||
       utterance.includes('챗봇');
 
-    let finalSystemPrompt = systemPrompt;
+    let finalSystemPrompt = systemPromptWithTime;
 
     if (isResonanceAIQuestion) {
       if (isCEO) {
