@@ -111,7 +111,7 @@ router.get('/coop-status', async (req, res) => {
     const min_qty = MIN_ORDER[product_id].qty;
     const current_qty = campaign?.current_qty ?? 0;
     const progress_pct = Math.min(Math.round((current_qty / min_qty) * 100), 100);
-    const participant_count = await CoopOrder.countDocuments({ product_id, status: 'pending' });
+    const participant_count = await CoopOrder.countDocuments({ product_id, status: { $in: ['pending', 'confirmed'] } });
     const days_remaining = campaign?.deadline
       ? Math.max(Math.ceil((new Date(campaign.deadline) - Date.now()) / 86400000), 0)
       : null;
