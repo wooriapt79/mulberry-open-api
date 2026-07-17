@@ -1,12 +1,13 @@
-// routes/kakao.js — Luna v2.6
+// routes/kakao.js — Luna v2.7
 // 변경사항:
 // 1. LUNA_SYSTEM_PROMPT v2.3 — FORMAT_RULE
 // 2. CEO 인식 기능
-// 3. 타임아웃 4.5초
+// 3. 타임아웃 4.5초 (단일) / 6.0초 (Carousel)
 // 4. "내 아이디" 명령어
 // 5. [v2.4] 대화 이력 메모리 — userId별 최근 6턴 유지
-// 6. [v2.5] Commerce Card — 상품 감지 시 구매 카드 자동 첨부 (프로토타입)
+// 6. [v2.5] Commerce Card — 상품 감지 시 구매 카드 자동 첨부
 // 7. [v2.6] 시간대별 인사 — 모든 방문자 공통 적용
+// 8. [v2.7] Carousel — 복수 상품 감지 또는 전체 조회 키워드 시 Carousel 응답
 
 const express = require('express');
 const router = express.Router();
@@ -80,11 +81,97 @@ const PRODUCT_DB = [
   },
 ];
 
-// 상품 키워드 감지
+// ─────────────────────────────────────────────
+// [v2.7] Carousel 트리거 키워드
+// ─────────────────────────────────────────────
+const CAROUSEL_TRIGGER_KEYWORDS = ['전체 상품', '뭐 있어요', '목록', '다 보여줘', '전체', '추천'];
+const TIMEOUT_SINGLE   = 4500;
+const TIMEOUT_CAROUSEL = 6000;
+
+// 단일 상품 키워드 감지
 function detectProduct(utterance) {
   return PRODUCT_DB.find(p =>
     p.keywords.some(k => utterance.includes(k))
   ) || null;
+}
+
+// [v2.7] 복수 상품 감지 — 2개 이상 매칭되거나 전체 트리거 키워드
+function detectMultiProduct(utterance) {
+  if (CAROUSEL_TRIGGER_KEYWORDS.some(k => utterance.includes(k))) {
+    return PRODUCT_DB; // 전체 반환
+  }
+  const matched = PRODUCT_DB.filter(p =>
+    p.keywords.some(k => utterance.includes(k))
+  );
+  return matched.length >= 2 ? matched : null;
+}
+
+// [v2.7] Carousel 생성
+function buildCarousel(products) {
+  const items = products.slice(0, 5).map(p => ({
+    header: {
+      title: p.name,
+      description: `${p.store} | ${p.unit}`,
+      thumbnail: {
+        imageUrl: p.imageUrl,
+        fixedRatio: true,
+      },
+    },
+    itemList: [
+      { title: '가격', description: `${p.price.toLocaleString()}원` },
+      { title: '단위', description: p.unit },
+      { title: '매장', description: p.store },
+    ],
+    buttons: [
+      {
+        label: '온라인 구매',
+        action: 'webLink',
+        webLinkUrl: p.orderUrl,
+      },
+      {
+        label: '전화 주문',
+        action: 'phone',
+        phoneNumber: p.storePhone,
+      },
+    ],
+  }));
+
+  return {
+    carousel: {
+      type: 'commerceCard',
+      items,
+    },
+  };
+}
+
+// [v2.7] Carousel with 3단계 Fallback
+function buildCarouselWithFallback(products) {
+  try {
+    // Step 1: Carousel 시도
+    if (products && products.length >= 2) {
+      return { type: 'carousel', output: buildCarousel(products) };
+    }
+    // Step 2: 단일 Commerce Card
+    if (products && products.length === 1) {
+      return { type: 'commerce', output: buildCommerceCard(products[0]) };
+    }
+    // Step 3: 텍스트 안내
+    return {
+      type: 'text',
+      output: {
+        simpleText: {
+          text: '안녕, 현재 파일럿 5개 품목(감자·당근·쌀·배추·옥수수)을 운영 중입니다. 원하는 상품명을 입력해 주세요.',
+        },
+      },
+    };
+  } catch {
+    return {
+      type: 'text',
+      output: {
+        simpleText: { text: '안녕, 상품 목록을 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.' },
+      },
+    };
+  }
 }
 
 // Commerce Card 생성
@@ -266,6 +353,13 @@ router.post('/webhook', async (req, res) => {
     // [v2.4] 대화 이력 로드
     const history = conversationHistory.get(userId) || [];
 
+    // ─────────────────────────────────────────────
+    // [v2.7] Carousel vs 단일 Commerce Card 분기
+    // ─────────────────────────────────────────────
+    const multiProducts = detectMultiProduct(utterance);
+    const isCarousel = !!multiProducts;
+    const timeout = isCarousel ? TIMEOUT_CAROUSEL : TIMEOUT_SINGLE;
+
     // Claude Haiku 호출
     const message = await Promise.race([
       client.messages.create({
@@ -278,7 +372,7 @@ router.post('/webhook', async (req, res) => {
         ],
       }),
       new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('timeout')), 4500)
+        setTimeout(() => reject(new Error('timeout')), timeout)
       ),
     ]);
 
@@ -290,18 +384,22 @@ router.post('/webhook', async (req, res) => {
     if (history.length > 12) history.splice(0, 2);
     conversationHistory.set(userId, history);
 
-    // ─────────────────────────────────────────────
-    // [v2.5] 상품 감지 → Commerce Card 첨부
-    // ─────────────────────────────────────────────
-    const detectedProduct = detectProduct(utterance);
     const outputs = [{ simpleText: { text } }];
 
-    if (detectedProduct) {
-      outputs.push(buildCommerceCard(detectedProduct));
+    if (isCarousel) {
+      // [v2.7] Carousel (3단계 Fallback 포함)
+      const result = buildCarouselWithFallback(multiProducts);
+      outputs.push(result.output);
+    } else {
+      // [v2.5] 단일 Commerce Card
+      const detectedProduct = detectProduct(utterance);
+      if (detectedProduct) {
+        outputs.push(buildCommerceCard(detectedProduct));
+      }
     }
 
     if (process.env.NODE_ENV !== 'production' || isCEO) {
-      console.log(`[Luna] userId=${userId} | isCEO=${isCEO} | product=${detectedProduct?.name || 'none'} | utterance="${utterance}"`);
+      console.log(`[Luna] userId=${userId} | isCEO=${isCEO} | carousel=${isCarousel} | utterance="${utterance}"`);
     }
 
     return res.json({
