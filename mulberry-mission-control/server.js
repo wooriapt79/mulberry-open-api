@@ -449,6 +449,11 @@ app.use('/api/agents', require('./routes/jr-trang'));
 // GET|POST /api/coop-buy/farmers              — 농부 프로필
 app.use('/api/coop-buy', require('./routes/coop-buy'));
 
+// POST /api/coop-order   — 인제군 파일럿 주문 접수
+// GET  /api/coop-status  — 공동구매 현황 조회
+// POST /api/coop-notify  — 달성 알림 (TRANG Manager 설계, 2026-07-17)
+app.use('/api', require('./routes/coop-pilot'));
+
 // ==================== KakaoTalk Webhook (Issue #91, Koda 2026-07-12) ====================
 // POST /kakao/webhook — 카카오 i 오픈빌더 Mulberry_Luna 채널 연동
 app.use('/kakao', require('./routes/kakao'));
