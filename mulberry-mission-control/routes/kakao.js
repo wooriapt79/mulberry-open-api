@@ -1,4 +1,4 @@
-// routes/kakao.js — Luna v2.7
+// routes/kakao.js — Luna v2.7.1
 // 변경사항:
 // 1. LUNA_SYSTEM_PROMPT v2.3 — FORMAT_RULE
 // 2. CEO 인식 기능
@@ -84,7 +84,7 @@ const PRODUCT_DB = [
 // ─────────────────────────────────────────────
 // [v2.7] Carousel 트리거 키워드
 // ─────────────────────────────────────────────
-const CAROUSEL_TRIGGER_KEYWORDS = ['전체 상품', '뭐 있어요', '목록', '다 보여줘', '전체', '추천'];
+const CAROUSEL_TRIGGER_KEYWORDS = ['전체 상품', '뭐 있어요', '목록', '다 보여줘', '전체', '상품 추천', '뭐 추천'];
 const TIMEOUT_SINGLE   = 4500;
 const TIMEOUT_CAROUSEL = 6000;
 
@@ -384,22 +384,27 @@ router.post('/webhook', async (req, res) => {
     if (history.length > 12) history.splice(0, 2);
     conversationHistory.set(userId, history);
 
-    const outputs = [{ simpleText: { text } }];
-
     if (isCarousel) {
-      // [v2.7] Carousel (3단계 Fallback 포함)
+      // [v2.7] Carousel 단독 return — simpleText와 혼합하지 않음
       const result = buildCarouselWithFallback(multiProducts);
-      outputs.push(result.output);
-    } else {
-      // [v2.5] 단일 Commerce Card
-      const detectedProduct = detectProduct(utterance);
-      if (detectedProduct) {
-        outputs.push(buildCommerceCard(detectedProduct));
+      if (process.env.NODE_ENV !== 'production' || isCEO) {
+        console.log(`[Luna] userId=${userId} | isCEO=${isCEO} | carousel=true | utterance="${utterance}"`);
       }
+      return res.json({
+        version: '2.0',
+        template: { outputs: [result.output] }
+      });
+    }
+
+    // 단일 상품 또는 일반 텍스트 응답
+    const outputs = [{ simpleText: { text } }];
+    const detectedProduct = detectProduct(utterance);
+    if (detectedProduct) {
+      outputs.push(buildCommerceCard(detectedProduct));
     }
 
     if (process.env.NODE_ENV !== 'production' || isCEO) {
-      console.log(`[Luna] userId=${userId} | isCEO=${isCEO} | carousel=${isCarousel} | utterance="${utterance}"`);
+      console.log(`[Luna] userId=${userId} | isCEO=${isCEO} | carousel=false | product=${detectedProduct?.name || 'none'} | utterance="${utterance}"`);
     }
 
     return res.json({
