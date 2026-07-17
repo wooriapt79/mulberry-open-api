@@ -7,7 +7,7 @@
 const mongoose = require('mongoose');
 const { CoopCampaign } = require('../models/coopPilot');
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/mulberry';
+const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/mulberry';
 
 const SEED_CAMPAIGNS = [
   { product_id: 'p001', min_order_qty: 50,  current_qty: 0, unit_price: 4000, status: 'open', deadline: new Date(Date.now() + 86400000 * 30), producer_id: 'producer_girin' },
