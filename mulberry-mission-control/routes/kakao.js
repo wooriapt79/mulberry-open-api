@@ -1,4 +1,4 @@
-// routes/kakao.js — Luna v2.7.1
+// routes/kakao.js — Luna v2.8
 // 변경사항:
 // 1. LUNA_SYSTEM_PROMPT v2.3 — FORMAT_RULE
 // 2. CEO 인식 기능
@@ -7,7 +7,7 @@
 // 5. [v2.4] 대화 이력 메모리 — userId별 최근 6턴 유지
 // 6. [v2.5] Commerce Card — 상품 감지 시 구매 카드 자동 첨부
 // 7. [v2.6] 시간대별 인사 — 모든 방문자 공통 적용
-// 8. [v2.7] Carousel — 복수 상품 감지 또는 전체 조회 키워드 시 Carousel 응답
+// 8. [v2.8] Carousel — basicCard 타입 수정 (Issue #107)
 
 const express = require('express');
 const router = express.Router();
@@ -106,22 +106,15 @@ function detectMultiProduct(utterance) {
   return matched.length >= 2 ? matched : null;
 }
 
-// [v2.7] Carousel 생성
+// [v2.8] Carousel 생성 — basicCard 타입으로 수정 (Issue #107)
 function buildCarousel(products) {
   const items = products.slice(0, 5).map(p => ({
-    header: {
-      title: p.name,
-      description: `${p.store} | ${p.unit}`,
-      thumbnail: {
-        imageUrl: p.imageUrl,
-        fixedRatio: true,
-      },
+    title: p.name,
+    description: `${p.price.toLocaleString()}원 / ${p.unit} | ${p.store}`,
+    thumbnail: {
+      imageUrl: p.imageUrl,
+      fixedRatio: true,
     },
-    itemList: [
-      { title: '가격', description: `${p.price.toLocaleString()}원` },
-      { title: '단위', description: p.unit },
-      { title: '매장', description: p.store },
-    ],
     buttons: [
       {
         label: '온라인 구매',
@@ -138,7 +131,7 @@ function buildCarousel(products) {
 
   return {
     carousel: {
-      type: 'commerceCard',
+      type: 'basicCard',
       items,
     },
   };
