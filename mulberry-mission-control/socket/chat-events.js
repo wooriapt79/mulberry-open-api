@@ -1,7 +1,7 @@
 /**
  * Chat Socket.IO 서버 핸들러
  *
- * 채널: #general / #dev / #research
+ * 채널: #general / #dev / #research / #luna-analysis
  * 메시지는 MongoDB(ChatMessage)에 영속화. DB 미연결 시 인메모리 캐시로 fallback.
  *
  * @author CTO Koda · DAY6~DAY7 · 2026-06-19~25
@@ -11,7 +11,7 @@ const mongoose = require('mongoose');
 const ChatMessage = require('../models/ChatMessage');
 const { saveMemoryEvent } = require('../utils/memory-layer');
 
-const CHANNELS = ['general', 'dev', 'research'];
+const CHANNELS = ['general', 'dev', 'research', 'luna-analysis'];
 const HISTORY_LIMIT = 50;
 
 class ChatEventsManager {

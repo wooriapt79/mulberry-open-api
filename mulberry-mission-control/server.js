@@ -454,6 +454,10 @@ app.use('/api/coop-buy', require('./routes/coop-buy'));
 // POST /api/coop-notify  — 달성 알림 (TRANG Manager 설계, 2026-07-17)
 app.use('/api', require('./routes/coop-pilot'));
 
+// ==================== Analysis API (Issue #39, Koda 2026-07-18) ====================
+// GET /api/analysis?product=배추&period=weekly — 공동구매 데이터 분석 + #luna-analysis 채널 연동
+app.use('/api', require('./routes/analysis'));
+
 // ==================== KakaoTalk Webhook (Issue #91, Koda 2026-07-12) ====================
 // POST /kakao/webhook — 카카오 i 오픈빌더 Mulberry_Luna 채널 연동
 app.use('/kakao', require('./routes/kakao'));
