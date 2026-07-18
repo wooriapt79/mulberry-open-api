@@ -727,8 +727,17 @@ const MissionControlModules = {
       { id: 'analytics', name: '분석', icon: '📊' }
     ]
   },
+  // Issue #109: Analyze 드롭다운 — 현장 운영 + 분석 + 모니터링 통합
+  analyze: {
+    id: 'analyze', name: 'Analyze', icon: '📊', group: 'workspace',
+    type: 'dropdown',
+    description: '현장 운영 · 분석 · 모니터링',
+    children: ['field', 'analytics', 'monitor'],
+    route: '#field',
+  },
+  // analyze-child: 직접 nav에 표시하지 않고 Analyze 드롭다운 하위에만 노출
   field: {
-    id: 'field', name: '현장 운영', icon: '🚛', group: 'workspace',
+    id: 'field', name: '현장 운영', icon: '🚛', group: 'analyze-child',
     description: '현장 거점 및 배달 관리', route: '#field',
     sections: [
       { id: 'map', name: '거점 지도', icon: '🗺️' },
@@ -738,13 +747,34 @@ const MissionControlModules = {
     ]
   },
   analytics: {
-    id: 'analytics', name: '분석', icon: '📈', group: 'workspace',
+    id: 'analytics', name: '분석', icon: '📈', group: 'analyze-child',
     description: '데이터 분석 및 리포트', route: '#analytics',
     sections: [
       { id: 'kpi', name: 'KPI', icon: '🎯' },
       { id: 'region', name: '지역별', icon: '🗺️' },
       { id: 'agent', name: 'Agent 성과', icon: '🤖' },
       { id: 'trend', name: '트렌드', icon: '📊' }
+    ]
+  },
+  monitor: {
+    id: 'monitor', name: '모니터링', icon: '📊', group: 'analyze-child',
+    description: '시스템 KPI 모니터링 대시보드', route: '#monitor',
+    sections: [
+      { id: 'overview', name: 'Overview', icon: '📈' }
+    ]
+  },
+  decision: {
+    id: 'decision', name: 'Decision', icon: '⚖️', group: 'workspace',
+    description: 'Steward Decision Engine 실시간 라우팅 결정 스트림', route: '#decision',
+    sections: [
+      { id: 'stream', name: 'Live Stream', icon: '📡' }
+    ]
+  },
+  search: {
+    id: 'search', name: 'Search', icon: '🔍', group: 'workspace',
+    description: '멀티에이전트 검색 — 10개 도메인 전문가 병렬 실행', route: '#search',
+    sections: [
+      { id: 'query', name: '검색', icon: '🔍' }
     ]
   },
   settings: {
@@ -757,27 +787,6 @@ const MissionControlModules = {
       { id: 'billing', name: '과금', icon: '💳' }
     ]
   },
-  decision: {
-    id: 'decision', name: 'Decision', icon: '⚖️', group: 'workspace',
-    description: 'Steward Decision Engine 실시간 라우팅 결정 스트림', route: '#decision',
-    sections: [
-      { id: 'stream', name: 'Live Stream', icon: '📡' }
-    ]
-  },
-  monitor: {
-    id: 'monitor', name: 'Monitor', icon: '📊', group: 'workspace',
-    description: '시스템 KPI 모니터링 대시보드', route: '#monitor',
-    sections: [
-      { id: 'overview', name: 'Overview', icon: '📈' }
-    ]
-  },
-  search: {
-    id: 'search', name: 'Search', icon: '🔍', group: 'workspace',
-    description: '멀티에이전트 검색 — 10개 도메인 전문가 병렬 실행', route: '#search',
-    sections: [
-      { id: 'query', name: '검색', icon: '🔍' }
-    ]
-  }
 };
 
 // ==================== 메뉴 렌더링 ====================
@@ -809,24 +818,77 @@ function renderNavItem(m) {
   `;
 }
 
+// Issue #109: Analyze 드롭다운 렌더링
+function renderNavDropdown(m) {
+  const isActive = m.children && m.children.some(childId => isCurrentModule(childId));
+  const items = (m.children || []).map(childId => {
+    const child = MissionControlModules[childId];
+    if (!child) return '';
+    return `<a href="${child.route}"
+       class="nav-dropdown-item ${isCurrentModule(childId) ? 'active' : ''}"
+       data-module="${childId}"
+       onclick="document.getElementById('nav-dropdown-${m.id}').style.display='none'">
+      <span class="nav-icon">${child.icon}</span>
+      <span>${child.name}</span>
+    </a>`;
+  }).join('');
+  return `
+    <div class="nav-dropdown-wrapper">
+      <button class="nav-item nav-dropdown-btn ${isActive ? 'active' : ''}"
+              onclick="toggleNavDropdown('${m.id}')"
+              data-module="${m.id}"
+              title="${m.description}">
+        <span class="nav-icon">${m.icon}</span>
+        <span class="nav-label">${m.name}</span>
+        <span class="nav-dropdown-caret" id="nav-caret-${m.id}">▼</span>
+      </button>
+      <div id="nav-dropdown-${m.id}" class="nav-dropdown-menu" style="display:none;">
+        ${items}
+      </div>
+    </div>
+  `;
+}
+
+// Issue #109: 드롭다운 토글
+function toggleNavDropdown(id) {
+  const menu = document.getElementById(`nav-dropdown-${id}`);
+  const caret = document.getElementById(`nav-caret-${id}`);
+  if (!menu) return;
+  const isOpen = menu.style.display !== 'none';
+  // 모든 드롭다운 닫기
+  document.querySelectorAll('.nav-dropdown-menu').forEach(m => { m.style.display = 'none'; });
+  document.querySelectorAll('.nav-dropdown-caret').forEach(c => { c.style.transform = ''; });
+  if (!isOpen) {
+    menu.style.display = 'block';
+    if (caret) caret.style.transform = 'rotate(180deg)';
+  }
+}
+
+// Issue #109: flat nav — 그룹 없이 | 구분자 스타일로 렌더링
+// 순서: Mission Control | AI Agents | Skill Bank | 공동구매 | Analyze | Decision | Search | 설정
+const NAV_FLAT_ORDER = ['mhc', 'agents', 'skills', 'coopbuy', 'analyze', 'decision', 'search', 'settings'];
+
 function renderMainNavigation() {
   const nav = document.getElementById('main-navigation');
   if (!nav) return;
-  const modules = Object.values(MissionControlModules);
 
-  // Issue #57 (2026-07-01): chat 그룹을 메인 nav에서 제거 — nav overflow 방지
-  // Team Chat은 우측 nav-chat-btn 플로팅 버튼으로 접근
-  const groups = ['workspace'];
-  nav.innerHTML = groups.map(groupId => {
-    const groupModules = modules.filter(m => (m.group || 'workspace') === groupId);
-    if (groupModules.length === 0) return '';
-    return `
-      <div class="nav-group" data-group="${groupId}">
-        <span class="nav-group-label">${NAV_GROUP_LABELS[groupId] || groupId}</span>
-        ${groupModules.map(renderNavItem).join('')}
-      </div>
-    `;
+  nav.innerHTML = NAV_FLAT_ORDER.map(id => {
+    const m = MissionControlModules[id];
+    if (!m) return '';
+    if (m.type === 'dropdown') return renderNavDropdown(m);
+    return renderNavItem(m);
   }).join('');
+
+  // 외부 클릭 시 드롭다운 닫기 (한 번만 등록)
+  if (!window._navDropdownOutsideHandler) {
+    window._navDropdownOutsideHandler = (e) => {
+      if (!e.target.closest('.nav-dropdown-wrapper')) {
+        document.querySelectorAll('.nav-dropdown-menu').forEach(m => { m.style.display = 'none'; });
+        document.querySelectorAll('.nav-dropdown-caret').forEach(c => { c.style.transform = ''; });
+      }
+    };
+    document.addEventListener('click', window._navDropdownOutsideHandler);
+  }
 }
 
 function renderSubNavigation(moduleId) {
@@ -875,5 +937,6 @@ window.MissionControl = {
   navigateTo,
   toggleMobileMenu,
   renderMainNavigation,
-  renderSubNavigation
+  renderSubNavigation,
+  toggleNavDropdown,
 };
