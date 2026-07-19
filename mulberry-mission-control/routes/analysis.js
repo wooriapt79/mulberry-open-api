@@ -194,7 +194,7 @@ function _buildLunaContext(templateKey, product_name, period, dataCtx, team, cam
     };
   }
   if (templateKey === '팀' || templateKey === 'admin') {
-    return { ...base, 질문: `${product_name} ${dataCtx.period} 분석 결과를 공유해주세요.` };
+    return { ...base, 팀: team, 질문: `${product_name} ${dataCtx.period} 분석 결과를 공유해주세요.` };
   }
   return { ...base, 팀: team };
 }
