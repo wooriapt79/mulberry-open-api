@@ -121,13 +121,18 @@ async function dispatch(mandate) {
 // ─────────────────────────────────────────────
 
 async function _atfsFetch(url, options) {
-  const fetch = require('node-fetch');
-  const res = await fetch(url, { ...options, timeout: 8000 });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`ATFS ${res.status}: ${text.slice(0, 200)}`);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`ATFS ${res.status}: ${text.slice(0, 200)}`);
+    }
+    return res.json();
+  } finally {
+    clearTimeout(timer);
   }
-  return res.json();
 }
 
 function _buildNegotiatePayload(task_type, mandate_scope, room_id, passport_id) {

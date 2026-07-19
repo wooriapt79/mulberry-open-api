@@ -131,15 +131,16 @@
     const time = new Date().toLocaleString('ko-KR', { hour12: false });
     const taskBadge = data.task_id ? `<span class="nroom-badge">${data.task_id.slice(0, 12)}…</span>` : '';
 
+    const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     card.innerHTML = `
       <div class="nroom-card-header">
-        <span class="nroom-room-id">${room_id}</span>
+        <span class="nroom-room-id">${esc(room_id)}</span>
         ${taskBadge}
         <span class="nroom-time">${time}</span>
       </div>
       <div class="nroom-status" style="color:${statusColor}">${statusLabel}</div>
-      ${data.task_type ? `<div class="nroom-meta">작업: ${data.task_type}</div>` : ''}
-      ${data.approval_id ? `<div class="nroom-meta">승인 ID: ${data.approval_id}</div>` : ''}
+      ${data.task_type ? `<div class="nroom-meta">작업: ${esc(data.task_type)}</div>` : ''}
+      ${data.approval_id ? `<div class="nroom-meta">승인 ID: ${esc(data.approval_id)}</div>` : ''}
     `;
 
     if (isNew) card.classList.add('nroom-card-new');

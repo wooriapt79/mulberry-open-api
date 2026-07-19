@@ -286,6 +286,11 @@ router.post('/negotiation/worker-callback', async (req, res) => {
     const room = await NegotiationRoom.findOne({ room_id });
     if (!room) return res.status(404).json({ error: '룸 없음' });
 
+    // MANDATE_ISSUED 상태만 허용 — 이미 종료된 룸에 stale 콜백 차단
+    if (room.status !== 'MANDATE_ISSUED' && room.status !== 'EXECUTING') {
+      return res.status(409).json({ error: `Invalid state for callback: ${room.status}` });
+    }
+
     // EXECUTING 전환 (아직 안 됐다면)
     if (room.status === 'MANDATE_ISSUED') {
       await room.transition('EXECUTING');
