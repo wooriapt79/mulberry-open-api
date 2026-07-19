@@ -111,15 +111,65 @@ router.get('/analysis', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────
-// POST /api/analysis  (Phase 2: 직접 템플릿 호출)
-// Body: { template: '배추'|'위험'|'팀'|'admin'|'농민', context: {...} }
+// POST /api/analysis
+//   Mode A (Phase 4): { product, period?, additionalContext? }
+//     → GET 분석과 동일하게 처리 + additionalContext 프롬프트 append
+//   Mode B (Phase 2): { template, context }
+//     → 직접 템플릿 호출
 // ─────────────────────────────────────────────
 router.post('/analysis', async (req, res) => {
-  const { template, context } = req.body || {};
+  const { product, period = 'weekly', additionalContext, template, context } = req.body || {};
 
+  // ── Mode A: product 기반 호출 (Phase 4 luna-channel 트리거) ──
+  if (product) {
+    const product_id = PRODUCT_BY_NAME[product] || (PRODUCT_MAP[product] ? product : null);
+    if (!product_id) {
+      return res.status(400).json({ error: `지원하지 않는 품목: ${product}` });
+    }
+    const product_name = PRODUCT_MAP[product_id].name;
+    const team = 'Sr. TRANG Manager';
+
+    try {
+      const dbReady = require('mongoose').connection.readyState === 1;
+      const campaign = dbReady ? await CoopCampaign.findOne({ product_id, status: { $in: ['open', 'goal_reached'] } }) : null;
+      const history = dbReady ? await CoopHistory.findRecent(product_id, 30) : [];
+      const dataContext = _buildContext(product_name, period, campaign, history);
+
+      const templateKey = ['배추', '위험', '팀', 'admin', '농민'].includes(product_name) ? product_name : '팀';
+      const lunaContext = _buildLunaContext(templateKey, product_name, period, dataContext, team, campaign);
+      let prompt = promptGen.generate(templateKey, lunaContext);
+
+      // Issue #3 Phase 4: 추가 지시사항 append
+      if (additionalContext) prompt += `\n\n## 추가 지시\n${additionalContext}`;
+
+      let analysis = process.env.ANTHROPIC_API_KEY
+        ? await _callClaude(prompt)
+        : _mockAnalysis(product_name, period, campaign);
+
+      const generated_at = new Date().toISOString();
+
+      const io = req.app.get('io');
+      if (io) {
+        io.to('luna-analysis').emit('luna:analysis', {
+          template: templateKey, product: product_name, analysis, additionalContext, generated_at,
+        });
+      }
+
+      return res.json({
+        product_id, product_name, period, template: templateKey,
+        prompt_stats: promptGen.getStats(), additionalContext: additionalContext || null,
+        analysis, channel: 'luna-analysis', generated_at,
+      });
+    } catch (err) {
+      console.error('[analysis/post/product]', err.message);
+      return res.status(500).json({ error: '분석 중 오류가 발생했습니다' });
+    }
+  }
+
+  // ── Mode B: 직접 템플릿 호출 (Phase 2) ──
   if (!template || !context) {
     return res.status(400).json({
-      error: 'template, context 필수',
+      error: 'product 또는 (template + context) 필수',
       available_templates: ['배추', '위험', '팀', 'admin', '농민'],
       example: { template: '배추', context: { 팀: 'Sr. TRANG', 목표: '전략 수립', 데이터: '...' } },
     });
@@ -127,7 +177,8 @@ router.post('/analysis', async (req, res) => {
 
   try {
     promptGen.validateContext(template, context);
-    const prompt = promptGen.generate(template, context);
+    let prompt = promptGen.generate(template, context);
+    if (additionalContext) prompt += `\n\n## 추가 지시\n${additionalContext}`;
 
     let analysis = null;
     if (process.env.ANTHROPIC_API_KEY) {
@@ -141,12 +192,13 @@ router.post('/analysis', async (req, res) => {
     // Issue #113: #luna-analysis 채널 실시간 push
     const io = req.app.get('io');
     if (io) {
-      io.to('luna-analysis').emit('luna:analysis', { template, analysis, generated_at });
+      io.to('luna-analysis').emit('luna:analysis', { template, analysis, additionalContext: additionalContext || null, generated_at });
     }
 
     return res.json({
       template,
       prompt_stats: promptGen.getStats(),
+      additionalContext: additionalContext || null,
       analysis,
       channel: 'luna-analysis',
       generated_at,

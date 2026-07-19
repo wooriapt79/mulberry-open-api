@@ -103,10 +103,15 @@
     const btn = document.getElementById('luna-trigger-btn');
     const sel = document.getElementById('luna-product-select');
     const product = sel ? sel.value : '배추';
+    const additionalContext = (document.getElementById('luna-additional-context')?.value || '').trim();
     if (btn) { btn.disabled = true; btn.textContent = '분석 중…'; }
 
     try {
-      const res = await fetch(`/api/analysis?product=${encodeURIComponent(product)}&period=weekly`);
+      const res = await fetch(`/api/analysis?product=${encodeURIComponent(product)}&period=weekly`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product, period: 'weekly', additionalContext }),
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       // emit은 서버에서 처리 — 응답은 확인용
       const data = await res.json();
