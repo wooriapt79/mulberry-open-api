@@ -461,6 +461,10 @@ app.use('/api', require('./routes/coop-pilot'));
 // GET /api/analysis?product=배추&period=weekly — 공동구매 데이터 분석 + #luna-analysis 채널 연동
 app.use('/api', require('./routes/analysis'));
 
+// ==================== Negotiation Room API (Issue #116, Koda 2026-07-19) ====================
+// POST /api/negotiation/rooms — Guest Negotiation Room MVP
+app.use('/api', require('./routes/negotiation'));
+
 // ==================== KakaoTalk Webhook (Issue #91, Koda 2026-07-12) ====================
 // POST /kakao/webhook — 카카오 i 오픈빌더 Mulberry_Luna 채널 연동
 app.use('/kakao', require('./routes/kakao'));

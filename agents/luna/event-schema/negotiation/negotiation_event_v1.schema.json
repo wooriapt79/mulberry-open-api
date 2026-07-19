@@ -1,0 +1,142 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "mulberry:negotiation_event:v1",
+  "title": "NegotiationEvent Schema v1",
+  "description": "Guest Negotiation Room 전용 이벤트 스키마. luna_event_v1과 task_id로 연결되며 독립 발전합니다.",
+  "version": "1.0.0",
+  "created": "2026-07-19",
+  "author": "KODA (CTO)",
+  "type": "object",
+  "required": ["event_id", "room_id", "task_id", "event_type", "agent", "timestamp"],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "이벤트 고유 식별자 (UUID v4)",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "room_id": {
+      "type": "string",
+      "description": "협상 룸 고유 식별자"
+    },
+    "task_id": {
+      "type": "string",
+      "description": "luna_event_v1.schema.json과 공유하는 공통 식별자 (연결 키)"
+    },
+    "event_type": {
+      "type": "string",
+      "description": "이벤트 유형",
+      "enum": [
+        "room_created",
+        "participant_joined",
+        "agenda_set",
+        "proposal_made",
+        "counter_proposal",
+        "terms_agreed",
+        "human_approval_requested",
+        "human_approved",
+        "human_rejected",
+        "mandate_issued",
+        "worker_assigned",
+        "worker_completed",
+        "agreement_recorded",
+        "room_closed",
+        "room_withdrawn"
+      ]
+    },
+    "room_status": {
+      "type": "string",
+      "description": "이벤트 발생 시점의 협상 룸 상태 (14개 상태 머신)",
+      "enum": [
+        "ROOM_CREATED",
+        "WAITING_GUEST",
+        "GUEST_JOINED",
+        "AGENDA_OPEN",
+        "NEGOTIATING",
+        "PROPOSAL_PENDING",
+        "COUNTER_PENDING",
+        "HUMAN_REQUIRED",
+        "APPROVED",
+        "REJECTED",
+        "MANDATE_ISSUED",
+        "EXECUTING",
+        "CLOSED_AGREED",
+        "WITHDRAWN"
+      ]
+    },
+    "agent": {
+      "type": "string",
+      "description": "이벤트를 발생시킨 에이전트",
+      "enum": ["luna_jr", "steward_ai", "worker_ai", "steward_human", "system"]
+    },
+    "permission_level": {
+      "type": "string",
+      "description": "에이전트 권한 레벨",
+      "enum": ["STEWARD", "EXECUTOR", "OBSERVER"]
+    },
+    "payload": {
+      "type": "object",
+      "description": "이벤트 유형별 가변 데이터",
+      "additionalProperties": true
+    },
+    "mandate_scope": {
+      "type": "object",
+      "description": "EXECUTOR 권한 범위 (mandate_issued 이벤트 시 필수)",
+      "properties": {
+        "task_type": {
+          "type": "string",
+          "enum": ["image_generation", "music_generation", "video_generation", "text_copy"]
+        },
+        "allowed_actions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "usage_period": {
+          "type": "string",
+          "description": "콘텐츠 사용 기간 (예: 2026-12-31)"
+        },
+        "publication_channels": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "audit_ref": {
+      "type": "string",
+      "description": "감사 레코드 참조 ID (ApprovalRecord.approval_id)"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "이벤트 발생 시각 (ISO 8601 UTC)"
+    },
+    "meta": {
+      "type": "object",
+      "description": "디버그·추적용 메타데이터",
+      "properties": {
+        "schema_version": { "type": "string", "const": "1.0.0" },
+        "luna_event_link": {
+          "type": "string",
+          "description": "연결된 luna_event_v1 event_id (선택)"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "event_id": "550e8400-e29b-41d4-a716-446655440000",
+      "room_id": "room_abc123",
+      "task_id": "task_xyz789",
+      "event_type": "human_approval_requested",
+      "room_status": "HUMAN_REQUIRED",
+      "agent": "steward_ai",
+      "permission_level": "STEWARD",
+      "payload": {
+        "reason": "계약 금액 50만원 초과 — re.eul CEO 승인 필요",
+        "proposal_summary": "인스타그램 콜라주 3장, 사용기간 6개월"
+      },
+      "audit_ref": "approval_20260719_001",
+      "timestamp": "2026-07-19T07:00:00Z",
+      "meta": { "schema_version": "1.0.0" }
+    }
+  ]
+}
