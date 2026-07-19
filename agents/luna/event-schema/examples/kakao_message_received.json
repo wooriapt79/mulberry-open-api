@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "event_id": "EVT-20260718-000001",
+  "task_id": "TASK-20260718-000031",
+  "parent_event_id": null,
+  "timestamp": "2026-07-18T21:10:00+09:00",
+  "channel": "kakao",
+  "agent": "gateway",
+  "event_type": "message_received",
+  "status": "received",
+  "session_id": "KAKAO-SESSION-8F29A",
+  "user_ref": "USER-HASH-91AC",
+  "intent": "product_inquiry",
+  "input_summary": "흑염소 진액의 가격과 배송 가능 지역 문의",
+  "output_summary": null,
+  "tool": null,
+  "next_agent": "kakao_luna",
+  "failure_code": null,
+  "human_approval_required": false,
+  "metadata": {
+    "locale": "ko-KR",
+    "source_message_type": "text"
+  }
+}
