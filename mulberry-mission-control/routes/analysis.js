@@ -79,7 +79,7 @@ router.get('/analysis', async (req, res) => {
       analysis = _mockAnalysis(product_name, period, campaign);
     }
 
-    return res.json({
+    const result = {
       product_id,
       product_name,
       period,
@@ -89,7 +89,20 @@ router.get('/analysis', async (req, res) => {
       analysis,
       channel: 'luna-analysis',
       generated_at: new Date().toISOString(),
-    });
+    };
+
+    // Issue #113: #luna-analysis 채널 실시간 push
+    const io = req.app.get('io');
+    if (io) {
+      io.to('luna-analysis').emit('luna:analysis', {
+        template: templateKey,
+        product: product_name,
+        analysis,
+        generated_at: result.generated_at,
+      });
+    }
+
+    return res.json(result);
 
   } catch (err) {
     console.error('[analysis]', err.message);
@@ -123,12 +136,20 @@ router.post('/analysis', async (req, res) => {
       analysis = `[mock] ${template} 템플릿 분석 완료. ANTHROPIC_API_KEY 설정 후 실제 분석 가능합니다.`;
     }
 
+    const generated_at = new Date().toISOString();
+
+    // Issue #113: #luna-analysis 채널 실시간 push
+    const io = req.app.get('io');
+    if (io) {
+      io.to('luna-analysis').emit('luna:analysis', { template, analysis, generated_at });
+    }
+
     return res.json({
       template,
       prompt_stats: promptGen.getStats(),
       analysis,
       channel: 'luna-analysis',
-      generated_at: new Date().toISOString(),
+      generated_at,
     });
 
   } catch (err) {

@@ -149,6 +149,9 @@ class MissionControlRouter {
       case 'monitor':
         this.showMonitorDashboard(section);
         break;
+      case 'luna-channel':
+        this.showLunaChannel();
+        break;
       default:
         console.warn(`Unknown module: ${moduleName}, fallback to mhc/overview`);
         this.showMissionHealthCheck('overview');
@@ -575,6 +578,16 @@ class MissionControlRouter {
     }
   }
 
+  // ==================== Luna Channel (#luna-analysis, Issue #113) ====================
+
+  showLunaChannel() {
+    const container = document.getElementById('module-luna-channel');
+    if (!container) return;
+    container.style.display = 'block';
+    // Socket.IO 채널 join (이미 init됐으면 no-op)
+    if (window.LunaChannel) LunaChannel.init();
+  }
+
   // ==================== Search (멀티에이전트, DAY5) ====================
 
   showSearchModule(section) {
@@ -732,7 +745,7 @@ const MissionControlModules = {
     id: 'analyze', name: 'Analyze', icon: '📊', group: 'workspace',
     type: 'dropdown',
     description: '현장 운영 · 분석 · 모니터링',
-    children: ['field', 'analytics', 'monitor'],
+    children: ['field', 'analytics', 'monitor', 'luna-channel'],
     route: '#field',
   },
   // analyze-child: 직접 nav에 표시하지 않고 Analyze 드롭다운 하위에만 노출
@@ -762,6 +775,11 @@ const MissionControlModules = {
     sections: [
       { id: 'overview', name: 'Overview', icon: '📈' }
     ]
+  },
+  'luna-channel': {
+    id: 'luna-channel', name: 'Luna 채널', icon: '🌙', group: 'analyze-child',
+    description: '#luna-analysis 실시간 분석 채널', route: '#luna-channel',
+    sections: []
   },
   decision: {
     id: 'decision', name: 'Decision', icon: '⚖️', group: 'workspace',
