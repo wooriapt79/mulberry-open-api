@@ -947,7 +947,32 @@ document.addEventListener('click', (e) => {
     </div>
   </div>
 
-  <!-- 11. Search (Steward Workspace - 멀티에이전트 검색, DAY5 Issue #122) -->
+  <!-- 11. Luna Channel (#luna-analysis 실시간 채널, Issue #113) -->
+  <div id="module-luna-channel" class="module-container">
+    <div class="module-header">
+      <h1>🌙 Luna 채널</h1>
+      <p>#luna-analysis — 공동구매 AI 분석 실시간 채널</p>
+    </div>
+    <div class="luna-channel-toolbar">
+      <span class="luna-status-dot" id="luna-channel-status-dot"></span>
+      <span class="luna-status-label" id="luna-channel-status-label">연결 중…</span>
+      <span style="flex:1"></span>
+      <select id="luna-product-select" class="luna-select">
+        <option value="배추">배추</option>
+        <option value="감자">감자</option>
+        <option value="당근">당근</option>
+        <option value="쌀">쌀</option>
+        <option value="옥수수">옥수수</option>
+      </select>
+      <button id="luna-trigger-btn" class="luna-btn" onclick="LunaChannel.trigger()">분석 실행</button>
+      <button class="luna-btn luna-btn-secondary" onclick="LunaChannel.clear()">초기화</button>
+    </div>
+    <div id="luna-channel-feed" class="luna-feed">
+      <p id="luna-channel-empty" class="luna-empty">분석 결과를 기다리는 중… GET /api/analysis?product=배추 를 호출하거나 위 버튼을 눌러보세요.</p>
+    </div>
+  </div>
+
+  <!-- 12. Search (Steward Workspace - 멀티에이전트 검색, DAY5 Issue #122) -->
   <div id="module-search" class="module-container">
     <div class="module-header">
       <h1>🔍 Search</h1>
@@ -1705,5 +1730,63 @@ a.sub-nav-item.active,a.sub-nav-item.active:link{color:#58a6ff!important}
 </style>
     <script src="/js/steward-workspace-ui.js"></script>
 <script src="/js/coop-buy-dashboard.js"></script>
+<script src="/js/luna-channel.js"></script>
+<script>
+/* Issue #113: Luna 채널 자동 초기화 */
+document.addEventListener('DOMContentLoaded', function () {
+  if (window.LunaChannel) LunaChannel.init();
+});
+</script>
+<style>
+/* Issue #113: #luna-analysis 채널 UI */
+.luna-channel-toolbar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  margin-bottom: 16px;
+}
+.luna-status-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #94a3b8; display: inline-block; flex-shrink: 0;
+}
+.luna-status-label { font-size: 0.8rem; color: rgba(255,255,255,0.55); }
+.luna-select {
+  background: #1e1e2e; color: #e2e8f0; border: 1px solid rgba(124,58,237,0.4);
+  border-radius: 6px; padding: 5px 10px; font-size: 0.82rem; cursor: pointer;
+}
+.luna-btn {
+  background: #7c3aed; color: #fff; border: none; border-radius: 6px;
+  padding: 6px 14px; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+  transition: background 0.15s;
+}
+.luna-btn:hover { background: #6d28d9; }
+.luna-btn:disabled { background: #4b5563; cursor: not-allowed; }
+.luna-btn-secondary {
+  background: rgba(255,255,255,0.07); color: #94a3b8;
+}
+.luna-btn-secondary:hover { background: rgba(255,255,255,0.12); color: #e2e8f0; }
+.luna-feed { display: flex; flex-direction: column; gap: 12px; }
+.luna-empty { color: rgba(255,255,255,0.35); font-size: 0.85rem; text-align: center; padding: 40px 0; }
+.luna-card {
+  background: #12112a; border: 1px solid rgba(124,58,237,0.25);
+  border-radius: 10px; padding: 14px 18px; animation: lunaFadeIn 0.3s ease;
+}
+@keyframes lunaFadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+.luna-card-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+}
+.luna-card-tag {
+  background: rgba(124,58,237,0.25); color: #a78bfa;
+  border-radius: 4px; padding: 2px 8px; font-size: 0.75rem; font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.luna-card-product { color: #94a3b8; font-size: 0.78rem; }
+.luna-card-time { margin-left: auto; color: rgba(255,255,255,0.3); font-size: 0.75rem; }
+.luna-card-body {
+  color: #e2e8f0; font-size: 0.82rem; line-height: 1.6;
+  white-space: pre-wrap; word-break: break-word; margin: 0;
+  max-height: 320px; overflow-y: auto;
+}
+</style>
 </body>
 </html>

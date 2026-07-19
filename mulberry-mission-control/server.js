@@ -102,6 +102,9 @@ const io = socketIO(server, {
   transports: ['websocket', 'polling']
 });
 
+// Issue #113: analysis 라우터에서 io 접근용
+app.set('io', io);
+
 // ==================== Decision Events (Issue #98 Phase 1, Koda 2026-06-15) ====================
 const decisionEvents = new DecisionEventsManager(io);
 decisionEvents.initialize();
