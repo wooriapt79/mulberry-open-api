@@ -974,7 +974,24 @@ document.addEventListener('click', (e) => {
     </div>
   </div>
 
-  <!-- 12. Search (Steward Workspace - 멀티에이전트 검색, DAY5 Issue #122) -->
+  <!-- 12. Negotiation Room (Issue #116 Phase 2 — 협상 룸 현황 패널) -->
+  <div id="module-negotiation-room" class="module-container">
+    <div class="module-header">
+      <h1>🤝 협상 룸</h1>
+      <p>Guest Negotiation Room — 실시간 협상 현황 모니터</p>
+    </div>
+    <div class="nroom-toolbar">
+      <span class="nroom-status-dot" id="nroom-status-dot"></span>
+      <span class="nroom-status-label" id="nroom-status-label">연결 중…</span>
+      <span style="flex:1"></span>
+      <button class="nroom-btn nroom-btn-secondary" onclick="NegotiationRoom.clearFeed()">초기화</button>
+    </div>
+    <div id="negotiation-room-feed" class="nroom-feed">
+      <p id="negotiation-room-empty" class="nroom-empty">활성 협상 룸이 없습니다. POST /api/negotiation/rooms 로 룸을 생성하세요.</p>
+    </div>
+  </div>
+
+  <!-- 13. Search (Steward Workspace - 멀티에이전트 검색, DAY5 Issue #122) -->
   <div id="module-search" class="module-container">
     <div class="module-header">
       <h1>🔍 Search</h1>
@@ -1733,10 +1750,12 @@ a.sub-nav-item.active,a.sub-nav-item.active:link{color:#58a6ff!important}
     <script src="/js/steward-workspace-ui.js"></script>
 <script src="/js/coop-buy-dashboard.js"></script>
 <script src="/js/luna-channel.js"></script>
+<script src="/js/negotiation-room.js"></script>
 <script>
 /* Issue #113: Luna 채널 자동 초기화 */
 document.addEventListener('DOMContentLoaded', function () {
   if (window.LunaChannel) LunaChannel.init();
+  if (window.NegotiationRoom) NegotiationRoom.init();
 });
 </script>
 <style>
@@ -1778,6 +1797,46 @@ document.addEventListener('DOMContentLoaded', function () {
 .luna-additional-textarea:focus { outline: none; border-color: rgba(124,58,237,0.7); }
 .luna-feed { display: flex; flex-direction: column; gap: 12px; }
 .luna-empty { color: rgba(255,255,255,0.35); font-size: 0.85rem; text-align: center; padding: 40px 0; }
+
+/* Issue #116 Phase 2: 협상 룸 현황 패널 */
+.nroom-toolbar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  margin-bottom: 16px;
+}
+.nroom-status-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: #f87171; display: inline-block; flex-shrink: 0;
+}
+.nroom-status-label { color: rgba(255,255,255,0.55); font-size: 0.82rem; }
+.nroom-btn {
+  padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer;
+  font-size: 0.82rem; font-weight: 600;
+}
+.nroom-btn-secondary {
+  background: rgba(255,255,255,0.07); color: #94a3b8;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.nroom-btn-secondary:hover { background: rgba(255,255,255,0.12); color: #e2e8f0; }
+.nroom-feed { display: flex; flex-direction: column; gap: 10px; }
+.nroom-empty { color: rgba(255,255,255,0.35); font-size: 0.85rem; text-align: center; padding: 40px 0; }
+.nroom-card {
+  background: #0f0e20; border: 1px solid rgba(99,102,241,0.25);
+  border-radius: 10px; padding: 14px 18px;
+  animation: nroomFadeIn 0.35s ease;
+}
+.nroom-card-new { border-color: rgba(99,102,241,0.7); }
+@keyframes nroomFadeIn { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
+.nroom-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+.nroom-room-id { font-size: 0.78rem; color: #6366f1; font-family: monospace; font-weight: 700; }
+.nroom-badge {
+  font-size: 0.72rem; background: rgba(99,102,241,0.15);
+  color: #a5b4fc; border-radius: 4px; padding: 1px 6px;
+}
+.nroom-time { font-size: 0.72rem; color: rgba(255,255,255,0.3); margin-left: auto; }
+.nroom-status { font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; }
+.nroom-meta { font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-top: 2px; }
 .luna-card {
   background: #12112a; border: 1px solid rgba(124,58,237,0.25);
   border-radius: 10px; padding: 14px 18px; animation: lunaFadeIn 0.3s ease;

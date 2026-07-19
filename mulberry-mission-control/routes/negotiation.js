@@ -210,8 +210,8 @@ router.post('/negotiation/rooms/:room_id/approve', async (req, res) => {
         payload: {},
       });
 
-      // steward_adapter로 Worker AI 배정
-      const dispatchResult = stewardAdapter.dispatch({
+      // steward_adapter로 Worker AI 배정 (Phase 2: async ATFS 호출)
+      const dispatchResult = await stewardAdapter.dispatch({
         task_type: mandate_scope?.task_type,
         mandate_scope,
         room_id,
@@ -254,6 +254,82 @@ router.get('/negotiation/rooms/:room_id/events', async (req, res) => {
     const events = await NegotiationEvent.find({ room_id }).sort({ timestamp: 1 });
     return res.json({ room_id, count: events.length, events });
   } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────
+// GET /api/negotiation/rooms
+// 활성 룸 목록 (Mission Control UI용)
+// ─────────────────────────────────────────────
+router.get('/negotiation/rooms', async (req, res) => {
+  try {
+    const rooms = await NegotiationRoom.find({
+      status: { $nin: ['CLOSED_AGREED', 'WITHDRAWN', 'REJECTED'] },
+    }).sort({ createdAt: -1 }).limit(50);
+    return res.json({ count: rooms.length, rooms });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────
+// POST /api/negotiation/worker-callback
+// ATFS Worker AI 작업 완료 콜백 → EXECUTING → CLOSED_AGREED
+// Body: { room_id, task_type, result, passport_id }
+// ─────────────────────────────────────────────
+router.post('/negotiation/worker-callback', async (req, res) => {
+  const { room_id, task_type, result, passport_id } = req.body || {};
+  if (!room_id) return res.status(400).json({ error: 'room_id 필수' });
+
+  try {
+    const room = await NegotiationRoom.findOne({ room_id });
+    if (!room) return res.status(404).json({ error: '룸 없음' });
+
+    // MANDATE_ISSUED 상태만 허용 — 이미 종료된 룸에 stale 콜백 차단
+    if (room.status !== 'MANDATE_ISSUED' && room.status !== 'EXECUTING') {
+      return res.status(409).json({ error: `Invalid state for callback: ${room.status}` });
+    }
+
+    // EXECUTING 전환 (아직 안 됐다면)
+    if (room.status === 'MANDATE_ISSUED') {
+      await room.transition('EXECUTING');
+      await _logEvent({
+        room_id, task_id: room.task_id,
+        event_type: 'worker_assigned',
+        room_status: 'EXECUTING',
+        agent: 'worker_ai',
+        permission_level: 'EXECUTOR',
+        payload: { task_type, passport_id },
+      });
+    }
+
+    // Worker 완료 → CLOSED_AGREED
+    await room.transition('CLOSED_AGREED');
+    await _logEvent({
+      room_id, task_id: room.task_id,
+      event_type: 'worker_completed',
+      room_status: 'CLOSED_AGREED',
+      agent: 'worker_ai',
+      permission_level: 'EXECUTOR',
+      payload: { task_type, result: result || null, passport_id },
+    });
+
+    await _logEvent({
+      room_id, task_id: room.task_id,
+      event_type: 'agreement_recorded',
+      room_status: 'CLOSED_AGREED',
+      agent: 'steward_ai',
+      permission_level: 'STEWARD',
+      payload: { summary: `${task_type} 작업 완료. 합의 기록됨.` },
+    });
+
+    const io = req.app.get('io');
+    if (io) io.emit('negotiation:completed', { room_id, task_type, status: 'CLOSED_AGREED', result });
+
+    return res.json({ room_id, status: 'CLOSED_AGREED', task_type, result });
+  } catch (err) {
+    console.error('[negotiation] worker-callback error:', err.message);
     return res.status(500).json({ error: err.message });
   }
 });
