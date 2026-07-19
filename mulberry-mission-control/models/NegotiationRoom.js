@@ -81,8 +81,7 @@ const NegotiationEventSchema = new mongoose.Schema(
     audit_ref:        { type: String },
     timestamp:        { type: Date, default: Date.now },
     meta:             { type: mongoose.Schema.Types.Mixed, default: {} },
-  },
-  { _id: false }
+  }
 );
 
 const NegotiationEvent = mongoose.model('NegotiationEvent', NegotiationEventSchema);
@@ -107,8 +106,23 @@ const ApprovalRecordSchema = new mongoose.Schema(
 const ApprovalRecord = mongoose.model('ApprovalRecord', ApprovalRecordSchema);
 
 // ─────────────────────────────────────────────
-// UUID v4 생성 헬퍼 (외부 의존 없이)
+// UUID v4 생성 (negotiation_event_v1 스키마 pattern 준수)
 // ─────────────────────────────────────────────
+function generateUUID() {
+  const { randomBytes } = require('crypto');
+  const b = randomBytes(16);
+  b[6] = (b[6] & 0x0f) | 0x40;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  return [
+    b.slice(0, 4).toString('hex'),
+    b.slice(4, 6).toString('hex'),
+    b.slice(6, 8).toString('hex'),
+    b.slice(8, 10).toString('hex'),
+    b.slice(10).toString('hex'),
+  ].join('-');
+}
+
+// room_id / approval_id 등 내부 식별자용 (prefix + ts 형식 유지)
 function generateId(prefix = '') {
   const ts = Date.now().toString(36);
   const rand = Math.random().toString(36).slice(2, 8);
@@ -122,4 +136,5 @@ module.exports = {
   ROOM_STATUSES,
   EVENT_TYPES,
   generateId,
+  generateUUID,
 };

@@ -12,7 +12,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { NegotiationRoom, NegotiationEvent, ApprovalRecord, generateId } = require('../models/NegotiationRoom');
+const { NegotiationRoom, NegotiationEvent, ApprovalRecord, generateId, generateUUID } = require('../models/NegotiationRoom');
 const stewardAdapter = require('../utils/steward_adapter');
 
 // ─────────────────────────────────────────────
@@ -211,12 +211,22 @@ router.post('/negotiation/rooms/:room_id/approve', async (req, res) => {
       });
 
       // steward_adapter로 Worker AI 배정
-      stewardAdapter.dispatch({
-        task_type: mandate_scope?.task_type || 'unknown',
+      const dispatchResult = stewardAdapter.dispatch({
+        task_type: mandate_scope?.task_type,
         mandate_scope,
         room_id,
         audit_ref: approvalRecord?.approval_id,
       });
+
+      if (!dispatchResult.dispatched) {
+        // 배정 실패 시 MANDATE_ISSUED 롤백 → APPROVED로 복구
+        await room.transition('APPROVED');
+        return res.status(500).json({
+          error: `Worker AI 배정 실패: ${dispatchResult.reason}`,
+          room_id,
+          status: 'APPROVED',
+        });
+      }
     }
 
     const io = req.app.get('io');
@@ -252,7 +262,7 @@ router.get('/negotiation/rooms/:room_id/events', async (req, res) => {
 // 내부: 이벤트 로그 기록
 // ─────────────────────────────────────────────
 async function _logEvent({ room_id, task_id, event_type, room_status, agent, permission_level, payload, mandate_scope, audit_ref }) {
-  const event_id = generateId('evt_');
+  const event_id = generateUUID();
   try {
     await NegotiationEvent.create({
       event_id,
