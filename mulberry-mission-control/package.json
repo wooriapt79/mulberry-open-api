@@ -1,6 +1,6 @@
 {
   "name": "mulberry-mission-control",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Mulberry Mission Control Center with Redis Integration",
   "main": "server.js",
   "_build": "20260713-v33-luna-anthropic",
