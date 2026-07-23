@@ -1,4 +1,4 @@
-/**
+h/**
  * Mulberry Mission Control - Server
  *
  * 원본 정적 파일 서빙 패턴 복원 + Koda Redis 통합
@@ -95,6 +95,9 @@ app.use(express.json());
 
 // ✅ 정적 파일 서빙
 app.use(express.static(path.join(__dirname, 'public')));
+
+// GET /logout — 로그아웃 리디렉트 (login.html로)
+app.get('/logout', (req, res) => res.redirect('/login.html'));
 
 // ==================== Socket.IO ====================
 const io = socketIO(server, {
@@ -431,6 +434,10 @@ app.post('/api/messages', requireStewardAuth, async (req, res) => {
   io.to(channelId).emit('new_message', message);
   res.status(201).json(message);
 });
+
+// ==================== Auth API (Issue #5, 2026-07-23) ====================
+// POST /api/auth/login — JWT 로그인 | POST /api/auth/logout | GET /api/auth/me
+app.use('/api/auth', require('./routes/auth'));
 
 // ==================== Metrics API (DAY4 Part C, Issue #117) ====================
 // GET /api/v1/metrics/overview — Monitor 패널 KPI 데이터 (requireAuth 미들웨어 포함)
