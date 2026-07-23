@@ -3,7 +3,7 @@
  * 회원가입, 로그인, 비밀번호 검증 등
  */
 
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const { generateToken } = require('../utils/jwt');
 
