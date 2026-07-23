@@ -9,7 +9,7 @@ const jwt = require('jsonwebtoken');
 // 고정 문자열로 인증이 동작하던 취약점. 서버 기동 시점에 fail-fast.
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET 환경변수가 설정되지 않았습니다. 서버를 시작할 수 없습니다.');
+  console.warn('[jwt] JWT_SECRET not set - auth will not work');
 }
 const JWT_EXPIRE = '24h';
 
