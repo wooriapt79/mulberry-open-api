@@ -437,7 +437,7 @@ app.post('/api/messages', requireStewardAuth, async (req, res) => {
 
 // ==================== Auth API (Issue #5, 2026-07-23) ====================
 // POST /api/auth/login — JWT 로그인 | POST /api/auth/logout | GET /api/auth/me
-app.use('/api/auth', require('./routes/auth'));
+// DISABLED: app.use('/api/auth', require('./routes/auth'));
 
 // ==================== Metrics API (DAY4 Part C, Issue #117) ====================
 // GET /api/v1/metrics/overview — Monitor 패널 KPI 데이터 (requireAuth 미들웨어 포함)
