@@ -1,4 +1,4 @@
-h/**
+/**
  * Mulberry Mission Control - Server
  *
  * 원본 정적 파일 서빙 패턴 복원 + Koda Redis 통합
@@ -7,7 +7,7 @@ h/**
  * @date 2026-04-20
  * @version 3.2.1 h(Redis Auth + Error Handler Fix)
  * @cache-bust 20260517-v37
- */hh
+  */
 
 const express = require('express');
 const http = require('http');
