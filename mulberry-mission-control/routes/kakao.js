@@ -1,4 +1,4 @@
-// routes/kakao.js — Luna v2.9
+// routes/kakao.js — Luna v3.0
 // 변경사항:
 // 1. LUNA_SYSTEM_PROMPT v2.3 — FORMAT_RULE
 // 2. CEO 인식 기능
@@ -36,6 +36,11 @@ const PRODUCT_DB = [
     keywords: ['감자', '포테이토'],
     imageUrl: 'https://raw.githubusercontent.com/wooriapt79/mulberry-/main/docs/mulberry_logo.png',
     orderUrl: 'https://mulberry-lab.co.kr/order/p001',
+    region: {
+      name: '강원도 인제군 기린면',
+      intro: '해발 700m 고랭지, 강원도 인제군 기린면. 큰 일교차 덕분에 당도 높은 채소가 자라는 청정 농업 지대입니다. 내린천이 옆으로 흐르고, 설악산이 가깝습니다.',
+      travel: '📍 내린천 래프팅 코스 인근 · 기린면 감자전 맛집 · 설악산 한계령 드라이브',
+    },
   },
   {
     id: 'p002',
@@ -47,6 +52,11 @@ const PRODUCT_DB = [
     keywords: ['당근'],
     imageUrl: 'https://raw.githubusercontent.com/wooriapt79/mulberry-/main/docs/mulberry_logo.png',
     orderUrl: 'https://mulberry-lab.co.kr/order/p002',
+    region: {
+      name: '강원도 인제군 기린면',
+      intro: '해발 700m 고랭지, 강원도 인제군 기린면. 큰 일교차 덕분에 당도 높은 채소가 자라는 청정 농업 지대입니다. 내린천이 옆으로 흐르고, 설악산이 가깝습니다.',
+      travel: '📍 내린천 래프팅 코스 인근 · 기린면 감자전 맛집 · 설악산 한계령 드라이브',
+    },
   },
   {
     id: 'p003',
@@ -58,6 +68,11 @@ const PRODUCT_DB = [
     keywords: ['쌀', '백미'],
     imageUrl: 'https://raw.githubusercontent.com/wooriapt79/mulberry-/main/docs/mulberry_logo.png',
     orderUrl: 'https://mulberry-lab.co.kr/order/p003',
+    region: {
+      name: '강원도 인제군 인제읍',
+      intro: '맑은 소양강 상류가 흐르는 인제읍. 청정 수질과 강원도 특유의 서늘한 기후가 밥맛 좋은 쌀을 만들어냅니다.',
+      travel: '📍 원대리 자작나무숲 · 빙어축제(겨울) · 소양강 자전거길',
+    },
   },
   {
     id: 'p004',
@@ -69,6 +84,11 @@ const PRODUCT_DB = [
     keywords: ['배추', '김치'],
     imageUrl: 'https://raw.githubusercontent.com/wooriapt79/mulberry-/main/docs/mulberry_logo.png',
     orderUrl: 'https://mulberry-lab.co.kr/order/p004',
+    region: {
+      name: '강원도 인제군 기린면',
+      intro: '해발 700m 고랭지, 강원도 인제군 기린면. 큰 일교차 덕분에 당도 높은 채소가 자라는 청정 농업 지대입니다. 내린천이 옆으로 흐르고, 설악산이 가깝습니다.',
+      travel: '📍 내린천 래프팅 코스 인근 · 기린면 감자전 맛집 · 설악산 한계령 드라이브',
+    },
   },
   {
     id: 'p005',
@@ -80,6 +100,11 @@ const PRODUCT_DB = [
     keywords: ['옥수수', '강냉이'],
     imageUrl: 'https://raw.githubusercontent.com/wooriapt79/mulberry-/main/docs/mulberry_logo.png',
     orderUrl: 'https://mulberry-lab.co.kr/order/p005',
+    region: {
+      name: '강원도 인제군 기린면',
+      intro: '해발 700m 고랭지, 강원도 인제군 기린면. 큰 일교차 덕분에 당도 높은 채소가 자라는 청정 농업 지대입니다. 내린천이 옆으로 흐르고, 설악산이 가깝습니다.',
+      travel: '📍 내린천 래프팅 코스 인근 · 기린면 감자전 맛집 · 설악산 한계령 드라이브',
+    },
   },
 ];
 
@@ -173,6 +198,11 @@ function buildCarousel() {
             label: '전화 주문',
             action: 'phone',
             phoneNumber: p.storePhone,
+          },
+          {
+            label: '🗺️ 이 지역 더 알아보기',
+            action: 'message',
+            messageText: `region_intro:${p.id}`,
           }
         ]
       })),
@@ -290,6 +320,27 @@ router.post('/webhook', async (req, res) => {
     }
 
     // ─────────────────────────────────────────────
+    // [v3.0] Issue #120 — 지역 소개 핸들러
+    // ─────────────────────────────────────────────
+    if (utterance.startsWith('region_intro:')) {
+      const productId = utterance.split(':')[1];
+      const product = PRODUCT_DB.find(p => p.id === productId);
+      if (!product) {
+        return res.json({ version: '2.0', template: { outputs: [{ simpleText: { text: '상품 정보를 찾을 수 없어요.' } }] } });
+      }
+      return res.json({
+        version: '2.0',
+        template: {
+          outputs: [{
+            simpleText: {
+              text: `${product.region.intro}\n\n${product.region.travel}`
+            }
+          }]
+        }
+      });
+    }
+
+        // ─────────────────────────────────────────────
     // [v2.9] 목록 질문 → 카루셀 즉시 반환 (LLM 거치지 않음)
     // ─────────────────────────────────────────────
     if (isProductListQuery(utterance)) {
