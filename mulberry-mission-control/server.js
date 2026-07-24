@@ -7,7 +7,7 @@ h/**
  * @date 2026-04-20
  * @version 3.2.1 h(Redis Auth + Error Handler Fix)
  * @cache-bust 20260517-v37
- */
+ */hh
 
 const express = require('express');
 const http = require('http');
@@ -437,7 +437,7 @@ app.post('/api/messages', requireStewardAuth, async (req, res) => {
 
 // ==================== Auth API (Issue #5, 2026-07-23) ====================
 // POST /api/auth/login — JWT 로그인 | POST /api/auth/logout | GET /api/auth/me
-// DISABLED: app.use('/api/auth', require('./routes/auth'));
+app.use('/api/auth', require('./routes/auth')); // Issue #119 (2026-07-25): auth route 재활성화
 
 // ==================== Metrics API (DAY4 Part C, Issue #117) ====================
 // GET /api/v1/metrics/overview — Monitor 패널 KPI 데이터 (requireAuth 미들웨어 포함)
