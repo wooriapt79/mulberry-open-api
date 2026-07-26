@@ -195,11 +195,6 @@ function buildCarousel() {
             webLinkUrl: p.orderUrl,
           },
           {
-            label: '전화 주문',
-            action: 'phone',
-            phoneNumber: p.storePhone,
-          },
-          {
             label: '🗺️ 이 지역 더 알아보기',
             action: 'message',
             messageText: `region_intro:${p.id}`,
