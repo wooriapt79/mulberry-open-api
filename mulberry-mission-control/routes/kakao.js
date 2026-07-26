@@ -1,4 +1,4 @@
-// routes/kakao.js — Luna v3.0
+// routes/kakao.js — Luna v3.1
 // 변경사항:
 // 1. LUNA_SYSTEM_PROMPT v2.3 — FORMAT_RULE
 // 2. CEO 인식 기능
@@ -7,13 +7,15 @@
 // 5. [v2.4] 대화 이력 메모리 — userId별 최근 6턴 유지
 // 6. [v2.5] Commerce Card — 상품 감지 시 구매 카드 자동 첨부
 // 7. [v2.6] 시간대별 인사 — 모든 방문자 공통 적용
-// 8. [v2.7] Carousel — 목록 질문 시 전체 상품 카루셀 출력h
+// 8. [v2.7] Carousel — 목록 질문 시 전체 상품 카루셀 출력
 // 9. [v2.8] Carousel type basicCard 명시 (Issue #107 오류 수정)
 // 10. [v2.9] CAROUSEL_TRIGGER_KEYWORDS 확장 — CEO re.eul 실제 발화 패턴 반영
+// 11. [v3.1] AI Inje Initiative 발화 지점 — 첫방문/재방문 분기 + inje_now 핸들러 (Issue #122)
 
 const express = require('express');
 const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
+const UserVisit = require('../models/UserVisit');
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -136,6 +138,114 @@ const CAROUSEL_TRIGGER_KEYWORDS = [
 
 function isProductListQuery(utterance) {
   return CAROUSEL_TRIGGER_KEYWORDS.some(k => utterance.includes(k));
+}
+
+// ─────────────────────────────────────────────
+// [v3.1] AI Inje Initiative — 첫방문/재방문 분기 (Issue #122)
+// ─────────────────────────────────────────────
+function isGreeting(text) {
+  const patterns = [/^안녕/, /^하이/, /^hi$/i, /^hello$/i, /^시작$/, /^처음$/];
+  return patterns.some(p => p.test(text.trim()));
+}
+
+function buildWelcomeFirstVisit() {
+  return {
+    version: '2.0',
+    template: {
+      outputs: [{
+        carousel: {
+          type: 'basicCard',
+          items: [
+            {
+              title: '🌿 식품사막에서 시작됐습니다',
+              description: '인제군 주민들이 신선한 식품을 구하기 어려운 문제에서 모든 것이 시작됐어요.',
+              buttons: [{ label: '이야기 듣기', action: 'message', messageText: 'inje_story:start' }],
+            },
+            {
+              title: '🏔️ 인제군이 바뀌고 있습니다',
+              description: 'AI가 지역 문제를 해결하고, 주민과 함께 새로운 경제를 만드는 실험이 인제군에서 시작됐어요.',
+              buttons: [{ label: '무엇이 달라지나요?', action: 'message', messageText: 'inje_story:change' }],
+            },
+            {
+              title: '🤝 사람과 AI가 함께 만드는 지역',
+              description: 'Human-AI Participation Region — 대한민국 최초의 실험, 그 시작이 인제군입니다.',
+              buttons: [{ label: '참여하고 싶어요', action: 'message', messageText: 'inje_story:join' }],
+            },
+          ],
+        },
+      }],
+    },
+  };
+}
+
+function buildWelcomeRevisit() {
+  return {
+    version: '2.0',
+    template: {
+      outputs: [{ simpleText: { text: '다시 오셨군요 🌿\n인제에서 좋은 하루예요.' } }],
+      quickReplies: [
+        { label: '지금 우리는', action: 'message', messageText: 'inje_now' },
+        { label: '이번 주 공동구매', action: 'message', messageText: 'coop_list' },
+        { label: '지역 소식', action: 'message', messageText: 'region_news' },
+      ],
+    },
+  };
+}
+
+async function handleInjeNow() {
+  return {
+    version: '2.0',
+    template: {
+      outputs: [{
+        simpleText: {
+          text: '🏔️ 지금 인제에서 일어나는 일\n\n📍 식품사막 파일럿 — 인제읍 배송 준비 중\n🤖 AI Inje Initiative — 전략 수립 완료\n🛒 공동구매 — 참여자 모집 중',
+        },
+      }],
+      quickReplies: [
+        { label: 'AI Inje가 뭔가요?', action: 'message', messageText: 'inje_story:what' },
+        { label: '공동구매 참여', action: 'message', messageText: 'coop_list' },
+        { label: '다음에요', action: 'message', messageText: '취소' },
+      ],
+    },
+  };
+}
+
+function handleInjeStory(subtype) {
+  const stories = {
+    start: {
+      text: '🌿 식품사막(Food Desert)은 신선한 식품을 구하기 어려운 지역을 말해요.\n\n인제군처럼 고령화·인구감소가 진행되는 곳에서는 장거리 이동 없이는 장을 볼 수 없는 분들이 많아요. Mulberry는 이 문제를 AI로 해결하려 합니다.',
+      quickReplies: ['더 큰 가능성은?', '공동구매 참여', '처음으로'],
+      messages: ['inje_story:change', 'coop_list', 'inje_intro'],
+    },
+    change: {
+      text: '🏔️ AI Inje Initiative\n\n인제군을 대한민국 최초의 「Human-AI Participation Region」으로 만드는 프로젝트예요.\n\n✅ AI가 지역 데이터 분석\n✅ 주민이 의사결정에 참여\n✅ 공동구매로 경제 순환',
+      quickReplies: ['참여하고 싶어요', '더 알아보기', '처음으로'],
+      messages: ['inje_story:join', 'inje_story:what', 'inje_intro'],
+    },
+    join: {
+      text: '🤝 함께하는 방법\n\n1️⃣ 공동구매 — 지역 농산물을 함께 구매\n2️⃣ 지역 소식 공유 — 인제 이야기를 들려주세요\n3️⃣ 파일럿 참여 — 서비스 체험 후 피드백\n\n지금 바로 시작해볼까요?',
+      quickReplies: ['공동구매 보기', '지역 소식', '처음으로'],
+      messages: ['coop_list', 'region_news', 'inje_intro'],
+    },
+    what: {
+      text: '🤖 AI Inje란?\n\n인제군만의 데이터로 학습한 지역 특화 AI예요.\n행정·농업·관광·복지 데이터를 이해해서 지역 문제를 함께 해결합니다.\n\nMulberry Research Lab이 개발 중이며, 2026년 파일럿 운영 예정입니다.',
+      quickReplies: ['참여하고 싶어요', '공동구매', '처음으로'],
+      messages: ['inje_story:join', 'coop_list', 'inje_intro'],
+    },
+  };
+
+  const story = stories[subtype] || stories['what'];
+  return {
+    version: '2.0',
+    template: {
+      outputs: [{ simpleText: { text: story.text } }],
+      quickReplies: story.quickReplies.map((label, i) => ({
+        label,
+        action: 'message',
+        messageText: story.messages[i],
+      })),
+    },
+  };
 }
 
 // ─────────────────────────────────────────────
@@ -295,6 +405,29 @@ router.post('/webhook', async (req, res) => {
         version: '2.0',
         template: { outputs: [{ simpleText: { text: '안녕, Mulberry Lab Luna입니다. 무엇을 도와드릴까요?' } }] }
       });
+    }
+
+    // ─────────────────────────────────────────────
+    // [v3.1] AI Inje Initiative — 첫방문/재방문 분기 (Issue #122)
+    // ─────────────────────────────────────────────
+    const plusfriendUserKey = req.body?.userRequest?.user?.plusfriendUserKey || userId || 'unknown';
+
+    if (isGreeting(utterance)) {
+      const { isFirst } = await UserVisit.checkAndRecord(plusfriendUserKey);
+      return res.json(isFirst ? buildWelcomeFirstVisit() : buildWelcomeRevisit());
+    }
+
+    if (utterance === 'inje_intro') {
+      return res.json(buildWelcomeFirstVisit());
+    }
+
+    if (utterance === 'inje_now') {
+      return res.json(await handleInjeNow());
+    }
+
+    if (utterance.startsWith('inje_story:')) {
+      const subtype = utterance.split(':')[1];
+      return res.json(handleInjeStory(subtype));
     }
 
     // 특수 명령어: 내 아이디
