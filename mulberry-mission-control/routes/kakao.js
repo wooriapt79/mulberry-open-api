@@ -7,7 +7,7 @@
 // 5. [v2.4] 대화 이력 메모리 — userId별 최근 6턴 유지
 // 6. [v2.5] Commerce Card — 상품 감지 시 구매 카드 자동 첨부
 // 7. [v2.6] 시간대별 인사 — 모든 방문자 공통 적용
-// 8. [v2.7] Carousel — 목록 질문 시 전체 상품 카루셀 출력
+// 8. [v2.7] Carousel — 목록 질문 시 전체 상품 카루셀 출력h
 // 9. [v2.8] Carousel type basicCard 명시 (Issue #107 오류 수정)
 // 10. [v2.9] CAROUSEL_TRIGGER_KEYWORDS 확장 — CEO re.eul 실제 발화 패턴 반영
 
@@ -195,7 +195,7 @@ function buildCarousel() {
             webLinkUrl: p.orderUrl,
           },
           {
-            label: '🗺️ 이 지역 더 알아보기',
+            label: '지역정보',
             action: 'message',
             messageText: `region_intro:${p.id}`,
           }
