@@ -87,25 +87,25 @@ function buildCardReveal(topic) {
 
 // 메인 핸들러 — kakao.js webhook에서 호출
 function handleTarot(utterance, userKey) {
-  // 트리거: 타로 시작
-  if (isTarotTrigger(utterance)) {
-    tarotSession.set(userKey, { step: 'topic' });
-    return buildTopicSelect();
-  }
-
-  // 주제 선택
+  // 주제 선택 — tarot_topic:* 은 'tarot' 포함이므로 isTarotTrigger보다 먼저 체크
   if (TOPIC_MAP[utterance]) {
     const { label, key } = TOPIC_MAP[utterance];
     tarotSession.set(userKey, { step: 'card', topic: key });
     return buildCardSelect(label);
   }
 
-  // 카드 선택
+  // 카드 선택 — tarot_card:* 도 동일 이유로 먼저 체크
   if (utterance.startsWith('tarot_card:')) {
     const session = tarotSession.get(userKey);
     const topic = session?.topic || 'daily';
     tarotSession.delete(userKey);
     return buildCardReveal(topic);
+  }
+
+  // 트리거: 타로 시작 (가장 마지막에 체크)
+  if (isTarotTrigger(utterance)) {
+    tarotSession.set(userKey, { step: 'topic' });
+    return buildTopicSelect();
   }
 
   return null;
