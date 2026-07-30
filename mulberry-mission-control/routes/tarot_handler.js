@@ -1,125 +1,165 @@
 'use strict';
-// tarot_handler.js — Luna 타로 뽑기 핸들러 (Issue #126)
+/**
+ * tarot_handler.js
+ * Luna 타로 뽑기 핸들러 v1.2
+ * TRANG Manager — 2026-07-31
+ * Fix: 이미지 URL 404 수정 → Wikimedia Commons Rider-Waite
+ */
 
-const tarotData = require('../data/tarot_cards.json');
+const fs   = require('fs');
+const path = require('path');
 
-// 세션 상태: plusfriendUserKey → { step, topic }
-const tarotSession = new Map();
-
-const TOPIC_MAP = {
-  'tarot_topic:love':  { label: '💕 연애/사랑', key: 'love' },
-  'tarot_topic:work':  { label: '📚 공부/일',   key: 'work' },
-  'tarot_topic:daily': { label: '🌿 일상',       key: 'daily' },
+// ── 앞면 이미지 (Wikimedia Commons — Rider-Waite, 퍼블릭 도메인) ──
+const CARD_IMAGES = {
+  0:  'https://upload.wikimedia.org/wikipedia/commons/9/90/RWS_Tarot_00_Fool.jpg',
+  1:  'https://upload.wikimedia.org/wikipedia/commons/d/de/RWS_Tarot_01_Magician.jpg',
+  2:  'https://upload.wikimedia.org/wikipedia/commons/8/88/RWS_Tarot_02_High_Priestess.jpg',
+  3:  'https://upload.wikimedia.org/wikipedia/commons/d/d3/RWS_Tarot_03_Empress.jpg',
+  4:  'https://upload.wikimedia.org/wikipedia/commons/c/c3/RWS_Tarot_04_Emperor.jpg',
+  5:  'https://upload.wikimedia.org/wikipedia/commons/8/8d/RWS_Tarot_05_Hierophant.jpg',
+  6:  'https://upload.wikimedia.org/wikipedia/commons/d/db/RWS_Tarot_06_Lovers.jpg',
+  7:  'https://upload.wikimedia.org/wikipedia/commons/9/9b/RWS_Tarot_07_Chariot.jpg',
+  8:  'https://upload.wikimedia.org/wikipedia/commons/f/f5/RWS_Tarot_08_Strength.jpg',
+  9:  'https://upload.wikimedia.org/wikipedia/commons/4/4d/RWS_Tarot_09_Hermit.jpg',
+  10: 'https://upload.wikimedia.org/wikipedia/commons/3/3c/RWS_Tarot_10_Wheel_of_Fortune.jpg',
+  11: 'https://upload.wikimedia.org/wikipedia/commons/e/e0/RWS_Tarot_11_Justice.jpg',
+  12: 'https://upload.wikimedia.org/wikipedia/commons/2/2b/RWS_Tarot_12_Hanged_Man.jpg',
+  13: 'https://upload.wikimedia.org/wikipedia/commons/d/d7/RWS_Tarot_13_Death.jpg',
+  14: 'https://upload.wikimedia.org/wikipedia/commons/f/f8/RWS_Tarot_14_Temperance.jpg',
+  15: 'https://upload.wikimedia.org/wikipedia/commons/5/55/RWS_Tarot_15_Devil.jpg',
+  16: 'https://upload.wikimedia.org/wikipedia/commons/5/53/RWS_Tarot_16_Tower.jpg',
+  17: 'https://upload.wikimedia.org/wikipedia/commons/d/db/RWS_Tarot_17_Star.jpg',
+  18: 'https://upload.wikimedia.org/wikipedia/commons/7/7f/RWS_Tarot_18_Moon.jpg',
+  19: 'https://upload.wikimedia.org/wikipedia/commons/1/17/RWS_Tarot_19_Sun.jpg',
+  20: 'https://upload.wikimedia.org/wikipedia/commons/d/dd/RWS_Tarot_20_Judgement.jpg',
+  21: 'https://upload.wikimedia.org/wikipedia/commons/f/ff/RWS_Tarot_21_World.jpg',
 };
 
-const CARD_BACK_URL = 'https://raw.githubusercontent.com/ekelen/tarot-api/master/public/images/card-back.jpg';
-const CARD_FACE_BASE = 'https://raw.githubusercontent.com/ekelen/tarot-api/master/public/images/cards/';
+// ── 세션 상태 (메모리) ──
+const tarotSessions = new Map();
 
-function isTarotTrigger(text) {
-  const triggers = ['타로', '운세', '뽑아줘', '카드', '오늘운세', 'tarot'];
-  return triggers.some(t => text.includes(t));
+// ── tarot_cards.json 로드 ──
+let CARDS = [];
+let INTERPRETATIONS = {};
+try {
+  const raw = fs.readFileSync(path.join(__dirname, '../data/tarot_cards.json'), 'utf8');
+  const data = JSON.parse(raw);
+  CARDS           = data.major          || [];
+  INTERPRETATIONS = data.interpretations || {};
+} catch (e) {
+  console.error('[tarot_handler] tarot_cards.json 로드 실패:', e.message);
 }
 
-// Step 1: 주제 선택 화면
-function buildTopicSelect() {
+// ── 랜덤 카드 3장 ──
+function pickCards() {
+  return [...CARDS].sort(() => Math.random() - 0.5).slice(0, 3);
+}
+
+// ── 카드 선택 화면 — basicCard 캐러셀 (이미지 없이) ──
+function buildCardSelect(topic) {
+  const cards = pickCards();
   return {
     version: '2.0',
     template: {
-      outputs: [{
-        simpleText: {
-          text: '오늘 어떤 주제로 카드를 뽑아볼까요?\n주제를 선택해주세요.',
+      outputs: [
+        {
+          carousel: {
+            type: 'basicCard',
+            items: cards.map((card, i) => ({
+              title: `${i + 1}번 카드`,
+              description: '✨ 마음이 끌리는 카드를 선택하세요',
+              buttons: [
+                {
+                  action:      'message',
+                  label:       '이 카드 선택',
+                  messageText: `tarot_card:${topic}:${card.id}`,
+                },
+              ],
+            })),
+          },
         },
-      }],
-      quickReplies: [
-        { label: '💕 연애/사랑', action: 'message', messageText: 'tarot_topic:love' },
-        { label: '📚 공부/일',   action: 'message', messageText: 'tarot_topic:work' },
-        { label: '🌿 일상',       action: 'message', messageText: 'tarot_topic:daily' },
       ],
     },
   };
 }
 
-// Step 2: 카드 선택 화면 — basicCard 캐러셀 (카드 뒷면 이미지 3장)
-function buildCardSelect(topicLabel) {
-  const makeCard = (num) => ({
-    thumbnail: { imageUrl: CARD_BACK_URL, fixedRatio: true },
-    title: `${num}번 카드`,
-    description: '마음이 끌리는 카드를 선택하세요',
-    buttons: [{ label: `이 카드 선택`, action: 'message', messageText: `tarot_card:${num}` }],
-  });
+// ── 카드 공개 화면 — basicCard (Wikimedia 앞면 이미지 + 해석) ──
+function buildCardReveal(card, topic) {
+  const imageUrl    = CARD_IMAGES[card.id] || CARD_IMAGES[0];
+  const topicLabel  = { love: '💕 사랑', money: '💰 금전', career: '💼 커리어' }[topic] || '✨ 오늘';
+  const reading     = (INTERPRETATIONS[topic] || {})[String(card.id)] || card.keyword;
 
   return {
     version: '2.0',
     template: {
       outputs: [
-        { carousel: { type: 'basicCard', items: [makeCard(1), makeCard(2), makeCard(3)] } },
+        {
+          basicCard: {
+            thumbnail: { imageUrl },
+            title:       `${card.name} (${card.name_en})`,
+            description: `🔮 ${topicLabel} 운세\n\n${reading}\n\n키워드: ${card.keyword}`,
+            buttons: [
+              {
+                action:      'message',
+                label:       '🃏 다시 뽑기',
+                messageText: '타로',
+              },
+            ],
+          },
+        },
       ],
     },
   };
 }
 
-// Step 3: 카드 공개 + 해석 — 카드 앞면 이미지 + 해석 텍스트
-function buildCardReveal(topic) {
-  const cards = tarotData.major;
-  const card = cards[Math.floor(Math.random() * cards.length)];
-  const interpretation = tarotData.interpretations[topic][String(card.id)];
-  const cardId = String(card.id).padStart(2, '0');
-  const imageUrl = `${CARD_FACE_BASE}m${cardId}.jpg`;
-
-  const description = [
-    `키워드: ${card.keyword}`,
-    ``,
-    interpretation,
-    ``,
-    `오늘 하루도 자신을 믿고 나아가세요.`,
-  ].join('\n');
-
+// ── 토픽 선택 화면 ──
+function buildTopicSelect() {
   return {
     version: '2.0',
     template: {
-      outputs: [{
-        basicCard: {
-          thumbnail: { imageUrl, fixedRatio: true },
-          title: `✨ ${card.name} / ${card.name_en}`,
-          description,
-          buttons: [
-            { label: '🔄 다시 뽑기', action: 'message', messageText: '타로' },
-            { label: '🏠 메뉴로',    action: 'message', messageText: '안녕' },
-          ],
-        },
-      }],
+      outputs: [
+        { simpleText: { text: '오늘 어떤 주제로 카드를 뽑아볼까요?\n주제를 선택해주세요.' } },
+      ],
+      quickReplies: [
+        { action: 'message', label: '💕 사랑',   messageText: 'tarot_topic:love'   },
+        { action: 'message', label: '💰 금전',   messageText: 'tarot_topic:money'  },
+        { action: 'message', label: '💼 커리어', messageText: 'tarot_topic:career' },
+      ],
     },
   };
 }
 
-// 메인 핸들러 — kakao.js webhook에서 호출
-function handleTarot(utterance, userKey) {
-  // 주제 선택 — tarot_topic:* 은 'tarot' 포함이므로 isTarotTrigger보다 먼저 체크
-  if (TOPIC_MAP[utterance]) {
-    const { label, key } = TOPIC_MAP[utterance];
-    tarotSession.set(userKey, { step: 'card', topic: key });
-    return buildCardSelect(label);
-  }
-
-  // 카드 선택 — tarot_card:* 도 동일 이유로 먼저 체크
-  if (utterance.startsWith('tarot_card:')) {
-    const session = tarotSession.get(userKey);
-    const topic = session?.topic || 'daily';
-    tarotSession.delete(userKey);
-    return buildCardReveal(topic);
-  }
-
-  // 트리거: 타로 시작 (가장 마지막에 체크)
-  if (isTarotTrigger(utterance)) {
-    tarotSession.set(userKey, { step: 'topic' });
-    return buildTopicSelect();
-  }
-
-  return null;
+// ── 공개 API ──
+function isTarotTrigger(utterance) {
+  return /타로|오늘의 카드|카드 뽑|운세 카드/i.test(utterance);
 }
 
 function isInTarotSession(userKey) {
-  return tarotSession.has(userKey);
+  return tarotSessions.has(userKey);
+}
+
+function handleTarot(utterance, userKey) {
+  if (isTarotTrigger(utterance) && !utterance.startsWith('tarot_')) {
+    tarotSessions.set(userKey, { step: 'topic' });
+    return buildTopicSelect();
+  }
+
+  if (utterance.startsWith('tarot_topic:')) {
+    const topic = utterance.replace('tarot_topic:', '').trim();
+    tarotSessions.set(userKey, { step: 'select', topic });
+    return buildCardSelect(topic);
+  }
+
+  if (utterance.startsWith('tarot_card:')) {
+    const [, topic, cardIdStr] = utterance.split(':');
+    const cardId = parseInt(cardIdStr, 10);
+    const card   = CARDS.find(c => c.id === cardId);
+    tarotSessions.delete(userKey);
+    if (!card) return null;
+    return buildCardReveal(card, topic);
+  }
+
+  return null;
 }
 
 module.exports = { handleTarot, isTarotTrigger, isInTarotSession };
