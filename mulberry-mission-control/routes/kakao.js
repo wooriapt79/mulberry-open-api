@@ -1,6 +1,7 @@
 // routes/kakao.js — Luna v3.1
 // 변경사항:
 // 1. LUNA_SYSTEM_PROMPT v2.0 — AI Inje Initiative 지식 주입 (Issue #124)
+// 12. [v3.2] 타로 뽑기 기능 — 오늘의 카드 / 운세 서비스 (Issue #126)
 // 2. CEO 인식 기능
 // 3. 타임아웃 4.5초
 // 4. "내 아이디" 명령어
@@ -16,6 +17,7 @@ const express = require('express');
 const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
 const UserVisit = require('../models/UserVisit');
+const { handleTarot, isTarotTrigger, isInTarotSession } = require('./tarot_handler');
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -186,7 +188,7 @@ function buildWelcomeRevisit() {
       quickReplies: [
         { label: '지금 우리는', action: 'message', messageText: 'inje_now' },
         { label: '이번 주 공동구매', action: 'message', messageText: 'coop_list' },
-        { label: '지역 소식', action: 'message', messageText: 'region_news' },
+        { label: '🃏 타로 뽑기', action: 'message', messageText: '타로' },
       ],
     },
   };
@@ -438,6 +440,15 @@ router.post('/webhook', async (req, res) => {
     // [v3.1] AI Inje Initiative — 첫방문/재방문 분기 (Issue #122)
     // ─────────────────────────────────────────────
     const plusfriendUserKey = req.body?.userRequest?.user?.plusfriendUserKey || userId || 'unknown';
+
+    // ─────────────────────────────────────────────
+    // [v3.2] 타로 뽑기 — 트리거 + 세션 진행 (Issue #126)
+    // ─────────────────────────────────────────────
+    if (isTarotTrigger(utterance) || isInTarotSession(plusfriendUserKey) ||
+        utterance.startsWith('tarot_topic:') || utterance.startsWith('tarot_card:')) {
+      const tarotResult = handleTarot(utterance, plusfriendUserKey);
+      if (tarotResult) return res.json(tarotResult);
+    }
 
     if (isGreeting(utterance)) {
       const { isFirst } = await UserVisit.checkAndRecord(plusfriendUserKey);
