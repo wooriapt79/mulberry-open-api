@@ -12,6 +12,9 @@ const TOPIC_MAP = {
   'tarot_topic:daily': { label: '🌿 일상',       key: 'daily' },
 };
 
+const CARD_BACK_URL = 'https://raw.githubusercontent.com/ekelen/tarot-api/master/public/images/card-back.jpg';
+const CARD_FACE_BASE = 'https://raw.githubusercontent.com/ekelen/tarot-api/master/public/images/cards/';
+
 function isTarotTrigger(text) {
   const triggers = ['타로', '운세', '뽑아줘', '카드', '오늘운세', 'tarot'];
   return triggers.some(t => text.includes(t));
@@ -36,36 +39,35 @@ function buildTopicSelect() {
   };
 }
 
-// Step 2: 카드 선택 화면
+// Step 2: 카드 선택 화면 — basicCard 캐러셀 (카드 뒷면 이미지 3장)
 function buildCardSelect(topicLabel) {
+  const makeCard = (num) => ({
+    thumbnail: { imageUrl: CARD_BACK_URL, fixedRatio: true },
+    title: `${num}번 카드`,
+    description: '마음이 끌리는 카드를 선택하세요',
+    buttons: [{ label: `이 카드 선택`, action: 'message', messageText: `tarot_card:${num}` }],
+  });
+
   return {
     version: '2.0',
     template: {
-      outputs: [{
-        simpleText: {
-          text: `${topicLabel} 주제를 선택했어요.\n\n카드 세 장 중 하나를 선택해주세요.\n마음이 끌리는 번호를 눌러보세요.`,
-        },
-      }],
-      quickReplies: [
-        { label: '🃏 1번 카드', action: 'message', messageText: 'tarot_card:1' },
-        { label: '🃏 2번 카드', action: 'message', messageText: 'tarot_card:2' },
-        { label: '🃏 3번 카드', action: 'message', messageText: 'tarot_card:3' },
+      outputs: [
+        { simpleText: { text: `${topicLabel} 주제를 선택했어요.\n\n세 장의 카드 중 마음이 끌리는 카드를 골라주세요 ✨` } },
+        { carousel: { type: 'basicCard', items: [makeCard(1), makeCard(2), makeCard(3)] } },
       ],
     },
   };
 }
 
-// Step 3: 카드 공개 + 해석
+// Step 3: 카드 공개 + 해석 — 카드 앞면 이미지 + 해석 텍스트
 function buildCardReveal(topic) {
   const cards = tarotData.major;
   const card = cards[Math.floor(Math.random() * cards.length)];
   const interpretation = tarotData.interpretations[topic][String(card.id)];
+  const cardId = String(card.id).padStart(2, '0');
+  const imageUrl = `${CARD_FACE_BASE}m${cardId}.jpg`;
 
-  const text = [
-    `✨ 당신의 카드는...`,
-    ``,
-    `[ ${card.name} / ${card.name_en} ]`,
-    ``,
+  const description = [
     `키워드: ${card.keyword}`,
     ``,
     interpretation,
@@ -76,11 +78,17 @@ function buildCardReveal(topic) {
   return {
     version: '2.0',
     template: {
-      outputs: [{ simpleText: { text } }],
-      quickReplies: [
-        { label: '🔄 다시 뽑기', action: 'message', messageText: '타로' },
-        { label: '🏠 메뉴로',    action: 'message', messageText: '안녕' },
-      ],
+      outputs: [{
+        basicCard: {
+          thumbnail: { imageUrl, fixedRatio: true },
+          title: `✨ ${card.name} / ${card.name_en}`,
+          description,
+          buttons: [
+            { label: '🔄 다시 뽑기', action: 'message', messageText: '타로' },
+            { label: '🏠 메뉴로',    action: 'message', messageText: '안녕' },
+          ],
+        },
+      }],
     },
   };
 }
