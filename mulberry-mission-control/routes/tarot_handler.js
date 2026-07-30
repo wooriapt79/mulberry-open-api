@@ -52,7 +52,6 @@ function buildCardSelect(topicLabel) {
     version: '2.0',
     template: {
       outputs: [
-        { simpleText: { text: `${topicLabel} 주제를 선택했어요.\n\n세 장의 카드 중 마음이 끌리는 카드를 골라주세요 ✨` } },
         { carousel: { type: 'basicCard', items: [makeCard(1), makeCard(2), makeCard(3)] } },
       ],
     },
