@@ -101,7 +101,7 @@ function buildCardReveal(card, topic) {
           basicCard: {
             thumbnail: { imageUrl },
             title:       `${card.name} (${card.name_en})`,
-            description: `🔮 ${topicLabel} 운세\n\n${reading}\n\n키워드: ${card.keyword}`,
+            description: `🔮 ${topicLabel} | ${reading} ✦ 키워드: ${card.keyword}`,
             buttons: [
               {
                 action:      'message',
