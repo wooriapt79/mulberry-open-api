@@ -12,7 +12,7 @@ const TOPIC_MAP = {
   'tarot_topic:daily': { label: '🌿 일상',       key: 'daily' },
 };
 
-const CARD_BACK_URL = 'https://raw.githubusercontent.com/ekelen/tarot-api/master/public/images/card-back.jpg';
+const CARD_BACK_URL = 'https://raw.githubusercontent.com/wooriapt79/mulberry_ecosystem_AgenticAI/main/assets/tarot/mulberry-carousel-800x400.jpg';
 const CARD_FACE_BASE = 'https://raw.githubusercontent.com/ekelen/tarot-api/master/public/images/cards/';
 
 function isTarotTrigger(text) {
