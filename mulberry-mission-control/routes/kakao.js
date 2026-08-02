@@ -11,6 +11,7 @@
  *
  * @author CTO Koda · Issue #91 · 2026-07-12
  * v3.3: 타로 핸들러 연동 복구 (TRANG Manager · 2026-07-31)
+ * v3.4: Event Adapter 구조 도입 — clientExtra 파싱 (Issue #131 · 2026-08-02)
  */
 
 const express = require('express');
@@ -56,21 +57,25 @@ async function callLuna(utterance) {
  * 카카오 i 오픈빌더 → Luna → 카카오 응답
  */
 router.post('/webhook', async (req, res) => {
-  const utterance = req.body?.userRequest?.utterance?.trim();
-  const plusfriendUserKey = req.body?.userRequest?.user?.properties?.plusfriendUserKey || 'anon';
+  const body = req.body;
+  const utterance = body?.userRequest?.utterance?.trim();
+  const plusfriendUserKey = body?.userRequest?.user?.properties?.plusfriendUserKey || 'anon';
+  const clientExtra = body?.action?.clientExtra || {};
 
   if (!utterance) {
     return res.json(EMPTY_QUERY);
   }
 
-  // ── 타로 분기 (Luna AI 호출 전 먼저 체크) ──
+  // ── 타로 분기 — clientExtra(Event Adapter) 우선, utterance 폴백 ──
+  const isTarotExtra = clientExtra?.event?.startsWith('tarot_');
   if (
+    isTarotExtra ||
     isTarotTrigger(utterance) ||
     isInTarotSession(plusfriendUserKey) ||
     utterance.startsWith('tarot_topic:') ||
     utterance.startsWith('tarot_card:')
   ) {
-    const tarotResult = handleTarot(utterance, plusfriendUserKey);
+    const tarotResult = await handleTarot(utterance, plusfriendUserKey, isTarotExtra ? clientExtra : null);
     if (tarotResult) return res.json(tarotResult);
   }
 

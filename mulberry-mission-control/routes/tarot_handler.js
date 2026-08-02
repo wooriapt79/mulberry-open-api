@@ -1,13 +1,13 @@
 'use strict';
 /**
- * tarot_handler.js
- * Luna 타로 뽑기 핸들러 v1.2
- * TRANG Manager — 2026-07-31
- * Fix: 이미지 URL 404 수정 → Wikimedia Commons Rider-Waite
+ * tarot_handler.js — Luna 타로 뽑기 핸들러 v2.0
+ * Issue #131: Event Adapter 구조 도입 (display_text / event_payload 분리)
+ * Issue #130: Mulberry 타로카드 비주얼
  */
 
 const fs   = require('fs');
 const path = require('path');
+const ResonanceProfile = require('../models/ResonanceProfile');
 
 // ── 앞면 이미지 (Wikimedia Commons — Rider-Waite, 퍼블릭 도메인) ──
 const CARD_IMAGES = {
@@ -35,22 +35,49 @@ const CARD_IMAGES = {
   21: 'https://upload.wikimedia.org/wikipedia/commons/f/ff/RWS_Tarot_21_World.jpg',
 };
 
-// ── 카루셀 뒷면 이미지 (Mulberry 타로카드 비주얼 — Issue #130) ──
+// ── 카루셀 뒷면 이미지 (Mulberry 타로카드 비주얼) ──
 const CARD_BACK_URL = 'https://raw.githubusercontent.com/wooriapt79/mulberry_ecosystem_AgenticAI/main/assets/tarot/mulberry-carousel-800x400.jpg';
 
 // ── 세션 상태 (메모리) ──
 const tarotSessions = new Map();
 
-// ── tarot_cards.json 로드 ──
+// ── 데이터 로드 ──
 let CARDS = [];
 let INTERPRETATIONS = {};
+let RESONANCE_MAP = {};
 try {
-  const raw = fs.readFileSync(path.join(__dirname, '../data/tarot_cards.json'), 'utf8');
-  const data = JSON.parse(raw);
-  CARDS           = data.major          || [];
-  INTERPRETATIONS = data.interpretations || {};
+  const cardRaw = fs.readFileSync(path.join(__dirname, '../data/tarot_cards.json'), 'utf8');
+  const cardData = JSON.parse(cardRaw);
+  CARDS           = cardData.major          || [];
+  INTERPRETATIONS = cardData.interpretations || {};
 } catch (e) {
   console.error('[tarot_handler] tarot_cards.json 로드 실패:', e.message);
+}
+try {
+  const resRaw = fs.readFileSync(path.join(__dirname, '../data/resonance_map.json'), 'utf8');
+  RESONANCE_MAP = JSON.parse(resRaw);
+} catch (e) {
+  console.error('[tarot_handler] resonance_map.json 로드 실패:', e.message);
+}
+
+// ── 테마별 카드 맞춤 display_text ──
+const DISPLAY_TEXT = {
+  love: {
+    default: (n) => `설레는 마음으로 ${n}번 카드를 선택했어요. 💕`,
+  },
+  money: {
+    default: (n) => `풍요의 기운이 흐르는 ${n}번 카드를 선택했어요. 💰`,
+  },
+  career: {
+    default: (n) => `새로운 길이 열리는 ${n}번 카드를 선택했어요. ✨`,
+  },
+};
+
+function getDisplayText(theme, cardNum) {
+  const themeMap = DISPLAY_TEXT[theme];
+  if (themeMap?.[cardNum]) return themeMap[cardNum];
+  if (themeMap?.default) return themeMap.default(cardNum);
+  return `마음이 이끄는 ${cardNum}번 카드를 선택했어요. 🎴`;
 }
 
 // ── 랜덤 카드 3장 ──
@@ -58,7 +85,7 @@ function pickCards() {
   return [...CARDS].sort(() => Math.random() - 0.5).slice(0, 3);
 }
 
-// ── 카드 선택 화면 — basicCard 캐러셀 (Mulberry 뒷면 이미지) ──
+// ── 카드 선택 화면 — basicCard 캐러셀 (Mulberry 뒷면 이미지 + Event Adapter) ──
 function buildCardSelect(topic) {
   const cards = pickCards();
   return {
@@ -76,7 +103,12 @@ function buildCardSelect(topic) {
                 {
                   action:      'message',
                   label:       '이 카드 선택',
-                  messageText: `tarot_card:${topic}:${card.id}`,
+                  messageText: getDisplayText(topic, i + 1),
+                  extra: {
+                    event:      'tarot_card.select',
+                    theme:      topic,
+                    card_index: card.id,
+                  },
                 },
               ],
             })),
@@ -87,11 +119,26 @@ function buildCardSelect(topic) {
   };
 }
 
-// ── 카드 공개 화면 — basicCard (Wikimedia 앞면 이미지 + 해석) ──
-function buildCardReveal(card, topic) {
-  const imageUrl    = CARD_IMAGES[card.id] || CARD_IMAGES[0];
-  const topicLabel  = { love: '💕 사랑', money: '💰 금전', career: '💼 커리어' }[topic] || '✨ 오늘';
-  const reading     = (INTERPRETATIONS[topic] || {})[String(card.id)] || card.keyword;
+// ── 카드 공개 화면 — basicCard (앞면 이미지 + 해석 + 추천 문구) ──
+async function buildCardReveal(card, topic, userKey) {
+  const imageUrl   = CARD_IMAGES[card.id] || CARD_IMAGES[0];
+  const topicLabel = { love: '💕 사랑', money: '💰 금전', career: '💼 커리어' }[topic] || '✨ 오늘';
+  const reading    = (INTERPRETATIONS[topic] || {})[String(card.id)] || card.keyword;
+  const resonance  = RESONANCE_MAP[String(card.id)];
+  const recText    = resonance ? `오늘은 ${resonance.category}이(가) 도움이 될 것 같아요 🌿` : '';
+
+  // ResonanceProfile 저장 (비동기, 응답 지연 없음)
+  ResonanceProfile.record({
+    userKey,
+    selectedCard:        resonance?.card || card.name_en,
+    cardNumber:          card.id,
+    emotionLabel:        resonance?.emotionLabel || '',
+    theme:               topic,
+    recommendedCategory: resonance?.category || '',
+    resonanceScore:      resonance?.resonanceScore || 0,
+  }).catch(() => {});
+
+  const description = `🔮 ${topicLabel} | ${reading} ✦ 키워드: ${card.keyword}${recText ? `\n${recText}` : ''}`;
 
   return {
     version: '2.0',
@@ -101,7 +148,7 @@ function buildCardReveal(card, topic) {
           basicCard: {
             thumbnail: { imageUrl },
             title:       `${card.name} (${card.name_en})`,
-            description: `🔮 ${topicLabel} | ${reading} ✦ 키워드: ${card.keyword}`,
+            description,
             buttons: [
               {
                 action:      'message',
@@ -142,7 +189,16 @@ function isInTarotSession(userKey) {
   return tarotSessions.has(userKey);
 }
 
-function handleTarot(utterance, userKey) {
+async function handleTarot(utterance, userKey, clientExtra) {
+  // Event Adapter — clientExtra 우선 처리
+  if (clientExtra?.event === 'tarot_card.select') {
+    const { theme, card_index } = clientExtra;
+    const card = CARDS.find(c => c.id === card_index);
+    tarotSessions.delete(userKey);
+    if (!card) return null;
+    return await buildCardReveal(card, theme, userKey);
+  }
+
   if (isTarotTrigger(utterance) && !utterance.startsWith('tarot_')) {
     tarotSessions.set(userKey, { step: 'topic' });
     return buildTopicSelect();
@@ -154,13 +210,13 @@ function handleTarot(utterance, userKey) {
     return buildCardSelect(topic);
   }
 
+  // fallback: 기존 utterance 방식 (하위 호환)
   if (utterance.startsWith('tarot_card:')) {
     const [, topic, cardIdStr] = utterance.split(':');
-    const cardId = parseInt(cardIdStr, 10);
-    const card   = CARDS.find(c => c.id === cardId);
+    const card = CARDS.find(c => c.id === parseInt(cardIdStr, 10));
     tarotSessions.delete(userKey);
     if (!card) return null;
-    return buildCardReveal(card, topic);
+    return await buildCardReveal(card, topic, userKey);
   }
 
   return null;
