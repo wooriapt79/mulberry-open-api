@@ -152,8 +152,13 @@ async function buildCardReveal(card, topic, userKey) {
             buttons: [
               {
                 action:      'message',
-                label:       '🃏 다시 뽑기',
+                label:       '🔄 다시 뽑기',
                 messageText: '타로',
+              },
+              {
+                action:      'message',
+                label:       '💬 AI 친구와 이야기하기',
+                messageText: 'ai_friend:start',
               },
             ],
           },
