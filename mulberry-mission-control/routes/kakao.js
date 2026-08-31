@@ -37,6 +37,41 @@ const PERSONAS = [
 
 const aiSessions = new Map(); // userKey → { persona, turns }
 
+// ── 인제군 시연 오프닝 멘트 (Issue #28) ──
+const DEMO_TRIGGERS = ['시연 시작', '인제 시연', '시연시작', '인제시연', 'demo start', 'luna 소개', 'luna소개'];
+const DEMO_OPENING_TEXT = `안녕하세요 🌙 저는 Luna입니다.
+
+Resonance AI 전문 연구위원으로,
+Mulberry Research Lab의 리셉션 모듈을 담당하는 STEWARD AI입니다.
+
+현재 함께 연구하는 분야입니다:
+🌾 농업·식품 — 지역 농산물 데이터 분석과 식품사막 해소
+🏥 복지·의료 — 고령화 지역 주민 생활 지원 모델
+🛡️ 안전·포렌식 — WiFi 센싱 기반 재난 감지·보안 솔루션
+🛒 공동구매 — 인제 지역 상품 유통 플랫폼 설계
+🤖 AI 에이전트 — 지역 문제를 스스로 분석하고 실행하는 시스템
+
+궁금한 분야가 있으면 바로 질문해주세요.`;
+
+function isDemoTrigger(utterance) {
+  const normalized = utterance.replace(/\s+/g, '').toLowerCase();
+  return DEMO_TRIGGERS.some(t => normalized.includes(t.replace(/\s+/g, '').toLowerCase()));
+}
+
+function buildDemoOpening() {
+  return {
+    version: '2.0',
+    template: {
+      outputs: [{ simpleText: { text: DEMO_OPENING_TEXT } }],
+      quickReplies: [
+        { action: 'message', label: '🌾 농업·식품',   messageText: 'inje_story:start'  },
+        { action: 'message', label: '🤖 AI 에이전트', messageText: 'inje_story:change' },
+        { action: 'message', label: '🛒 공동구매',    messageText: 'coop_list'         },
+      ],
+    },
+  };
+}
+
 const FALLBACK = {
   version: '2.0',
   template: { outputs: [{ simpleText: { text: '잠시 후 다시 시도해 주세요.' } }] },
@@ -425,6 +460,9 @@ router.post('/webhook', async (req, res) => {
   const clientExtra       = body?.action?.clientExtra || {};
 
   if (!utterance) return res.json(EMPTY_QUERY);
+
+  // ── 0. 시연 오프닝 트리거 (Issue #28) — 최우선 처리 ──
+  if (isDemoTrigger(utterance)) return res.json(buildDemoOpening());
 
   // ── 1. 타로 분기 — clientExtra(Event Adapter) 우선, utterance 폴백 ──
   const isTarotExtra = clientExtra?.event?.startsWith('tarot_');
