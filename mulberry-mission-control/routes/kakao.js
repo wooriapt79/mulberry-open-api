@@ -431,6 +431,27 @@ async function handleAiFriendChat(utterance, userKey) {
   }
 }
 
+// ─────────────────────────────────────────────
+// [v3.6] 카카오 simpleText 1,000자 제한 — 분할 전송 (Issue #33)
+// ─────────────────────────────────────────────
+const MAX_KAKAO_TEXT = 1000;
+
+function splitText(text, maxLen = MAX_KAKAO_TEXT) {
+  if (text.length <= maxLen) return [text];
+  const parts = [];
+  let remaining = text;
+  while (remaining.length > maxLen) {
+    // 줄바꿈 → 문장 끝('. ') → 강제 분할 순으로 경계 탐색
+    let cut = remaining.lastIndexOf('\n', maxLen);
+    if (cut < maxLen * 0.5) cut = remaining.lastIndexOf('. ', maxLen);
+    if (cut < maxLen * 0.5) cut = maxLen;
+    parts.push(remaining.slice(0, cut).trimEnd());
+    remaining = remaining.slice(cut).trimStart();
+  }
+  if (remaining) parts.push(remaining);
+  return parts;
+}
+
 // Luna 내부 API 호출 (타임아웃 적용)
 // ─────────────────────────────────────────────
 async function callLuna(utterance) {
@@ -553,7 +574,8 @@ router.post('/webhook', async (req, res) => {
     const lunaText = await callLuna(utterance);
     if (!lunaText) return res.json(FALLBACK);
 
-    const outputs = [{ simpleText: { text: lunaText } }];
+    // 1,000자 초과 시 분할 전송 (Issue #33)
+    const outputs = splitText(lunaText).map(part => ({ simpleText: { text: part } }));
     if (detectedProduct) outputs.push(buildCommerceCard(detectedProduct));
 
     return res.json({ version: '2.0', template: { outputs } });
